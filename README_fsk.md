@@ -124,11 +124,7 @@ The Octave version of the modem was developed by David Rowe.  Brady O'Brien port
    | fsk_lib.m | Core FSK modem library |
    | fsk_lib_demo.m | A demonstration of fsk_lib, runs a single point BER test |
    | fsk_demod_file.m | Demodulates FSK signals from a file, useful for debugging FSK waveforms |
-   | fsk_lock_down.m | simulations to support the "lock down" low SNR waveform |
    | tfsk.m | automated test that compares the C and Octave versions of the modem |
-   | fsk_cml.m | Symbol rate experiments with FSK modem LLR estimation and LDPC |
-   | fsk_cml_sam.m | Sample rate experiments with FSK modem LLR estimation and LDPC |
-   | fsk_llr_plot.m | Plots curves from fsk_cml.m & fsk_cml_sam.m |
    | fsk_lib_ldpc_demo.m | CML library LLR routines and LDPC codes with fsk_lib.m |
    
    You can run many of them from the Octave command line:
