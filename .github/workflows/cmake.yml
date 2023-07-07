@@ -1,0 +1,58 @@
+name: Build Codec2 for Linux
+
+on: [pull_request]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install packages
+      shell: bash
+      run: |
+           sudo apt-get update
+           sudo apt-get install octave octave-common octave-signal liboctave-dev gnuplot sox p7zip-full python3-numpy valgrind 
+
+    - name: Create Build Directory
+      shell: bash
+      run: mkdir $GITHUB_WORKSPACE/build_linux
+
+    - name: Configure codec2 CMake
+      shell: bash
+      working-directory: ${{github.workspace}}/build_linux
+      run: cmake -DUNITTEST=1 $GITHUB_WORKSPACE
+
+    - name: Build LPCNet and Run ctests
+      shell: bash
+      run: |
+           cd $HOME
+           git clone https://github.com/drowe67/LPCNet.git 
+           cd LPCNet && mkdir -p build_linux && cd build_linux 
+           cmake .. && make && ctest
+
+    - name: Build codec2 with LPCNet
+      working-directory: ${{github.workspace}}/build_linux
+      shell: bash
+      run: |
+           cmake -DLPCNET_BUILD_DIR=$HOME/LPCNet/build_linux -DUNITTEST=1 $GITHUB_WORKSPACE
+           make -j4
+      
+    - name: Run ctests
+      working-directory: ${{github.workspace}}/build_linux
+      shell: bash
+      run: ctest --output-on-failure
+
+    - name: Test library installation
+      working-directory: ${{github.workspace}}/build_linux
+      shell: bash
+      run: cmake --install . --prefix "$HOME/codec2_install" && rm -rf "$HOME/codec2_install"
