@@ -141,3 +141,9 @@ target_compile_options(golay23 PUBLIC -DGOLAY23_UNITTEST)
 
 add_executable(golay23_runtime_tables ../src/golay23.c)
 target_compile_options(golay23_runtime_tables PUBLIC -DGOLAY23_UNITTEST -DRUN_TIME_TABLES)
+
+add_executable(mksine mksine.c)
+target_link_libraries(mksine m)
+
+add_executable(vq_mbest vq_mbest.c)
+target_link_libraries(vq_mbest codec2)
