@@ -118,3 +118,6 @@ target_link_libraries(mksine m)
 
 add_executable(vq_mbest vq_mbest.c)
 target_link_libraries(vq_mbest codec2)
+
+add_executable(tesno_est tesno_est.c)
+target_link_libraries(tesno_est m codec2)
