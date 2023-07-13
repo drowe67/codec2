@@ -118,12 +118,6 @@ endif(MINGW)
 option(BUILD_SHARED_LIBS
     "Build shared library. Set to OFF for static library." ON)
 option(UNITTEST "Build unittest binaries." OFF)
-option(INSTALL_EXAMPLES "Install example code." OFF)
-if(INSTALL_EXAMPLES)
-    install(DIRECTORY octave raw script wav
-        USE_SOURCE_PERMISSIONS
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/codec2)
-endif()
 
 # LPCNet needs to be bootstraped because codec2 and freedvlpcnet are
 # cross dependent.
@@ -133,7 +127,6 @@ set(LPCNET_BUILD_DIR FALSE CACHE PATH "Location of lpcnet build tree.")
 if(LPCNET_BUILD_DIR)
     set(LPCNET ON)
 endif()
-
 
 
 include(CheckIncludeFiles)
