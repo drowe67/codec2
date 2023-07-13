@@ -381,10 +381,10 @@ endif()
     add_test(NAME test_codec2_700c_octave_port
              COMMAND sh -c "
                cd ${CMAKE_CURRENT_BINARY_DIR}/src;
-               ./c2sim ${CMAKE_CURRENT_SOURCE_DIR}/raw/cq_ref.raw --phase0 --postfilter --dump cq_ref --lpc 10 --dump_pitch_e cq_ref_pitche.txt;
-               cd ${CMAKE_CURRENT_BINARY_DIR}/unittest; ./tnewamp1 ${CMAKE_CURRENT_SOURCE_DIR}/raw/cq_ref.raw;
+               ./c2sim ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw --phase0 --postfilter --dump hts1a --lpc 10 --dump_pitch_e hts1a_pitche.txt;
+               cd ${CMAKE_CURRENT_BINARY_DIR}/unittest; ./tnewamp1 ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw;
                cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
-               DISPLAY=\"\" octave-cli -qf --eval 'tnewamp1(\"${CMAKE_CURRENT_BINARY_DIR}/src/cq_ref\", \"${CMAKE_CURRENT_BINARY_DIR}/unittest\")'")
+               DISPLAY=\"\" octave-cli -qf --eval 'tnewamp1(\"${CMAKE_CURRENT_BINARY_DIR}/src/hts1a\", \"${CMAKE_CURRENT_BINARY_DIR}/unittest\")'")
              set_tests_properties(test_codec2_700c_octave_port PROPERTIES PASS_REGULAR_EXPRESSION "fails: 0")
 
     # -------------------------------------------------------------------------
