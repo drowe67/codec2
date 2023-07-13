@@ -321,9 +321,6 @@ target_link_libraries(freedv_mixed_rx codec2)
 add_executable(fsk_mod fsk_mod.c)
 target_link_libraries(fsk_mod codec2)
 
-add_executable(fsk_mod_ext_vco fsk_mod_ext_vco.c)
-target_link_libraries(fsk_mod_ext_vco m)
-
 add_executable(fsk_demod fsk_demod.c modem_probe.c octave.c)
 target_link_libraries(fsk_demod codec2)
 
@@ -339,9 +336,6 @@ target_link_libraries(framer)
 add_executable(deframer deframer.c)
 target_link_libraries(deframer)
 
-add_executable(fm_demod fm_demod.c fm.c)
-target_link_libraries(fm_demod m)
-
 add_executable(cohpsk_mod cohpsk_mod.c)
 target_link_libraries(cohpsk_mod codec2)
 
@@ -356,12 +350,6 @@ target_link_libraries(ofdm_mod codec2)
 
 add_executable(ofdm_demod ofdm_demod.c octave.c)
 target_link_libraries(ofdm_demod codec2)
-
-add_executable(fmfsk_mod fmfsk_mod.c)
-target_link_libraries(fmfsk_mod codec2)
-
-add_executable(fmfsk_demod fmfsk_demod.c modem_probe.c octave.c)
-target_link_libraries(fmfsk_demod codec2)
 
 add_executable(vhf_deframe_c2 vhf_deframe_c2.c)
 target_link_libraries(vhf_deframe_c2  codec2)
