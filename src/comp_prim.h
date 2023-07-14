@@ -28,6 +28,8 @@
 #ifndef __COMP_PRIM__
 #define __COMP_PRIM__
 
+#include <math.h>
+
 /*---------------------------------------------------------------------------*\
 
                                FUNCTIONS
