@@ -42,59 +42,39 @@
 #ifndef PI
 #define PI 3.141592654
 #endif
-#define FS \
-  8000 /* sample rate in Hz */
-#define FS_VOICE_8K \
-  8000 /* speech sample rate, 8000 Hz */
-#define FS_VOICE_16K \
-  16000 /* speech sample rate, 16000 Hz */
-#define T \
-  (1.0 / FS) /* sample period in seconds */
-#define RS \
-  50 /* symbol rate in Hz */
-#define NC \
-  20 /* max number of data carriers (plus one pilot in the centre) */
-#define NB \
-  2 /* Bits/symbol for QPSK modulation                                      */
-#define RB \
-  (NC * RS * NB) /* bit rate */
-#define M_FAC \
-  (FS / RS) /* oversampling factor */
-#define NSYM \
-  6 /* number of symbols to filter over                                     */
-#define NFILTER \
-  (NSYM * M_FAC) /* size of tx/rx filters at sample rate M */
+#define FS 8000            /* sample rate in Hz */
+#define FS_VOICE_8K 8000   /* speech sample rate, 8000 Hz */
+#define FS_VOICE_16K 16000 /* speech sample rate, 16000 Hz */
+#define T (1.0 / FS)       /* sample period in seconds */
+#define RS 50              /* symbol rate in Hz */
+#define NC 20 /* max number of data carriers (plus one pilot in the centre) */
+#define NB 2  /* Bits/symbol for QPSK modulation */
+#define RB (NC * RS * NB)      /* bit rate */
+#define M_FAC (FS / RS)        /* oversampling factor */
+#define NSYM 6                 /* number of symbols to filter over */
+#define NFILTER (NSYM * M_FAC) /* size of tx/rx filters at sample rate M */
 
-#define FSEP \
-  75 /* Default separation between carriers (Hz) */
+#define FSEP 75 /* Default separation between carriers (Hz) */
 
-#define NT \
-  5 /* number of symbols we estimate timing over                            */
-#define P \
-  4 /* oversample factor used for initial rx symbol filtering output        */
-#define Q  \
-  (M_FAC / \
-   4) /* oversample factor used for initial rx symbol filtering input */
-#define NRXDEC \
-  31 /* number of taps in the rx decimation filter */
+#define NT 5          /* number of symbols we estimate timing over */
+#define P 4           /* oversampling for initial rx symbol filtering output */
+#define Q (M_FAC / 4) /* oversampling for initial rx symbol filtering input */
+#define NRXDEC 31     /* number of taps in the rx decimation filter */
 
-#define NPILOT_LUT \
-  (4 * M_FAC) /* number of pilot look up table samples                 */
-#define NPILOTCOEFF \
-  30 /* number of FIR filter coeffs in LP filter              */
-#define NPILOTBASEBAND   \
-  (NPILOTCOEFF + M_FAC + \
-   M_FAC / P) /* number of pilot baseband samples reqd for pilot LPF   */
-#define NPILOTLPF \
-  (4 * M_FAC) /* number of samples we DFT pilot over, pilot est window */
+#define NPILOT_LUT (4 * M_FAC) /* number of pilot look up table samples */
+#define NPILOTCOEFF 30         /* number of FIR filter coeffs in LP filter */
+/* number of pilot baseband samples reqd for pilot LPF */
+#define NPILOTBASEBAND (NPILOTCOEFF + M_FAC + M_FAC / P)
+/* number of samples we DFT pilot over, pilot est window */
+#define NPILOTLPF (4 * M_FAC)
 #define MPILOTFFT 256
 
 #define NSYNC_MEM 6
 
-#define NRX_FDM_MEM \
-  (NFILTER + M_FAC + M_FAC / P) /* size of rx filter memory            */
-#define NRXDECMEM \
-  (NRXDEC + M_FAC + M_FAC / P) /* size of rx decimation filter memory */
+/* size of rx filter memory */
+#define NRX_FDM_MEM (NFILTER + M_FAC + M_FAC / P)
+/* size of rx decimation filter memory */
+#define NRXDECMEM (NRXDEC + M_FAC + M_FAC / P)
 
 /* averaging filter coeffs */
 

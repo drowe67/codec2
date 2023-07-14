@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "codec2.h"
+#include "comp.h"
 #include "comp_prim.h"
 #include "debug_alloc.h"
 #include "fmfsk.h"

@@ -12,6 +12,8 @@
 #define H_256_512_4_DEC_TYPE 0
 #define H_256_512_4_MAX_ITER 100
 
+#include <stdint.h>
+
 extern const uint16_t H_256_512_4_H_rows[];
 extern const uint16_t H_256_512_4_H_cols[];
 extern const float H_256_512_4_input[];

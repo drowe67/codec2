@@ -28,6 +28,7 @@
 #ifndef __INTERP__
 #define __INTERP__
 
+#include "defines.h"
 #include "kiss_fft.h"
 
 void interpolate(MODEL *interp, MODEL *prev, MODEL *next);

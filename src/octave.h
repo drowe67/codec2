@@ -29,6 +29,8 @@
 #ifndef __OCTAVE__
 #define __OCTAVE__
 
+#include <stdio.h>
+
 #include "comp.h"
 
 void octave_save_int(FILE *f, char name[], int data[], int rows, int cols);

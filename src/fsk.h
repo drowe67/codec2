@@ -48,6 +48,8 @@ octave/fsk_horus.m
 #define FSK_DEFAULT_NSYM 50 /* See Nsym below */
 #define FSK_NONE -1         /* unused parameter */
 
+#undef P /* avoid clash with #define P in fdmdv_internal.h */
+
 struct FSK {
   /*  Static parameters set up by fsk_init */
   int Ndft; /* freq offset est fft */

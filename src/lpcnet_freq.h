@@ -36,6 +36,8 @@
 
 #define LPCNET_FREQ_MAX_BANDS 18
 
+#include "comp.h"
+
 int lpcnet_compute_band_energy(float *bandE, float *bandCentrekHz, COMP *Sw,
                                float Fs, int Nfft);
 

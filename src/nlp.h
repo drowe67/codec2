@@ -29,6 +29,7 @@
 #define __NLP__
 
 #include "comp.h"
+#include "defines.h"
 
 void *nlp_create(C2CONST *c2const);
 void nlp_destroy(void *nlp_state);
