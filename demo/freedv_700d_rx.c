@@ -6,7 +6,7 @@
 
   Demo receive program for FreeDV API (700D mode), see freedv_700d_tx.c for
   instructions.
- 
+
 \*---------------------------------------------------------------------------*/
 
 /*
@@ -27,29 +27,29 @@
 */
 
 #include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "freedv_api.h"
 
 int main(int argc, char *argv[]) {
-    struct freedv *freedv;
+  struct freedv *freedv;
 
-    freedv = freedv_open(FREEDV_MODE_700D);
-    assert(freedv != NULL);
+  freedv = freedv_open(FREEDV_MODE_700D);
+  assert(freedv != NULL);
 
-    /* note API functions to tell us how big our buffers need to be */
-    short speech_out[freedv_get_n_max_speech_samples(freedv)];
-    short demod_in[freedv_get_n_max_modem_samples(freedv)];
+  /* note API functions to tell us how big our buffers need to be */
+  short speech_out[freedv_get_n_max_speech_samples(freedv)];
+  short demod_in[freedv_get_n_max_modem_samples(freedv)];
 
-    size_t nin,nout;
-    nin = freedv_nin(freedv);
-    while(fread(demod_in, sizeof(short), nin, stdin) == nin) {
-        nout = freedv_rx(freedv, speech_out, demod_in);
-        nin = freedv_nin(freedv); /* call me on every loop! */
-        fwrite(speech_out, sizeof(short), nout, stdout);
-    }
+  size_t nin, nout;
+  nin = freedv_nin(freedv);
+  while (fread(demod_in, sizeof(short), nin, stdin) == nin) {
+    nout = freedv_rx(freedv, speech_out, demod_in);
+    nin = freedv_nin(freedv); /* call me on every loop! */
+    fwrite(speech_out, sizeof(short), nout, stdout);
+  }
 
-    freedv_close(freedv);
-    return 0;
+  freedv_close(freedv);
+  return 0;
 }

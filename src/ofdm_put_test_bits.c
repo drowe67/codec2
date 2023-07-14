@@ -27,98 +27,98 @@
 */
 
 #include <assert.h>
+#include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <errno.h>
 
 #include "codec2_ofdm.h"
 #include "ofdm_internal.h"
 #include "test_bits_ofdm.h"
 
 #define LOG_FRAMES 100
-#define NDISCARD   20
+#define NDISCARD 20
 
 static struct OFDM *ofdm;
 
 int opt_exists(char *argv[], int argc, char opt[]) {
-    int i;
-    for (i=0; i<argc; i++) {
-        if (strcmp(argv[i], opt) == 0) {
-            return i;
-        }
+  int i;
+  for (i = 0; i < argc; i++) {
+    if (strcmp(argv[i], opt) == 0) {
+      return i;
     }
-    return 0;
+  }
+  return 0;
 }
 
-int main(int argc, char *argv[])
-{
-    FILE         *fin;
-    int           i, f, Nerrs, Terrs, Tbits, Terrs2, Tbits2, verbose;
-    float         aber;
+int main(int argc, char *argv[]) {
+  FILE *fin;
+  int i, f, Nerrs, Terrs, Tbits, Terrs2, Tbits2, verbose;
+  float aber;
 
-    if (argc < 2) {
-	fprintf(stderr, "\n");
-	fprintf(stderr, "usage: %s InputOneCharPerBitFile [-v]\n", argv[0]);
-	fprintf(stderr, "\n");
-	exit(1);
+  if (argc < 2) {
+    fprintf(stderr, "\n");
+    fprintf(stderr, "usage: %s InputOneCharPerBitFile [-v]\n", argv[0]);
+    fprintf(stderr, "\n");
+    exit(1);
+  }
+
+  if (strcmp(argv[1], "-") == 0)
+    fin = stdin;
+  else if ((fin = fopen(argv[1], "rb")) == NULL) {
+    fprintf(stderr, "Error opening input file: %s: %s.\n", argv[1],
+            strerror(errno));
+    exit(1);
+  }
+
+  verbose = 0;
+  if (opt_exists(argv, argc, "-v")) {
+    verbose = 1;
+  }
+
+  ofdm = ofdm_create(NULL);
+  assert(ofdm != NULL);
+
+  int Nbitsperframe = ofdm_get_bits_per_frame(ofdm);
+  char rx_bits[Nbitsperframe];
+
+  f = Terrs = Tbits = Terrs2 = Tbits2 = 0;
+  while (fread(rx_bits, sizeof(char), Nbitsperframe, fin) == Nbitsperframe) {
+    f++;
+
+    Nerrs = 0;
+    for (i = 0; i < Nbitsperframe; i++) {
+      if (test_bits_ofdm[i] != rx_bits[i]) {
+        Nerrs++;
+      }
+    }
+    aber = (float)Nerrs / Nbitsperframe;
+
+    Terrs += Nerrs;
+    Tbits += Nbitsperframe;
+
+    if (f >= NDISCARD) {
+      Terrs2 += Nerrs;
+      Tbits2 += Nbitsperframe;
     }
 
-    if (strcmp(argv[1], "-") == 0)
-        fin = stdin;
-    else if ( (fin = fopen(argv[1],"rb")) == NULL ) {
-	fprintf(stderr, "Error opening input file: %s: %s.\n",
-         argv[1], strerror(errno));
-	exit(1);
+    if (verbose) {
+      printf("f: %d Nerrs: %d aber: %3.2f\n", f, Nerrs, aber);
     }
+  }
 
-    verbose = 0;
-    if (opt_exists(argv, argc, "-v")) {
-        verbose = 1;
-    }
+  fclose(fin);
 
-    ofdm = ofdm_create(NULL);
-    assert(ofdm != NULL);
+  fprintf(stderr, "BER..: %5.4f Tbits: %5d Terrs: %5d\n", (float)Terrs / Tbits,
+          Tbits, Terrs);
 
-    int Nbitsperframe = ofdm_get_bits_per_frame(ofdm);
-    char rx_bits[Nbitsperframe];
-  
-    f = Terrs = Tbits = Terrs2 = Tbits2 = 0;
-    while (fread(rx_bits, sizeof(char), Nbitsperframe, fin) == Nbitsperframe) {
-        f++;
-        
-        Nerrs = 0;
-        for(i=0; i<Nbitsperframe; i++) {
-            if (test_bits_ofdm[i] != rx_bits[i]) {
-                Nerrs++;
-            }
-        }
-        aber = (float)Nerrs/Nbitsperframe;
+  if (Tbits2 != 0) {
+    fprintf(stderr, "BER2.: %5.4f Tbits: %5d Terrs: %5d\n",
+            (float)Terrs2 / Tbits2, Tbits2, Terrs2);
+  }
 
-        Terrs += Nerrs;
-        Tbits += Nbitsperframe;
+  ofdm_destroy(ofdm);
 
-        if (f >= NDISCARD) {
-            Terrs2 += Nerrs;
-            Tbits2 += Nbitsperframe;
-        }
-        
-        if (verbose) {
-            printf("f: %d Nerrs: %d aber: %3.2f\n", f, Nerrs, aber);
-        }
-    }
-
-    fclose(fin);
-
-    fprintf(stderr, "BER..: %5.4f Tbits: %5d Terrs: %5d\n", (float)Terrs/Tbits, Tbits, Terrs);
-
-    if (Tbits2 != 0) {
-        fprintf(stderr, "BER2.: %5.4f Tbits: %5d Terrs: %5d\n", (float)Terrs2/Tbits2, Tbits2, Terrs2);
-    }
-
-    ofdm_destroy(ofdm);
-
-    return 0;
+  return 0;
 }
-

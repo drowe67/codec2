@@ -8,14 +8,15 @@
 
 \*---------------------------------------------------------------------------*/
 
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+
 #include "mpdecode_core.h"
 
-#define M       4
-#define BPS     2
-#define NSYM     5
-#define V_EST    2
+#define M 4
+#define BPS 2
+#define NSYM 5
+#define V_EST 2
 #define SNR_EST 10
 
 /* Generated test vectors with:
@@ -27,40 +28,33 @@
 
 /* one col per symbol:
        0    1    2    3    4 */
- float rx_filt[] = {
-     1.0, 0.0, 0.0, 0.0, 1.0,  /* filter 0 */
-     0.0, 1.0, 0.0, 0.0, 0.0,  /* filter 1 */
-     0.0, 0.0, 1.0, 0.0, 0.0,  /* filter 2 */
-     0.0, 0.0, 0.0, 1.0, 0.0   /* filter 3 */
+float rx_filt[] = {
+    1.0, 0.0, 0.0, 0.0, 1.0, /* filter 0 */
+    0.0, 1.0, 0.0, 0.0, 0.0, /* filter 1 */
+    0.0, 0.0, 1.0, 0.0, 0.0, /* filter 2 */
+    0.0, 0.0, 0.0, 1.0, 0.0  /* filter 3 */
 };
 
-float llrs_target[] = {
-     7.3252,   7.3252,  /* bit 0, 1      */
-     7.3252,  -7.3252,  /*     2, 3, ... */
-    -7.3252,   7.3252,
-    -7.3252,  -7.3252,
-     7.3252,   7.3252
-};
+float llrs_target[] = {7.3252,  7.3252,  /* bit 0, 1      */
+                       7.3252,  -7.3252, /*     2, 3, ... */
+                       -7.3252, 7.3252,  -7.3252, -7.3252, 7.3252, 7.3252};
 
-int main(void) { 
-    float llrs[BPS*NSYM] = {0};
-    
-    fsk_rx_filt_to_llrs(llrs, rx_filt, V_EST, SNR_EST, M, NSYM);
+int main(void) {
+  float llrs[BPS * NSYM] = {0};
 
-    float error = 0.0;
-    for(int i=0; i<NSYM*BPS; i++) {
-        fprintf(stderr,"% f\n",llrs[i]);
-        error += pow(llrs[i]-llrs_target[i],2.0);
-    }
+  fsk_rx_filt_to_llrs(llrs, rx_filt, V_EST, SNR_EST, M, NSYM);
 
-    if (error < 1E-3) {
-        fprintf(stderr, "PASS\n");
-        return 0;
-    }
-    else {
-        fprintf(stderr, "FAIL\n");
-        return 1;
-    }
+  float error = 0.0;
+  for (int i = 0; i < NSYM * BPS; i++) {
+    fprintf(stderr, "% f\n", llrs[i]);
+    error += pow(llrs[i] - llrs_target[i], 2.0);
+  }
+
+  if (error < 1E-3) {
+    fprintf(stderr, "PASS\n");
+    return 0;
+  } else {
+    fprintf(stderr, "FAIL\n");
+    return 1;
+  }
 }
-
-

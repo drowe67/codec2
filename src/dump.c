@@ -23,14 +23,16 @@
   along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "defines.h"
-#include "comp.h"
 #include "dump.h"
+
 #include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "comp.h"
+#include "defines.h"
 
 #ifdef DUMP
 static int dumpon = 0;
@@ -65,586 +67,531 @@ static FILE *fE = NULL;
 static FILE *frk = NULL;
 static FILE *fhephase = NULL;
 
-static char  prefix[MAX_STR];
+static char prefix[MAX_STR];
 
 void dump_on(char p[]) {
-    dumpon = 1;
-    strcpy(prefix, p);
+  dumpon = 1;
+  strcpy(prefix, p);
 }
 
-void dump_off(){
-    if (fsn != NULL)
-	fclose(fsn);
-    if (fsw != NULL)
-	fclose(fsw);
-    if (fsw_ != NULL)
-	fclose(fsw_);
-    if (few != NULL)
-	fclose(few);
-    if (fmodel != NULL)
-	fclose(fmodel);
-    if (fsoftdec != NULL)
-	fclose(fsoftdec);
-    if (fqmodel != NULL)
-	fclose(fqmodel);
-    if (fpwb != NULL)
-	fclose(fpwb);
-    if (fpw != NULL)
-	fclose(fpw);
-    if (frw != NULL)
-	fclose(frw);
-    if (flsp != NULL)
-	fclose(flsp);
-    if (fweights != NULL)
-	fclose(fweights);
-    if (flsp_ != NULL)
-	fclose(flsp_);
-    if (fmel != NULL)
-	fclose(fmel);
-    if (fmel_indexes != NULL)
-	fclose(fmel_indexes);
-    if (fphase != NULL)
-	fclose(fphase);
-    if (fphase_ != NULL)
-	fclose(fphase_);
-    if (ffw != NULL)
-	fclose(ffw);
-    if (fe != NULL)
-	fclose(fe);
-    if (fsq != NULL)
-	fclose(fsq);
-    if (fdec != NULL)
-	fclose(fdec);
-    if (fsnr != NULL)
-	fclose(fsnr);
-    if (flpcsnr != NULL)
-	fclose(flpcsnr);
-    if (fak != NULL)
-	fclose(fak);
-    if (fak_ != NULL)
-	fclose(fak_);
-    if (fbg != NULL)
-	fclose(fbg);
-    if (fE != NULL)
-	fclose(fE);
-    if (frk != NULL)
-	fclose(frk);
-    if (fhephase != NULL)
-	fclose(fhephase);
+void dump_off() {
+  if (fsn != NULL) fclose(fsn);
+  if (fsw != NULL) fclose(fsw);
+  if (fsw_ != NULL) fclose(fsw_);
+  if (few != NULL) fclose(few);
+  if (fmodel != NULL) fclose(fmodel);
+  if (fsoftdec != NULL) fclose(fsoftdec);
+  if (fqmodel != NULL) fclose(fqmodel);
+  if (fpwb != NULL) fclose(fpwb);
+  if (fpw != NULL) fclose(fpw);
+  if (frw != NULL) fclose(frw);
+  if (flsp != NULL) fclose(flsp);
+  if (fweights != NULL) fclose(fweights);
+  if (flsp_ != NULL) fclose(flsp_);
+  if (fmel != NULL) fclose(fmel);
+  if (fmel_indexes != NULL) fclose(fmel_indexes);
+  if (fphase != NULL) fclose(fphase);
+  if (fphase_ != NULL) fclose(fphase_);
+  if (ffw != NULL) fclose(ffw);
+  if (fe != NULL) fclose(fe);
+  if (fsq != NULL) fclose(fsq);
+  if (fdec != NULL) fclose(fdec);
+  if (fsnr != NULL) fclose(fsnr);
+  if (flpcsnr != NULL) fclose(flpcsnr);
+  if (fak != NULL) fclose(fak);
+  if (fak_ != NULL) fclose(fak_);
+  if (fbg != NULL) fclose(fbg);
+  if (fE != NULL) fclose(fE);
+  if (frk != NULL) fclose(frk);
+  if (fhephase != NULL) fclose(fhephase);
 }
 
 void dump_Sn(int m_pitch, float Sn[]) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fsn == NULL) {
-	sprintf(s,"%s_sn.txt", prefix);
-	fsn = fopen(s, "wt");
-	assert(fsn != NULL);
-    }
+  if (fsn == NULL) {
+    sprintf(s, "%s_sn.txt", prefix);
+    fsn = fopen(s, "wt");
+    assert(fsn != NULL);
+  }
 
-    /* split across two lines to avoid max line length problems */
-    /* reconstruct in Octave */
+  /* split across two lines to avoid max line length problems */
+  /* reconstruct in Octave */
 
-    for(i=0; i<m_pitch/2; i++)
-	fprintf(fsn,"%f\t",Sn[i]);
-    fprintf(fsn,"\n");
-    for(i=m_pitch/2; i<m_pitch; i++)
-	fprintf(fsn,"%f\t",Sn[i]);
-    fprintf(fsn,"\n");
+  for (i = 0; i < m_pitch / 2; i++) fprintf(fsn, "%f\t", Sn[i]);
+  fprintf(fsn, "\n");
+  for (i = m_pitch / 2; i < m_pitch; i++) fprintf(fsn, "%f\t", Sn[i]);
+  fprintf(fsn, "\n");
 }
 
 void dump_Sw(COMP Sw[]) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fsw == NULL) {
-	sprintf(s,"%s_sw.txt", prefix);
-	fsw = fopen(s, "wt");
-	assert(fsw != NULL);
-    }
+  if (fsw == NULL) {
+    sprintf(s, "%s_sw.txt", prefix);
+    fsw = fopen(s, "wt");
+    assert(fsw != NULL);
+  }
 
-    for(i=0; i<FFT_ENC/2; i++)
-	fprintf(fsw,"%f\t",
-		10.0*log10(Sw[i].real*Sw[i].real + Sw[i].imag*Sw[i].imag));
-    fprintf(fsw,"\n");
+  for (i = 0; i < FFT_ENC / 2; i++)
+    fprintf(fsw, "%f\t",
+            10.0 * log10(Sw[i].real * Sw[i].real + Sw[i].imag * Sw[i].imag));
+  fprintf(fsw, "\n");
 }
 
 void dump_Sw_(COMP Sw_[]) {
-    int i;
-    char s[MAX_STR + 8];
+  int i;
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fsw_ == NULL) {
-	sprintf(s,"%s_sw_.txt", prefix);
-	fsw_ = fopen(s, "wt");
-	assert(fsw_ != NULL);
-    }
+  if (fsw_ == NULL) {
+    sprintf(s, "%s_sw_.txt", prefix);
+    fsw_ = fopen(s, "wt");
+    assert(fsw_ != NULL);
+  }
 
-    for(i=0; i<FFT_ENC/2; i++)
-	fprintf(fsw_,"%f\t",
-		10.0*log10(Sw_[i].real*Sw_[i].real + Sw_[i].imag*Sw_[i].imag));
-    fprintf(fsw_,"\n");
+  for (i = 0; i < FFT_ENC / 2; i++)
+    fprintf(
+        fsw_, "%f\t",
+        10.0 * log10(Sw_[i].real * Sw_[i].real + Sw_[i].imag * Sw_[i].imag));
+  fprintf(fsw_, "\n");
 }
 
 void dump_Ew(COMP Ew[]) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (few == NULL) {
-	sprintf(s,"%s_ew.txt", prefix);
-	few = fopen(s, "wt");
-	assert(few != NULL);
-    }
+  if (few == NULL) {
+    sprintf(s, "%s_ew.txt", prefix);
+    few = fopen(s, "wt");
+    assert(few != NULL);
+  }
 
-    for(i=0; i<FFT_ENC/2; i++)
-	fprintf(few,"%f\t",
-		10.0*log10(Ew[i].real*Ew[i].real + Ew[i].imag*Ew[i].imag));
-    fprintf(few,"\n");
+  for (i = 0; i < FFT_ENC / 2; i++)
+    fprintf(few, "%f\t",
+            10.0 * log10(Ew[i].real * Ew[i].real + Ew[i].imag * Ew[i].imag));
+  fprintf(few, "\n");
 }
 
-void dump_softdec(float *softdec, int n)
-{
-    int i;
-    char s[MAX_STR + 12];
+void dump_softdec(float *softdec, int n) {
+  int i;
+  char s[MAX_STR + 12];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fsoftdec == NULL) {
-	sprintf(s,"%s_softdec.txt", prefix);
-	fsoftdec = fopen(s, "wt");
-	assert(fsoftdec != NULL);
-    }
+  if (fsoftdec == NULL) {
+    sprintf(s, "%s_softdec.txt", prefix);
+    fsoftdec = fopen(s, "wt");
+    assert(fsoftdec != NULL);
+  }
 
-    for(i=0; i<n; i++)
-	fprintf(fsoftdec,"%f\t", softdec[i]);
-    fprintf(fsoftdec,"\n");
+  for (i = 0; i < n; i++) fprintf(fsoftdec, "%f\t", softdec[i]);
+  fprintf(fsoftdec, "\n");
 }
 
 void dump_model(MODEL *model) {
-    int l;
-    char s[MAX_STR + 10];
-    char line[MAX_STR*10];
+  int l;
+  char s[MAX_STR + 10];
+  char line[MAX_STR * 10];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fmodel == NULL) {
-	sprintf(s,"%s_model.txt", prefix);
-	fmodel = fopen(s, "wt");
-	assert(fmodel != NULL);
-    }
+  if (fmodel == NULL) {
+    sprintf(s, "%s_model.txt", prefix);
+    fmodel = fopen(s, "wt");
+    assert(fmodel != NULL);
+  }
 
-    sprintf(line,"%12f %12d ", model->Wo, model->L);
-    for(l=1; l<=model->L; l++) {
-	sprintf(s,"%12f ",model->A[l]);
-        strcat(line, s);
-        assert(strlen(line) < MAX_STR*10);
-    }
-    for(l=model->L+1; l<=MAX_AMP; l++) {
-	sprintf(s,"%12f ", 0.0);
-        strcat(line,s);
-        assert(strlen(line) < MAX_STR*10);
-    }
+  sprintf(line, "%12f %12d ", model->Wo, model->L);
+  for (l = 1; l <= model->L; l++) {
+    sprintf(s, "%12f ", model->A[l]);
+    strcat(line, s);
+    assert(strlen(line) < MAX_STR * 10);
+  }
+  for (l = model->L + 1; l <= MAX_AMP; l++) {
+    sprintf(s, "%12f ", 0.0);
+    strcat(line, s);
+    assert(strlen(line) < MAX_STR * 10);
+  }
 
-    sprintf(s,"%d\n",model->voiced);
-    strcat(line,s);
-    fprintf(fmodel,"%s",line);
+  sprintf(s, "%d\n", model->voiced);
+  strcat(line, s);
+  fprintf(fmodel, "%s", line);
 }
 
 void dump_quantised_model(MODEL *model) {
-    int l;
-    char s[MAX_STR + 11];
-    char line[4096];
+  int l;
+  char s[MAX_STR + 11];
+  char line[4096];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fqmodel == NULL) {
-	sprintf(s,"%s_qmodel.txt", prefix);
-	fqmodel = fopen(s, "wt");
-	assert(fqmodel != NULL);
-    }
+  if (fqmodel == NULL) {
+    sprintf(s, "%s_qmodel.txt", prefix);
+    fqmodel = fopen(s, "wt");
+    assert(fqmodel != NULL);
+  }
 
-    sprintf(line,"%12f %12d ", model->Wo, model->L);
-    for(l=1; l<=model->L; l++) {
-	sprintf(s,"%12f ",model->A[l]);
-        strcat(line, s);
-        assert(strlen(line) < 4096);
-    }
-    for(l=model->L+1; l<=MAX_AMP; l++) {
-	sprintf(s,"%12f ", 0.0);
-        strcat(line, s);
-        assert(strlen(line) < 4096);
-    }
-
-    sprintf(s,"%d\n",model->voiced);
+  sprintf(line, "%12f %12d ", model->Wo, model->L);
+  for (l = 1; l <= model->L; l++) {
+    sprintf(s, "%12f ", model->A[l]);
     strcat(line, s);
-    fprintf(fqmodel, "%s", line);
+    assert(strlen(line) < 4096);
+  }
+  for (l = model->L + 1; l <= MAX_AMP; l++) {
+    sprintf(s, "%12f ", 0.0);
+    strcat(line, s);
+    assert(strlen(line) < 4096);
+  }
+
+  sprintf(s, "%d\n", model->voiced);
+  strcat(line, s);
+  fprintf(fqmodel, "%s", line);
 }
 
 void dump_phase(float phase[], int L) {
-    int l;
-    char s[MAX_STR + 10];
+  int l;
+  char s[MAX_STR + 10];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fphase == NULL) {
-	sprintf(s,"%s_phase.txt", prefix);
-	fphase = fopen(s, "wt");
-	assert(fphase != NULL);
-    }
+  if (fphase == NULL) {
+    sprintf(s, "%s_phase.txt", prefix);
+    fphase = fopen(s, "wt");
+    assert(fphase != NULL);
+  }
 
-    for(l=1; l<=L; l++)
-	fprintf(fphase,"%f\t",phase[l]);
-    for(l=L+1; l<=MAX_AMP; l++)
-	fprintf(fphase,"%f\t",0.0);
-    fprintf(fphase,"\n");
+  for (l = 1; l <= L; l++) fprintf(fphase, "%f\t", phase[l]);
+  for (l = L + 1; l <= MAX_AMP; l++) fprintf(fphase, "%f\t", 0.0);
+  fprintf(fphase, "\n");
 }
 
 void dump_phase_(float phase_[], int L) {
-    int l;
-    char s[MAX_STR + 11];
+  int l;
+  char s[MAX_STR + 11];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fphase_ == NULL) {
-	sprintf(s,"%s_phase_.txt", prefix);
-	fphase_ = fopen(s, "wt");
-	assert(fphase_ != NULL);
-    }
+  if (fphase_ == NULL) {
+    sprintf(s, "%s_phase_.txt", prefix);
+    fphase_ = fopen(s, "wt");
+    assert(fphase_ != NULL);
+  }
 
-    for(l=1; l<=L; l++)
-	fprintf(fphase_,"%f\t",phase_[l]);
-    for(l=L+1; l<MAX_AMP; l++)
-	fprintf(fphase_,"%f\t",0.0);
-    fprintf(fphase_,"\n");
+  for (l = 1; l <= L; l++) fprintf(fphase_, "%f\t", phase_[l]);
+  for (l = L + 1; l < MAX_AMP; l++) fprintf(fphase_, "%f\t", 0.0);
+  fprintf(fphase_, "\n");
 }
-
 
 void dump_hephase(int ind[], int dim) {
-    int m;
-    char s[MAX_STR + 12];
+  int m;
+  char s[MAX_STR + 12];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fhephase == NULL) {
-	sprintf(s,"%s_hephase.txt", prefix);
-	fhephase = fopen(s, "wt");
-	assert(fhephase != NULL);
-    }
+  if (fhephase == NULL) {
+    sprintf(s, "%s_hephase.txt", prefix);
+    fhephase = fopen(s, "wt");
+    assert(fhephase != NULL);
+  }
 
-    for(m=0; m<dim; m++)
-	fprintf(fhephase,"%d\t",ind[m]);
-    fprintf(fhephase,"\n");
+  for (m = 0; m < dim; m++) fprintf(fhephase, "%d\t", ind[m]);
+  fprintf(fhephase, "\n");
 }
 
-
 void dump_snr(float snr) {
-    char s[MAX_STR + 8];
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fsnr == NULL) {
-	sprintf(s,"%s_snr.txt", prefix);
-	fsnr = fopen(s, "wt");
-	assert(fsnr != NULL);
-    }
+  if (fsnr == NULL) {
+    sprintf(s, "%s_snr.txt", prefix);
+    fsnr = fopen(s, "wt");
+    assert(fsnr != NULL);
+  }
 
-    fprintf(fsnr,"%f\n",snr);
+  fprintf(fsnr, "%f\n", snr);
 }
 
 void dump_lpc_snr(float snr) {
-    char s[MAX_STR + 12];
+  char s[MAX_STR + 12];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (flpcsnr == NULL) {
-	sprintf(s,"%s_lpc_snr.txt", prefix);
-	flpcsnr = fopen(s, "wt");
-	assert(flpcsnr != NULL);
-    }
+  if (flpcsnr == NULL) {
+    sprintf(s, "%s_lpc_snr.txt", prefix);
+    flpcsnr = fopen(s, "wt");
+    assert(flpcsnr != NULL);
+  }
 
-    fprintf(flpcsnr,"%f\n",snr);
+  fprintf(flpcsnr, "%f\n", snr);
 }
 
 /* Pw "before" post filter so we can plot before and after */
 
 void dump_Pwb(float Pwb[]) {
-    int i;
-    char s[MAX_STR + 8];
+  int i;
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fpwb == NULL) {
-	sprintf(s,"%s_pwb.txt", prefix);
-	fpwb = fopen(s, "wt");
-	assert(fpwb != NULL);
-    }
+  if (fpwb == NULL) {
+    sprintf(s, "%s_pwb.txt", prefix);
+    fpwb = fopen(s, "wt");
+    assert(fpwb != NULL);
+  }
 
-    for(i=0; i<FFT_ENC/2; i++)
-	fprintf(fpwb,"%f\t",Pwb[i]);
-    fprintf(fpwb,"\n");
+  for (i = 0; i < FFT_ENC / 2; i++) fprintf(fpwb, "%f\t", Pwb[i]);
+  fprintf(fpwb, "\n");
 }
 
 void dump_Pw(float Pw[]) {
-    int i;
-    char s[MAX_STR +7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fpw == NULL) {
-	sprintf(s,"%s_pw.txt", prefix);
-	fpw = fopen(s, "wt");
-	assert(fpw != NULL);
-    }
+  if (fpw == NULL) {
+    sprintf(s, "%s_pw.txt", prefix);
+    fpw = fopen(s, "wt");
+    assert(fpw != NULL);
+  }
 
-    for(i=0; i<FFT_ENC/2; i++)
-	fprintf(fpw,"%f\t",Pw[i]);
-    fprintf(fpw,"\n");
+  for (i = 0; i < FFT_ENC / 2; i++) fprintf(fpw, "%f\t", Pw[i]);
+  fprintf(fpw, "\n");
 }
 
 void dump_Rw(float Rw[]) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (frw == NULL) {
-	sprintf(s,"%s_rw.txt", prefix);
-	frw = fopen(s, "wt");
-	assert(frw != NULL);
-    }
+  if (frw == NULL) {
+    sprintf(s, "%s_rw.txt", prefix);
+    frw = fopen(s, "wt");
+    assert(frw != NULL);
+  }
 
-    for(i=0; i<FFT_ENC/2; i++)
-	fprintf(frw,"%f\t",Rw[i]);
-    fprintf(frw,"\n");
+  for (i = 0; i < FFT_ENC / 2; i++) fprintf(frw, "%f\t", Rw[i]);
+  fprintf(frw, "\n");
 }
 
 void dump_weights(float w[], int order) {
-    int i;
-    char s[MAX_STR + 12];
+  int i;
+  char s[MAX_STR + 12];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fweights == NULL) {
-	sprintf(s,"%s_weights.txt", prefix);
-	fweights = fopen(s, "wt");
-	assert(fweights != NULL);
-    }
+  if (fweights == NULL) {
+    sprintf(s, "%s_weights.txt", prefix);
+    fweights = fopen(s, "wt");
+    assert(fweights != NULL);
+  }
 
-    for(i=0; i<order; i++)
-	fprintf(fweights,"%f\t", w[i]);
-    fprintf(fweights,"\n");
+  for (i = 0; i < order; i++) fprintf(fweights, "%f\t", w[i]);
+  fprintf(fweights, "\n");
 }
 
 void dump_lsp(float lsp[]) {
-    int i;
-    char s[MAX_STR + 8];
+  int i;
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (flsp == NULL) {
-	sprintf(s,"%s_lsp.txt", prefix);
-	flsp = fopen(s, "wt");
-	assert(flsp != NULL);
-    }
+  if (flsp == NULL) {
+    sprintf(s, "%s_lsp.txt", prefix);
+    flsp = fopen(s, "wt");
+    assert(flsp != NULL);
+  }
 
-    for(i=0; i<10; i++)
-	fprintf(flsp,"%f\t",lsp[i]);
-    fprintf(flsp,"\n");
+  for (i = 0; i < 10; i++) fprintf(flsp, "%f\t", lsp[i]);
+  fprintf(flsp, "\n");
 }
 
 void dump_lsp_(float lsp_[]) {
-    int i;
-    char s[MAX_STR + 9];
+  int i;
+  char s[MAX_STR + 9];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (flsp_ == NULL) {
-	sprintf(s,"%s_lsp_.txt", prefix);
-	flsp_ = fopen(s, "wt");
-	assert(flsp_ != NULL);
-    }
+  if (flsp_ == NULL) {
+    sprintf(s, "%s_lsp_.txt", prefix);
+    flsp_ = fopen(s, "wt");
+    assert(flsp_ != NULL);
+  }
 
-    for(i=0; i<10; i++)
-	fprintf(flsp_,"%f\t",lsp_[i]);
-    fprintf(flsp_,"\n");
+  for (i = 0; i < 10; i++) fprintf(flsp_, "%f\t", lsp_[i]);
+  fprintf(flsp_, "\n");
 }
 
 void dump_mel(float mel[], int order) {
-    int i;
-    char s[MAX_STR + 8];
+  int i;
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fmel == NULL) {
-	sprintf(s,"%s_mel.txt", prefix);
-	fmel = fopen(s, "wt");
-	assert(fmel != NULL);
-    }
+  if (fmel == NULL) {
+    sprintf(s, "%s_mel.txt", prefix);
+    fmel = fopen(s, "wt");
+    assert(fmel != NULL);
+  }
 
-    for(i=0; i<order; i++)
-	fprintf(fmel,"%f\t",mel[i]);
-    fprintf(fmel,"\n");
+  for (i = 0; i < order; i++) fprintf(fmel, "%f\t", mel[i]);
+  fprintf(fmel, "\n");
 }
 
 void dump_mel_indexes(int mel_indexes[], int order) {
-    int i;
-    char s[MAX_STR + 16];
+  int i;
+  char s[MAX_STR + 16];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fmel_indexes == NULL) {
-	sprintf(s,"%s_mel_indexes.txt", prefix);
-	fmel_indexes = fopen(s, "wt");
-	assert(fmel_indexes != NULL);
-    }
+  if (fmel_indexes == NULL) {
+    sprintf(s, "%s_mel_indexes.txt", prefix);
+    fmel_indexes = fopen(s, "wt");
+    assert(fmel_indexes != NULL);
+  }
 
-    for(i=0; i<order; i++)
-	fprintf(fmel_indexes,"%d\t",mel_indexes[i]);
-    fprintf(fmel_indexes,"\n");
+  for (i = 0; i < order; i++) fprintf(fmel_indexes, "%d\t", mel_indexes[i]);
+  fprintf(fmel_indexes, "\n");
 }
 
 void dump_ak(float ak[], int order) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fak == NULL) {
-	sprintf(s,"%s_ak.txt", prefix);
-	fak = fopen(s, "wt");
-	assert(fak != NULL);
-    }
+  if (fak == NULL) {
+    sprintf(s, "%s_ak.txt", prefix);
+    fak = fopen(s, "wt");
+    assert(fak != NULL);
+  }
 
-    for(i=0; i<=order; i++)
-	fprintf(fak,"%f\t",ak[i]);
-    fprintf(fak,"\n");
+  for (i = 0; i <= order; i++) fprintf(fak, "%f\t", ak[i]);
+  fprintf(fak, "\n");
 }
 
 void dump_ak_(float ak_[], int order) {
-    int i;
-    char s[MAX_STR + 8];
+  int i;
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fak_ == NULL) {
-	sprintf(s,"%s_ak_.txt", prefix);
-	fak_ = fopen(s, "wt");
-	assert(fak_ != NULL);
-    }
+  if (fak_ == NULL) {
+    sprintf(s, "%s_ak_.txt", prefix);
+    fak_ = fopen(s, "wt");
+    assert(fak_ != NULL);
+  }
 
-    for(i=0; i<=order; i++)
-	fprintf(fak_,"%f\t",ak_[i]);
-    fprintf(fak_,"\n");
+  for (i = 0; i <= order; i++) fprintf(fak_, "%f\t", ak_[i]);
+  fprintf(fak_, "\n");
 }
 
 void dump_Fw(COMP Fw[]) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (ffw == NULL) {
-	sprintf(s,"%s_fw.txt", prefix);
-	ffw = fopen(s, "wt");
-	assert(ffw != NULL);
-    }
+  if (ffw == NULL) {
+    sprintf(s, "%s_fw.txt", prefix);
+    ffw = fopen(s, "wt");
+    assert(ffw != NULL);
+  }
 
-    for(i=0; i<256; i++)
-	fprintf(ffw,"%f\t",Fw[i].real);
-    fprintf(ffw,"\n");
+  for (i = 0; i < 256; i++) fprintf(ffw, "%f\t", Fw[i].real);
+  fprintf(ffw, "\n");
 }
 
 void dump_e(float e_hz[]) {
-    int i;
-    char s[MAX_STR + 6];
+  int i;
+  char s[MAX_STR + 6];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fe == NULL) {
-	sprintf(s,"%s_e.txt", prefix);
-	fe = fopen(s, "wt");
-	assert(fe != NULL);
-    }
+  if (fe == NULL) {
+    sprintf(s, "%s_e.txt", prefix);
+    fe = fopen(s, "wt");
+    assert(fe != NULL);
+  }
 
-    for(i=0; i<500/2; i++)
-	fprintf(fe,"%f\t",e_hz[i]);
-    fprintf(fe,"\n");
-    for(i=500/2; i<500; i++)
-	fprintf(fe,"%f\t",e_hz[i]);
-    fprintf(fe,"\n");
+  for (i = 0; i < 500 / 2; i++) fprintf(fe, "%f\t", e_hz[i]);
+  fprintf(fe, "\n");
+  for (i = 500 / 2; i < 500; i++) fprintf(fe, "%f\t", e_hz[i]);
+  fprintf(fe, "\n");
 }
 
 void dump_sq(int m_pitch, float sq[]) {
-    int i;
-    char s[MAX_STR + 7];
+  int i;
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fsq == NULL) {
-	sprintf(s,"%s_sq.txt", prefix);
-	fsq = fopen(s, "wt");
-	assert(fsq != NULL);
-    }
+  if (fsq == NULL) {
+    sprintf(s, "%s_sq.txt", prefix);
+    fsq = fopen(s, "wt");
+    assert(fsq != NULL);
+  }
 
-    for(i=0; i<m_pitch/2; i++)
-	fprintf(fsq,"%f\t",sq[i]);
-    fprintf(fsq,"\n");
-    for(i=m_pitch/2; i<m_pitch; i++)
-	fprintf(fsq,"%f\t",sq[i]);
-    fprintf(fsq,"\n");
+  for (i = 0; i < m_pitch / 2; i++) fprintf(fsq, "%f\t", sq[i]);
+  fprintf(fsq, "\n");
+  for (i = m_pitch / 2; i < m_pitch; i++) fprintf(fsq, "%f\t", sq[i]);
+  fprintf(fsq, "\n");
 }
 
 void dump_dec(COMP Fw[]) {
-    int i;
-    char s[MAX_STR + 8];
+  int i;
+  char s[MAX_STR + 8];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fdec == NULL) {
-	sprintf(s,"%s_dec.txt", prefix);
-	fdec = fopen(s, "wt");
-	assert(fdec != NULL);
-    }
+  if (fdec == NULL) {
+    sprintf(s, "%s_dec.txt", prefix);
+    fdec = fopen(s, "wt");
+    assert(fdec != NULL);
+  }
 
-    for(i=0; i<320/5; i++)
-	fprintf(fdec,"%f\t",Fw[i].real);
-    fprintf(fdec,"\n");
+  for (i = 0; i < 320 / 5; i++) fprintf(fdec, "%f\t", Fw[i].real);
+  fprintf(fdec, "\n");
 }
 
 void dump_bg(float e, float bg_est, float percent_uv) {
-    char s[MAX_STR + 7];
+  char s[MAX_STR + 7];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fbg == NULL) {
-	sprintf(s,"%s_bg.txt", prefix);
-	fbg = fopen(s, "wt");
-	assert(fbg != NULL);
-    }
+  if (fbg == NULL) {
+    sprintf(s, "%s_bg.txt", prefix);
+    fbg = fopen(s, "wt");
+    assert(fbg != NULL);
+  }
 
-    fprintf(fbg,"%f\t%f\t%f\n", e, bg_est, percent_uv);
+  fprintf(fbg, "%f\t%f\t%f\n", e, bg_est, percent_uv);
 }
 
 void dump_E(float E) {
-    char s[MAX_STR + 6];
+  char s[MAX_STR + 6];
 
-    if (!dumpon) return;
+  if (!dumpon) return;
 
-    if (fE == NULL) {
-	sprintf(s,"%s_E.txt", prefix);
-	fE = fopen(s, "wt");
-	assert(fE != NULL);
-    }
+  if (fE == NULL) {
+    sprintf(s, "%s_E.txt", prefix);
+    fE = fopen(s, "wt");
+    assert(fE != NULL);
+  }
 
-    fprintf(fE,"%f\n", 10.0*log10(E));
+  fprintf(fE, "%f\n", 10.0 * log10(E));
 }
 
 #if 0

@@ -9,11 +9,10 @@
 \*---------------------------------------------------------------------------*/
 
 #include <stdio.h>
+
 #include "freedv_api.h"
 
-int main(void) { 
-    printf("%s\n", freedv_get_hash());
-    return 0;
+int main(void) {
+  printf("%s\n", freedv_get_hash());
+  return 0;
 }
-
-

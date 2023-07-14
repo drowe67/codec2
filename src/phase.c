@@ -25,18 +25,19 @@
   along with this program; if not,see <http://www.gnu.org/licenses/>.
 */
 
-#include "defines.h"
 #include "phase.h"
-#include "kiss_fft.h"
-#include "comp.h"
-#include "comp_prim.h"
-#include "sine.h"
 
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "comp.h"
+#include "comp_prim.h"
+#include "defines.h"
+#include "kiss_fft.h"
+#include "sine.h"
 
 /*---------------------------------------------------------------------------*\
 
@@ -47,24 +48,22 @@
 
 \*---------------------------------------------------------------------------*/
 
-void sample_phase(MODEL *model, 
-                  COMP H[], 
-                  COMP A[]        /* LPC analysis filter in freq domain */
-                  )                  
-{
-    int   m, b;
-    float r;
+void sample_phase(MODEL *model, COMP H[],
+                  COMP A[] /* LPC analysis filter in freq domain */
+) {
+  int m, b;
+  float r;
 
-    r = TWO_PI/(FFT_ENC);
+  r = TWO_PI / (FFT_ENC);
 
-    /* Sample phase at harmonics */
+  /* Sample phase at harmonics */
 
-    for(m=1; m<=model->L; m++) {
-        b = (int)(m*model->Wo/r + 0.5);
-        H[m] = cconj(A[b]);      /* synth filter 1/A is opposite phase to analysis filter */
-    }
+  for (m = 1; m <= model->L; m++) {
+    b = (int)(m * model->Wo / r + 0.5);
+    H[m] =
+        cconj(A[b]); /* synth filter 1/A is opposite phase to analysis filter */
+  }
 }
-
 
 /*---------------------------------------------------------------------------*\
 
@@ -158,63 +157,55 @@ void sample_phase(MODEL *model,
 \*---------------------------------------------------------------------------*/
 
 void phase_synth_zero_order(
-    int    n_samp,
-    MODEL *model,
-    float *ex_phase,            /* excitation phase of fundamental        */
-    COMP   H[]                  /* L synthesis filter freq domain samples */
+    int n_samp, MODEL *model,
+    float *ex_phase, /* excitation phase of fundamental        */
+    COMP H[]         /* L synthesis filter freq domain samples */
 
-)
-{
-    int   m;
-    float new_phi;
-    COMP  Ex[MAX_AMP+1];	  /* excitation samples */
-    COMP  A_[MAX_AMP+1];	  /* synthesised harmonic samples */
+) {
+  int m;
+  float new_phi;
+  COMP Ex[MAX_AMP + 1]; /* excitation samples */
+  COMP A_[MAX_AMP + 1]; /* synthesised harmonic samples */
 
-    /*
-       Update excitation fundamental phase track, this sets the position
-       of each pitch pulse during voiced speech.  After much experiment
-       I found that using just this frame's Wo improved quality for UV
-       sounds compared to interpolating two frames Wo like this:
+  /*
+     Update excitation fundamental phase track, this sets the position
+     of each pitch pulse during voiced speech.  After much experiment
+     I found that using just this frame's Wo improved quality for UV
+     sounds compared to interpolating two frames Wo like this:
 
-       ex_phase[0] += (*prev_Wo+model->Wo)*N_SAMP/2;
-    */
+     ex_phase[0] += (*prev_Wo+model->Wo)*N_SAMP/2;
+  */
 
-    ex_phase[0] += (model->Wo)*n_samp;
-    ex_phase[0] -= TWO_PI*floorf(ex_phase[0]/TWO_PI + 0.5);
+  ex_phase[0] += (model->Wo) * n_samp;
+  ex_phase[0] -= TWO_PI * floorf(ex_phase[0] / TWO_PI + 0.5);
 
-    for(m=1; m<=model->L; m++) {
+  for (m = 1; m <= model->L; m++) {
+    /* generate excitation */
 
-        /* generate excitation */
-
-        if (model->voiced) {
-
-            Ex[m].real = cosf(ex_phase[0]*m);
-            Ex[m].imag = sinf(ex_phase[0]*m);
-        }
-        else {
-
-            /* When a few samples were tested I found that LPC filter
-               phase is not needed in the unvoiced case, but no harm in
-               keeping it.
-            */
-            float phi = TWO_PI*(float)codec2_rand()/CODEC2_RAND_MAX;
-            Ex[m].real = cosf(phi);
-            Ex[m].imag = sinf(phi);
-        }
-
-        /* filter using LPC filter */
-
-        A_[m].real = H[m].real*Ex[m].real - H[m].imag*Ex[m].imag;
-        A_[m].imag = H[m].imag*Ex[m].real + H[m].real*Ex[m].imag;
-
-        /* modify sinusoidal phase */
-
-        new_phi = atan2f(A_[m].imag, A_[m].real+1E-12);
-        model->phi[m] = new_phi;
+    if (model->voiced) {
+      Ex[m].real = cosf(ex_phase[0] * m);
+      Ex[m].imag = sinf(ex_phase[0] * m);
+    } else {
+      /* When a few samples were tested I found that LPC filter
+         phase is not needed in the unvoiced case, but no harm in
+         keeping it.
+      */
+      float phi = TWO_PI * (float)codec2_rand() / CODEC2_RAND_MAX;
+      Ex[m].real = cosf(phi);
+      Ex[m].imag = sinf(phi);
     }
 
-}
+    /* filter using LPC filter */
 
+    A_[m].real = H[m].real * Ex[m].real - H[m].imag * Ex[m].imag;
+    A_[m].imag = H[m].imag * Ex[m].real + H[m].real * Ex[m].imag;
+
+    /* modify sinusoidal phase */
+
+    new_phi = atan2f(A_[m].imag, A_[m].real + 1E-12);
+    model->phi[m] = new_phi;
+  }
+}
 
 /*---------------------------------------------------------------------------*\
 
@@ -230,60 +221,55 @@ void phase_synth_zero_order(
 
 \*---------------------------------------------------------------------------*/
 
-void mag_to_phase(float phase[],             /* Nfft/2+1 output phase samples in radians       */
-                  float Gdbfk[],             /* Nfft/2+1 positive freq amplitudes samples in dB */
-                  int Nfft, 
-                  codec2_fft_cfg fft_fwd_cfg,
-                  codec2_fft_cfg fft_inv_cfg
-                  )
-{
-    COMP Sdb[Nfft], c[Nfft], cf[Nfft], Cf[Nfft];
-    int  Ns = Nfft/2+1;
-    int  i;
+void mag_to_phase(
+    float phase[], /* Nfft/2+1 output phase samples in radians       */
+    float Gdbfk[], /* Nfft/2+1 positive freq amplitudes samples in dB */
+    int Nfft, codec2_fft_cfg fft_fwd_cfg, codec2_fft_cfg fft_inv_cfg) {
+  COMP Sdb[Nfft], c[Nfft], cf[Nfft], Cf[Nfft];
+  int Ns = Nfft / 2 + 1;
+  int i;
 
-    /* install negative frequency components, 1/Nfft takes into
-       account kiss fft lack of scaling on ifft */
+  /* install negative frequency components, 1/Nfft takes into
+     account kiss fft lack of scaling on ifft */
 
-    Sdb[0].real = Gdbfk[0];
-    Sdb[0].imag = 0.0;
-    for(i=1; i<Ns; i++) {
-        Sdb[i].real = Sdb[Nfft-i].real = Gdbfk[i];
-        Sdb[i].imag = Sdb[Nfft-i].imag = 0.0;
-    }
+  Sdb[0].real = Gdbfk[0];
+  Sdb[0].imag = 0.0;
+  for (i = 1; i < Ns; i++) {
+    Sdb[i].real = Sdb[Nfft - i].real = Gdbfk[i];
+    Sdb[i].imag = Sdb[Nfft - i].imag = 0.0;
+  }
 
-    /* compute real cepstrum from log magnitude spectrum */
+  /* compute real cepstrum from log magnitude spectrum */
 
-    codec2_fft(fft_inv_cfg, Sdb, c);
-    for(i=0; i<Nfft; i++) {
-        c[i].real /= (float)Nfft;
-        c[i].imag /= (float)Nfft;
-    }
+  codec2_fft(fft_inv_cfg, Sdb, c);
+  for (i = 0; i < Nfft; i++) {
+    c[i].real /= (float)Nfft;
+    c[i].imag /= (float)Nfft;
+  }
 
-    /* Fold cepstrum to reflect non-min-phase zeros inside unit circle */
+  /* Fold cepstrum to reflect non-min-phase zeros inside unit circle */
 
-    cf[0] = c[0];
-    for(i=1; i<Ns-1; i++) {
-        cf[i] = cadd(c[i],c[Nfft-i]);
-    }
-    cf[Ns-1] = c[Ns-1];
-    for(i=Ns; i<Nfft; i++) {
-        cf[i].real = 0.0;
-        cf[i].imag = 0.0;
-    }
+  cf[0] = c[0];
+  for (i = 1; i < Ns - 1; i++) {
+    cf[i] = cadd(c[i], c[Nfft - i]);
+  }
+  cf[Ns - 1] = c[Ns - 1];
+  for (i = Ns; i < Nfft; i++) {
+    cf[i].real = 0.0;
+    cf[i].imag = 0.0;
+  }
 
-    /* Cf = dB_magnitude + j * minimum_phase */
+  /* Cf = dB_magnitude + j * minimum_phase */
 
-    codec2_fft(fft_fwd_cfg, cf, Cf);
+  codec2_fft(fft_fwd_cfg, cf, Cf);
 
-    /*  The maths says we are meant to be using log(x), not 20*log10(x),
-        so we need to scale the phase to account for this:
-        log(x) = 20*log10(x)/scale */
-                          
-    float scale = (20.0/logf(10.0));
-    
-    for(i=0; i<Ns; i++) {
-        phase[i] = Cf[i].imag/scale;
-    }
+  /*  The maths says we are meant to be using log(x), not 20*log10(x),
+      so we need to scale the phase to account for this:
+      log(x) = 20*log10(x)/scale */
 
-    
+  float scale = (20.0 / logf(10.0));
+
+  for (i = 0; i < Ns; i++) {
+    phase[i] = Cf[i].imag / scale;
+  }
 }

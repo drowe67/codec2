@@ -16,4 +16,3 @@ extern const uint16_t HRA_56_56_H_rows[];
 extern const uint16_t HRA_56_56_H_cols[];
 extern const float HRA_56_56_input[];
 extern const char HRA_56_56_detected_data[];
-

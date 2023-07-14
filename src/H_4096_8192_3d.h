@@ -16,4 +16,3 @@ extern const uint16_t H_4096_8192_3d_H_rows[];
 extern const uint16_t H_4096_8192_3d_H_cols[];
 extern const float H_4096_8192_3d_input[];
 extern const char H_4096_8192_3d_detected_data[];
-

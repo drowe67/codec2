@@ -31,56 +31,57 @@
 #include "comp.h"
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
-#define MODEM_STATS_NC_MAX      50
-#define MODEM_STATS_NR_MAX      320
-#define MODEM_STATS_ET_MAX      8
+#define MODEM_STATS_NC_MAX 50
+#define MODEM_STATS_NR_MAX 320
+#define MODEM_STATS_ET_MAX 8
 #define MODEM_STATS_EYE_IND_MAX 160
-#define MODEM_STATS_NSPEC       512
-#define MODEM_STATS_MAX_F_HZ    4000
-#define MODEM_STATS_MAX_F_EST   4
+#define MODEM_STATS_NSPEC 512
+#define MODEM_STATS_MAX_F_HZ 4000
+#define MODEM_STATS_MAX_F_EST 4
 
 struct MODEM_STATS {
-    int    Nc;
-    float  snr_est;                          /* estimated SNR of rx signal in dB (3 kHz noise BW)  */
+  int Nc;
+  float snr_est; /* estimated SNR of rx signal in dB (3 kHz noise BW)  */
 #ifndef __EMBEDDED__
-    COMP   rx_symbols[MODEM_STATS_NR_MAX][MODEM_STATS_NC_MAX+1];
-                                             /* latest received symbols, for scatter plot          */
+  COMP rx_symbols[MODEM_STATS_NR_MAX][MODEM_STATS_NC_MAX + 1];
+  /* latest received symbols, for scatter plot          */
 #endif
-    int    nr;                               /* number of rows in rx_symbols                       */
-    int    sync;                             /* demod sync state                                   */
-    float  foff;                             /* estimated freq offset in Hz                        */
-    float  rx_timing;                        /* estimated optimum timing offset in samples         */
-    float  clock_offset;                     /* Estimated tx/rx sample clock offset in ppm         */
-    float  sync_metric;                      /* number between 0 and 1 indicating quality of sync  */
-    int    pre, post;                        /* preamble/postamble det counters for burst data     */
-    int    uw_fails;                         /* Failed to detect Unique word (burst data)          */
-    
-    /* FSK eye diagram traces */
-    /* Eye diagram plot -- first dim is trace number, second is the trace idx */
+  int nr;             /* number of rows in rx_symbols                       */
+  int sync;           /* demod sync state                                   */
+  float foff;         /* estimated freq offset in Hz                        */
+  float rx_timing;    /* estimated optimum timing offset in samples         */
+  float clock_offset; /* Estimated tx/rx sample clock offset in ppm         */
+  float sync_metric;  /* number between 0 and 1 indicating quality of sync  */
+  int pre, post;      /* preamble/postamble det counters for burst data     */
+  int uw_fails;       /* Failed to detect Unique word (burst data)          */
+
+  /* FSK eye diagram traces */
+  /* Eye diagram plot -- first dim is trace number, second is the trace idx */
 #ifndef __EMBEDDED__
-    float  rx_eye[MODEM_STATS_ET_MAX][MODEM_STATS_EYE_IND_MAX];
-    int    neyetr;                           /* How many eye traces are plotted */
-    int    neyesamp;                         /* How many samples in the eye diagram */
+  float rx_eye[MODEM_STATS_ET_MAX][MODEM_STATS_EYE_IND_MAX];
+  int neyetr;   /* How many eye traces are plotted */
+  int neyesamp; /* How many samples in the eye diagram */
 
-    /* optional for FSK modems - est tone freqs */
+  /* optional for FSK modems - est tone freqs */
 
-    float f_est[MODEM_STATS_MAX_F_EST];
+  float f_est[MODEM_STATS_MAX_F_EST];
 #endif
 
-    /* Buf for FFT/waterfall */
+  /* Buf for FFT/waterfall */
 
 #ifndef __EMBEDDED__
-   float  fft_buf[2*MODEM_STATS_NSPEC];
-   void  *fft_cfg;
+  float fft_buf[2 * MODEM_STATS_NSPEC];
+  void *fft_cfg;
 #endif
 };
 
 void modem_stats_open(struct MODEM_STATS *f);
 void modem_stats_close(struct MODEM_STATS *f);
-void modem_stats_get_rx_spectrum(struct MODEM_STATS *f, float mag_spec_dB[], COMP rx_fdm[], int nin);
+void modem_stats_get_rx_spectrum(struct MODEM_STATS *f, float mag_spec_dB[],
+                                 COMP rx_fdm[], int nin);
 
 #ifdef __cplusplus
 }

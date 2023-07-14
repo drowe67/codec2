@@ -9,7 +9,7 @@
 #ifndef __LDPC_CODES__
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 #include "mpdecode_core.h"
@@ -21,7 +21,7 @@ int ldpc_codes_find(char name[]);
 void ldpc_codes_setup(struct LDPC *ldpc, char name[]);
 
 #ifdef __cplusplus
-  }
+}
 #endif
 
 #endif
