@@ -308,6 +308,10 @@ if(UNITTEST)
     include(CTest)
     enable_testing()
 
+    add_test(NAME test_clang_format
+             COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR};
+                            clang-format --dry-run --Werror src/*.c src/*.h unittest/*.c demo/*.c")
+
     add_test(NAME test_freedv_get_hash
              COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/unittest/thash")
 

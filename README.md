@@ -113,7 +113,7 @@ CTest is used as a test framework, with support from [GNU Octave](https://www.gn
 
 1. Install GNU Octave and libraries on Ubuntu with:
    ```
-   sudo apt install octave octave-common octave-signal liboctave-dev gnuplot python3-numpy sox valgrind
+   sudo apt install octave octave-common octave-signal liboctave-dev gnuplot python3-numpy sox valgrind clang-format
    ```
 1. To build and run the tests:
    ```
