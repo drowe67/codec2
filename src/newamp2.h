@@ -35,9 +35,8 @@ David Rowe
 #define NEWAMP2_N_INDEXES \
   4 /* Number of indexes to pack: vq1, vq2, energy, Wo */
 #define NEWAMP2_PHASE_NFFT \
-  128 /* size of FFT used for phase synthesis            */
-#define NEWAMP2_K \
-  29 /* rate K vector length */
+  128                /* size of FFT used for phase synthesis            */
+#define NEWAMP2_K 29 /* rate K vector length */
 #define NEWAMP2_16K_K \
   40 /* rate K vector length	for 16k Mode			   */
 

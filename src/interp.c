@@ -150,14 +150,14 @@ float sample_log_amp(MODEL *model, float w) {
 \*---------------------------------------------------------------------------*/
 
 void interpolate_lsp(codec2_fft_cfg fft_fwd_cfg,
-                     MODEL *interp,      /* interpolated model params      */
-                     MODEL *prev,        /* previous frames model params        */
-                     MODEL *next,        /* next frames model params        */
-                     float *prev_lsps,   /* previous frames LSPs   */
-                     float prev_e,       /* previous frames LPC energy       */
-                     float *next_lsps,   /* next frames LSPs   */
-                     float next_e,       /* next frames LPC energy       */
-                     float *ak_interp,   /* interpolated aks for this frame   */
+                     MODEL *interp,    /* interpolated model params      */
+                     MODEL *prev,      /* previous frames model params        */
+                     MODEL *next,      /* next frames model params        */
+                     float *prev_lsps, /* previous frames LSPs   */
+                     float prev_e,     /* previous frames LPC energy       */
+                     float *next_lsps, /* next frames LSPs   */
+                     float next_e,     /* next frames LPC energy       */
+                     float *ak_interp, /* interpolated aks for this frame   */
                      float *lsps_interp, /* interpolated lsps for this frame */
                      float Wo_min) {
   int i;

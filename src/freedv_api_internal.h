@@ -81,17 +81,17 @@ struct freedv {
                                               // and 8000 sps for 700 .... 700C
   struct quisk_cfFilter *ptFilter8000to7500;
 
-  int n_speech_samples;  // number of speech samples we need for each
-                         // freedv_tx() call num of speech samples output by
-                         // freedv_rx() call
+  int n_speech_samples;     // number of speech samples we need for each
+                            // freedv_tx() call num of speech samples output by
+                            // freedv_rx() call
   int n_nom_modem_samples;  // size of tx modem sample buffers
   int n_max_modem_samples;  // make your rx modem sample buffers this big
   int n_nat_modem_samples;  // tx modem sample block length as used by the modem
                             // before interpolation to output usually the same
                             // as n_nom_modem_samples, except for 700C
-  int modem_sample_rate;   // Caller is responsible for meeting this
-  int modem_symbol_rate;   // Useful for ext_vco operation on 2400A and 800XA
-  int speech_sample_rate;  // 8 kHz or 16 kHz (high fidelity)
+  int modem_sample_rate;    // Caller is responsible for meeting this
+  int modem_symbol_rate;    // Useful for ext_vco operation on 2400A and 800XA
+  int speech_sample_rate;   // 8 kHz or 16 kHz (high fidelity)
 
   int bits_per_codec_frame;
   int bits_per_modem_frame;  // number of modem payload bits in each modem frame
