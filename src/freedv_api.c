@@ -57,22 +57,28 @@
 #include "ofdm_internal.h"
 #include "varicode.h"
 
-#define VERSION                                    \
-  15 /* The API version number.  The first version \
-      is 10.  Increment if the API changes in a    \
-      way that would require changes by the API    \
-      user. */
+/* The API version number.  The first version is 10.  Increment if the API
+   changes in a way that would require changes by the API user. */
+
+#define VERSION 15
+
 /*
- * Version 10   Initial version August 2, 2015.
- * Version 11   September 2015
- *              Added: freedv_zero_total_bit_errors(), freedv_get_sync()
- *              Changed all input and output sample rates to 8000 sps.  Rates
- * for FREEDV_MODE_700 and 700B were 7500. Version 12   August 2018 Added OFDM
- * configuration switch structure Version 13   November 2019 Removed 700 and
- * 700B modes Version 14   May 2020 Number of returned speech samples can vary,
- * use freedv_get_n_max_speech_samples() to allocate buffers. Version 15
- * December 2022 Removing rarely used DPSK support which is not needed given
- * fast fading modes
+  Version 10   Initial version August 2, 2015.
+
+  Version 11   September 2015
+               Added: freedv_zero_total_bit_errors(), freedv_get_sync()
+               Changed all input and output sample rates to 8000 sps.  Rates
+               for FREEDV_MODE_700 and 700B were 7500.
+
+  Version 12   August 2018 Added OFDM configuration switch structure
+
+  Version 13   November 2019 Removed 700 and 700B modes
+
+  Version 14   May 2020 Number of returned speech samples can vary,  use
+               freedv_get_n_max_speech_samples() to allocate buffers.
+
+  Version 15   December 2022 Removing rarely used DPSK support which is not
+               needed given fast fading modes
  */
 
 char *ofdm_statemode[] = {"search", "trial", "synced"};
@@ -877,13 +883,17 @@ static void codec2_decode_upacked(struct freedv *f, short speech_out[],
   with the input samples.
   We may squelch based on SNR.
   Need to handle various codecs, and varying number of codec frames per modem
-frame Squelch audio if test frames are being sent Determine how many speech
-samples to return, which will vary if in sync/out of sync Work with real and
-complex inputs (complex wrapper) Attenuate audio on pass through Deal with 700D
-first frame burble, and different sync states from OFDM modes like 700D Output
-no samples if squelched, we assume it's OK for the audio sink to run dry A FIFO
-required on output to smooth sample flow to audio sink Don't decode when we are
-sending test frames
+  frame.
+  Squelch audio if test frames are being sent.
+  Determine how many speech samples to return, which will vary if in
+  sync/out of sync Work with real and complex inputs (complex wrapper)
+  Attenuate audio on pass through.
+  Deal with 700D first frame burble, and different sync states from OFDM
+  modes like 700D.
+  Output no samples if squelched, we assume it's OK for the audio sink to run
+  dry.
+  A FIFO is required on output to smooth sample flow to audio sink.
+  Don't decode when we are sending test frames
 
 \*---------------------------------------------------------------------------*/
 
