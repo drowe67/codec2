@@ -5,12 +5,13 @@ Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.c
 Also included:
 
   + The FreeDV API for digital voice over radio. FreeDV is an open source digital voice protocol that integrates modems, codecs, and FEC [README_freedv](README_freedv.md)
-  + APIs for raw and Ethernet packet data over radio [README_data](README_data.md)
-  + High performance coherent OFDM modem for HF channels [README_ofdm](README_ofdm.md)
-  + High performance non-coherent FSK modem [README_fsk](README_fsk.md)
+  + HF OFDM and FSK modems, FEC used in the FreeDV API
+  + APIs for packet data over radio [README_data](README_data.md)
   + An STM32 embedded version of FreeDV 1600/700D/700E for the [SM1000](stm32/README.md)
-  + Coherent PSK modem [README_cohpsk](README_cohpsk.md) for HF channels
-  + FDMDV DPSK modem [README_fdmdv](README_fdmdv.md) for HF channels
+
+## Older code
+
+In July 2023 this repo was refactored, older code can be found in https://github.com/drowe67/codec2-dev
 
 ## Quickstart
 
@@ -154,10 +155,7 @@ CTest is used as a test framework, with support from [GNU Octave](https://www.gn
 ```
 cmake       - cmake support files
 demo        - Simple Codec 2 and FreeDv API demo applications
-misc        - misc C programs that have been useful in development,
-              not reqd for Codec 2 release. Part of Debug build.
-octave      - Octave scripts used to support development
-script      - shell scripts for playing and converting raw files
+octave      - Octave scripts used to support ctests
 src         - C source code for Codec 2, FDMDV modem, COHPSK modem, FreeDV API
 raw         - speech files in raw format (16 bits signed linear 8 kHz)
 stm32       - STM32F4 microcontroller and SM1000 FreeDV Adaptor support
@@ -172,15 +170,6 @@ wav         - speech files in wave file format
    rm -Rf build_linux && mkdir build_linux
    cd build_linux
    CFLAGS=-g cmake ..
-   make
-   ```
-
-1. For dump file support (dump data from c2sim for input to Octave development scripts):
-   ```
-   cd ~/codec2
-   rm -Rf build_linux && mkdir build_linux
-   cd build_linux
-   CFLAGS=-DDUMP cmake ..
    make
    ```
 

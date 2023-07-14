@@ -1,7 +1,7 @@
 % tcohpsk.m
 % David Rowe Oct 2014
 %
-% Octave coherent PSK modem script that hs two modes:
+% Octave coherent PSK modem script that has two modes:
 %
 % i) tests the C port of the coherent PSK modem.  This script loads
 %    the output of unittest/tcohpsk.c and compares it to the output of
@@ -254,10 +254,12 @@ acohpsk.f_fine_est = 0;
 acohpsk.ct = 4;
 acohpsk.ftrack_en = ftrack_en;
 
-[spread spread_2ms hf_gain] = init_hf_model(Fs, frames*acohpsk.Nsymbrowpilot*afdmdv.M);
-hf_n = 1;
-nhfdelay = floor(hf_delay_ms*Fs/1000);
-ch_fdm_delay = zeros(1, acohpsk.Nsymbrowpilot*M + nhfdelay);
+if fading_en
+  [spread spread_2ms hf_gain] = init_hf_model(Fs, frames*acohpsk.Nsymbrowpilot*afdmdv.M);
+  hf_n = 1;
+  nhfdelay = floor(hf_delay_ms*Fs/1000);
+  ch_fdm_delay = zeros(1, acohpsk.Nsymbrowpilot*M + nhfdelay);
+end
 
 % simulated SSB tx filter
 

@@ -13,7 +13,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment ver
 
 cmake_minimum_required(VERSION 3.13)
 project(CODEC2
-  VERSION 1.1.1
+  VERSION 1.2.0
   DESCRIPTION "Next-Generation Digital Voice for Two-Way Radio"
   HOMEPAGE_URL "https://www.rowetel.com/codec2.html"
   LANGUAGES C
@@ -118,12 +118,6 @@ endif(MINGW)
 option(BUILD_SHARED_LIBS
     "Build shared library. Set to OFF for static library." ON)
 option(UNITTEST "Build unittest binaries." OFF)
-option(INSTALL_EXAMPLES "Install example code." OFF)
-if(INSTALL_EXAMPLES)
-    install(DIRECTORY octave raw script wav
-        USE_SOURCE_PERMISSIONS
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/codec2)
-endif()
 
 # LPCNet needs to be bootstraped because codec2 and freedvlpcnet are
 # cross dependent.
@@ -133,7 +127,6 @@ set(LPCNET_BUILD_DIR FALSE CACHE PATH "Location of lpcnet build tree.")
 if(LPCNET_BUILD_DIR)
     set(LPCNET ON)
 endif()
-
 
 
 include(CheckIncludeFiles)
@@ -229,7 +222,6 @@ if(UNITTEST)
     message(STATUS "Threads library flags: ${CMAKE_THREAD_LIBS_INIT}")
 
     add_subdirectory(unittest)
-    add_subdirectory(misc)
 endif(UNITTEST)
 
 message(STATUS "Build type is: " ${CMAKE_BUILD_TYPE})
@@ -361,7 +353,7 @@ endif()
     # just the +ve freq exp(jwn) so output power is 0.5 input power
     add_test(NAME test_quisk_filter
              COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
-                            ${CMAKE_CURRENT_BINARY_DIR}/misc/mksine in.raw 1500 1;
+                            ${CMAKE_CURRENT_BINARY_DIR}/unittest/mksine in.raw 1500 1;
                             cat in.raw | ${CMAKE_CURRENT_BINARY_DIR}/unittest/tquisk_filter |
                             sox -t .s16 -r 8000 -c 1 - -t .s16 out.raw vol 2;
                             cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
@@ -384,15 +376,15 @@ endif()
     # check channel simulator measures correct Peak to Average Power Ratio (about 0dB) with a sine wave input signal
     add_test(NAME test_ch_papr
              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR};
-                            ./misc/mksine - 1000 10 | ./src/ch - /dev/null --ctest")
+                            ./unittest/mksine - 1000 10 | ./src/ch - /dev/null --ctest")
 
     add_test(NAME test_codec2_700c_octave_port
              COMMAND sh -c "
                cd ${CMAKE_CURRENT_BINARY_DIR}/src;
-               ./c2sim ${CMAKE_CURRENT_SOURCE_DIR}/raw/cq_ref.raw --phase0 --postfilter --dump cq_ref --lpc 10 --dump_pitch_e cq_ref_pitche.txt;
-               cd ${CMAKE_CURRENT_BINARY_DIR}/unittest; ./tnewamp1 ${CMAKE_CURRENT_SOURCE_DIR}/raw/cq_ref.raw;
+               ./c2sim ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw --phase0 --postfilter --dump hts1a --lpc 10 --dump_pitch_e hts1a_pitche.txt;
+               cd ${CMAKE_CURRENT_BINARY_DIR}/unittest; ./tnewamp1 ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw;
                cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
-               DISPLAY=\"\" octave-cli -qf --eval 'tnewamp1(\"${CMAKE_CURRENT_BINARY_DIR}/src/cq_ref\", \"${CMAKE_CURRENT_BINARY_DIR}/unittest\")'")
+               DISPLAY=\"\" octave-cli -qf --eval 'tnewamp1(\"${CMAKE_CURRENT_BINARY_DIR}/src/hts1a\", \"${CMAKE_CURRENT_BINARY_DIR}/unittest\")'")
              set_tests_properties(test_codec2_700c_octave_port PROPERTIES PASS_REGULAR_EXPRESSION "fails: 0")
 
     # -------------------------------------------------------------------------
@@ -1162,7 +1154,7 @@ endif(NOT APPLE)
      add_test(NAME test_vq_mbest
              COMMAND sh -c "./tvq_mbest; \
                             cat target.f32 | \
-                            ../misc/vq_mbest -k 4 -q vq1.f32,vq2.f32 --st 1 --en 2 --mbest 2 -v > /dev/null;"
+                            ./vq_mbest -k 4 -q vq1.f32,vq2.f32 --st 1 --en 2 --mbest 2 -v > /dev/null;"
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/unittest
              )
              set_tests_properties(test_vq_mbest PROPERTIES PASS_REGULAR_EXPRESSION "MSE: 0.00")

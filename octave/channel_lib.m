@@ -1,4 +1,4 @@
-% channel.m
+% channel_lib.m
 %
 % Commonly used channel simulation functions
 
