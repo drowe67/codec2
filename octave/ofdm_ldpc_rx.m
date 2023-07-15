@@ -58,7 +58,7 @@ function ofdm_ldpc_rx(filename, mode="700D", varargin)
   % Generate tx frame for BER calcs
 
   payload_bits = round(ofdm_rand(code_param.data_bits_per_frame)/32767);
-  tx_bits = fec_encode(states, code_param, mode, payload_bits, Ncodecframespermodemframe, Nbitspercodecframe);
+  tx_bits = fec_encode(states, code_param, mode, payload_bits);
 
   % Some handy constants
 
