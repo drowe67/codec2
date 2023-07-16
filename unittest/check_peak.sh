@@ -38,7 +38,6 @@ if [ "$1" == "LPCNet" ]; then
     # these don't get run unless we build with LPCNet
     voice_test "2020"
     voice_test "2020B"
-    voice_test "2020C"
   else
     voice_test "1600"
     voice_test "700C"

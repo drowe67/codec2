@@ -76,7 +76,6 @@ void ldpc_mode_specific_setup(struct OFDM *ofdm, struct LDPC *ldpc) {
     set_data_bits_per_frame(ldpc, 156);
     ldpc->protection_mode = LDPC_PROT_2020B;
   }
-  if (!strcmp(ofdm->mode, "2020C")) set_data_bits_per_frame(ldpc, 156);
   if (!strcmp(ofdm->mode, "datac4")) set_data_bits_per_frame(ldpc, 448);
   if (!strcmp(ofdm->mode, "datac13")) set_data_bits_per_frame(ldpc, 128);
 }

@@ -589,14 +589,7 @@ endif()
                             ./ofdm_mod --in /dev/zero --testframes 10 --mode 2020B --ldpc --clip --txbpf |
                             ./ch - - --No -19 |
                             ./ofdm_demod --mode 2020B --testframes --ldpc -v 2 > /dev/null")
-           
-    # 2020C AWGN test 
-    add_test(NAME test_OFDM_modem_2020C_AWGN
-             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
-                            ./ofdm_mod --in /dev/zero --testframes 10 --mode 2020C --ldpc --clip --txbpf |
-                            ./ch - - --No -21 |
-                            ./ofdm_demod --mode 2020C --testframes --ldpc -v 2 > /dev/null")
-           
+                      
     # -------------------------------------------------------------------------
     #                                OFDM Data modes
     # -------------------------------------------------------------------------
@@ -865,13 +858,6 @@ if(LPCNET)
                             ./freedv_rx 2020B - /dev/null --testframes"
              )
 
-     add_test(NAME test_freedv_api_2020C_mpd
-              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
-                            dd bs=32000 count=60 if=/dev/zero |
-                            ./freedv_tx 2020C - - --testframes --clip 1 |
-                            ./ch - - --No -32 --mpd --fading_dir ../unittest |
-                            ./freedv_rx 2020C - /dev/null --testframes"
-             )
 endif()
 
      add_test(NAME test_freedv_api_2400A

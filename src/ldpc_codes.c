@@ -51,7 +51,8 @@ struct LDPC ldpc_codes[] = {
      HRAb_396_504_MAX_ROW_WEIGHT, HRAb_396_504_MAX_COL_WEIGHT,
      (uint16_t *)HRAb_396_504_H_rows, (uint16_t *)HRAb_396_504_H_cols},
 
-    /* Rate 0.745 code for mopping up errors on 2020C from Bill VK5DSP */
+    /* Rate 0.745 code for mopping up errors on 2020C from Bill
+       VK5DSP. 2020C has been removed but code might be useful in future */
     {"H_212_158", H_212_158_MAX_ITER, 0, 1, 1, H_212_158_CODELENGTH,
      H_212_158_NUMBERPARITYBITS, H_212_158_NUMBERROWSHCOLS,
      H_212_158_MAX_ROW_WEIGHT, H_212_158_MAX_COL_WEIGHT,

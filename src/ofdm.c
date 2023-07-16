@@ -551,7 +551,7 @@ static void allocate_tx_bpf(struct OFDM *ofdm) {
     quisk_filt_cfInit(ofdm->tx_bpf, filtP900S1100,
                       sizeof(filtP900S1100) / sizeof(float));
     quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
-  } else if (!strcmp(ofdm->mode, "2020B") || !strcmp(ofdm->mode, "2020C")) {
+  } else if (!strcmp(ofdm->mode, "2020B")) {
     quisk_filt_cfInit(ofdm->tx_bpf, filtP1100S1300,
                       sizeof(filtP1100S1300) / sizeof(float));
     quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
