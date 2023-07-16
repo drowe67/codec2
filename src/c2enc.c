@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   if (argc < 4) {
     printf(
-        "usage: c2enc 3200|2400|1600|1400|1300|1200|700C|450|450PWB "
+        "usage: c2enc 3200|2400|1600|1400|1300|1200|700C "
         "InputRawspeechFile OutputBitFile [--natural] [--softdec] "
         "[--bitperchar] [--mlfeat f32File modelFile] [--loadcb stageNum "
         "Filename] [--var] [--eq]\n");
@@ -76,14 +76,10 @@ int main(int argc, char *argv[]) {
     mode = CODEC2_MODE_1200;
   else if (strcmp(argv[1], "700C") == 0)
     mode = CODEC2_MODE_700C;
-  else if (strcmp(argv[1], "450") == 0)
-    mode = CODEC2_MODE_450;
-  else if (strcmp(argv[1], "450PWB") == 0)
-    mode = CODEC2_MODE_450;
   else {
     fprintf(stderr,
             "Error in mode: %s.  Must be 3200, 2400, 1600, 1400, 1300, 1200, "
-            "700C, 450, 450PWB or WB\n",
+            "700C\n",
             argv[1]);
     exit(1);
   }

@@ -139,14 +139,10 @@ int main(int argc, char *argv[]) {
       mode = CODEC2_MODE_1200;
     else if (strcmp(argv[1], "700C") == 0)
       mode = CODEC2_MODE_700C;
-    else if (strcmp(argv[1], "450") == 0)
-      mode = CODEC2_MODE_450;
-    else if (strcmp(argv[1], "450PWB") == 0)
-      mode = CODEC2_MODE_450PWB;
     else {
       fprintf(stderr,
               "Error in mode: %s.  Must be 3200, 2400, 1600, 1400, 1300, 1200, "
-              "700C, 450, or 450PWB\n",
+              "700C\n",
               argv[1]);
       exit(1);
     }
@@ -396,7 +392,7 @@ void print_help(const struct option *long_options, int num_opts, char *argv[]) {
   char *option_parameters;
   fprintf(stderr,
           "\nc2dec - Codec 2 decoder and bit error simulation program\n"
-          "usage: %s 3200|2400|1600|1400|1300|1200|700C|450|450PWB InputFile "
+          "usage: %s 3200|2400|1600|1400|1300|1200|700C InputFile "
           "OutputRawFile [OPTIONS]\n\n"
           "Options:\n",
           argv[0]);

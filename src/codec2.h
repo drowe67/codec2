@@ -42,8 +42,6 @@ extern "C" {
 #define CODEC2_MODE_1300 4
 #define CODEC2_MODE_1200 5
 #define CODEC2_MODE_700C 8
-#define CODEC2_MODE_450 10
-#define CODEC2_MODE_450PWB 11
 
 #ifndef CODEC2_MODE_EN_DEFAULT
 #define CODEC2_MODE_EN_DEFAULT 1
@@ -77,12 +75,6 @@ extern "C" {
 #endif
 #if !defined(CODEC2_MODE_700C_EN)
 #define CODEC2_MODE_700C_EN CODEC2_MODE_EN_DEFAULT
-#endif
-#if !defined(CODEC2_MODE_450_EN)
-#define CODEC2_MODE_450_EN CODEC2_MODE_EN_DEFAULT
-#endif
-#if !defined(CODEC2_MODE_450PWB_EN)
-#define CODEC2_MODE_450PWB_EN CODEC2_MODE_EN_DEFAULT
 #endif
 
 #define CODEC2_MODE_ACTIVE(mode_name, var) \

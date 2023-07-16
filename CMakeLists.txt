@@ -1146,14 +1146,6 @@ endif(NOT APPLE)
              COMMAND sh -c "./c2enc 700C ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw - | ./c2dec 700C - - | sox -t .s16 -r 8000 - hts1a_700C.wav"
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
              )
-     add_test(NAME test_codec2_mode_450
-             COMMAND sh -c "./c2enc 450 ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw - | ./c2dec 450 - - | sox -t .s16 -r 8000 - hts1a_450.wav"
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
-             )
-     add_test(NAME test_codec2_mode_450PWB
-             COMMAND sh -c "./c2enc 450PWB ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw - | ./c2dec 450PWB - - | sox -t .s16 -r 16000 - hts1a_450PWB.wav"
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
-             )
 
      add_test(NAME test_vq_mbest
              COMMAND sh -c "./tvq_mbest; \
