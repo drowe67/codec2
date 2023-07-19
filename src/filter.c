@@ -15,19 +15,21 @@
   along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "filter.h"
+
+#include <complex.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <complex.h>
 
-#include "filter.h"
-#include "filter_coef.h"
 #include "debug_alloc.h"
+#include "filter_coef.h"
 
 #define cmplx(value) (cosf(value) + sinf(value) * I)
 
 /*
- * This is a library of filter functions. They were copied from Quisk and converted to single precision.
+ * This is a library of filter functions. They were copied from Quisk and
+ * converted to single precision.
  */
 
 /*---------------------------------------------------------------------------*\
@@ -37,22 +39,23 @@
   DATE CREATED: 27 August 2015
   MODIFIED: 4 June 2018
 
-  Initialize a FIR filter that has complex samples, and either real or complex coefficients.
+  Initialize a FIR filter that has complex samples, and either real or complex
+coefficients.
 
 \*---------------------------------------------------------------------------*/
 
-void quisk_filt_cfInit(struct quisk_cfFilter * filter, float * coefs, int taps) {
-    // Prepare a new filter using coefs and taps.  Samples are complex. Coefficients can
-    // be real or complex.
-    filter->dCoefs = coefs;
-    filter->cpxCoefs = NULL;
-    filter->cSamples = (complex float *)MALLOC(taps * sizeof(complex float));
-    memset(filter->cSamples, 0, taps * sizeof(complex float));
-    filter->ptcSamp = filter->cSamples;
-    filter->nTaps = taps;
-    filter->cBuf = NULL;
-    filter->nBuf = 0;
-    filter->decim_index = 0;
+void quisk_filt_cfInit(struct quisk_cfFilter *filter, float *coefs, int taps) {
+  // Prepare a new filter using coefs and taps.  Samples are complex.
+  // Coefficients can be real or complex.
+  filter->dCoefs = coefs;
+  filter->cpxCoefs = NULL;
+  filter->cSamples = (complex float *)MALLOC(taps * sizeof(complex float));
+  memset(filter->cSamples, 0, taps * sizeof(complex float));
+  filter->ptcSamp = filter->cSamples;
+  filter->nTaps = taps;
+  filter->cBuf = NULL;
+  filter->nBuf = 0;
+  filter->decim_index = 0;
 }
 
 /*---------------------------------------------------------------------------*\
@@ -66,21 +69,21 @@ void quisk_filt_cfInit(struct quisk_cfFilter * filter, float * coefs, int taps) 
 
 \*---------------------------------------------------------------------------*/
 
-void quisk_filt_destroy(struct quisk_cfFilter * filter) {
-    if (filter->cSamples) {
-        FREE(filter->cSamples);
-        filter->cSamples = NULL;
-    }
+void quisk_filt_destroy(struct quisk_cfFilter *filter) {
+  if (filter->cSamples) {
+    FREE(filter->cSamples);
+    filter->cSamples = NULL;
+  }
 
-    if (filter->cBuf) {
-        FREE(filter->cBuf);
-        filter->cBuf = NULL;
-    }
+  if (filter->cBuf) {
+    FREE(filter->cBuf);
+    filter->cBuf = NULL;
+  }
 
-    if (filter->cpxCoefs) {
-        FREE(filter->cpxCoefs);
-        filter->cpxCoefs = NULL;
-    }
+  if (filter->cpxCoefs) {
+    FREE(filter->cpxCoefs);
+    filter->cpxCoefs = NULL;
+  }
 }
 
 /*---------------------------------------------------------------------------*\
@@ -97,54 +100,56 @@ void quisk_filt_destroy(struct quisk_cfFilter * filter) {
 
 \*---------------------------------------------------------------------------*/
 
-int quisk_cfInterpDecim(complex float * cSamples, int count, struct quisk_cfFilter * filter, int interp, int decim) {
-    // Interpolate by interp, and then decimate by decim.
-    // This uses the float coefficients of filter (not the complex).  Samples are complex.
-    int i, k, nOut;
-    float * ptCoef;
-    complex float * ptSample;
-    complex float csample;
+int quisk_cfInterpDecim(complex float *cSamples, int count,
+                        struct quisk_cfFilter *filter, int interp, int decim) {
+  // Interpolate by interp, and then decimate by decim.
+  // This uses the float coefficients of filter (not the complex).  Samples are
+  // complex.
+  int i, k, nOut;
+  float *ptCoef;
+  complex float *ptSample;
+  complex float csample;
 
-    if (count > filter->nBuf) {    // increase size of sample buffer
-        filter->nBuf = count * 2;
+  if (count > filter->nBuf) {  // increase size of sample buffer
+    filter->nBuf = count * 2;
 
-        if (filter->cBuf)
-            FREE(filter->cBuf);
+    if (filter->cBuf) FREE(filter->cBuf);
 
-        filter->cBuf = (complex float *)MALLOC(filter->nBuf * sizeof(complex float));
+    filter->cBuf =
+        (complex float *)MALLOC(filter->nBuf * sizeof(complex float));
+  }
+
+  memcpy(filter->cBuf, cSamples, count * sizeof(complex float));
+  nOut = 0;
+
+  for (i = 0; i < count; i++) {
+    // Put samples into buffer left to right.  Use samples right to left.
+    *filter->ptcSamp = filter->cBuf[i];
+
+    while (filter->decim_index < interp) {
+      ptSample = filter->ptcSamp;
+      ptCoef = filter->dCoefs + filter->decim_index;
+      csample = 0;
+
+      for (k = 0; k < filter->nTaps / interp; k++, ptCoef += interp) {
+        csample += *ptSample * *ptCoef;
+
+        if (--ptSample < filter->cSamples)
+          ptSample = filter->cSamples + filter->nTaps - 1;
+      }
+
+      cSamples[nOut] = csample * interp;
+      nOut++;
+      filter->decim_index += decim;
     }
 
-    memcpy(filter->cBuf, cSamples, count * sizeof(complex float));
-    nOut = 0;
+    if (++filter->ptcSamp >= filter->cSamples + filter->nTaps)
+      filter->ptcSamp = filter->cSamples;
 
-    for (i = 0; i < count; i++) {
-        // Put samples into buffer left to right.  Use samples right to left.
-        *filter->ptcSamp = filter->cBuf[i];
+    filter->decim_index = filter->decim_index - interp;
+  }
 
-        while (filter->decim_index < interp) {
-            ptSample = filter->ptcSamp;
-            ptCoef = filter->dCoefs + filter->decim_index;
-            csample = 0;
-
-            for (k = 0; k < filter->nTaps / interp; k++, ptCoef += interp) {
-                csample += *ptSample * *ptCoef;
-
-                if (--ptSample < filter->cSamples)
-                    ptSample = filter->cSamples + filter->nTaps - 1;
-            }
-
-            cSamples[nOut] = csample * interp;
-            nOut++;
-            filter->decim_index += decim;
-        }
-
-        if (++filter->ptcSamp >= filter->cSamples + filter->nTaps)
-            filter->ptcSamp = filter->cSamples;
-
-        filter->decim_index = filter->decim_index - interp;
-    }
-
-    return nOut;
+  return nOut;
 }
 
 /*---------------------------------------------------------------------------*\
@@ -217,27 +222,28 @@ int quisk_ccfInterpDecim(complex float * cSamples, int count, struct quisk_cfFil
   AUTHOR......: Jim Ahlstrom
   DATE CREATED: 4 June 2018
 
-  Tune a low pass filter with float coefficients into an analytic I/Q bandpass filter
-  with complex coefficients.  The "freq" is the center frequency / sample rate.
-  If the float coefs represent a low pass filter with bandwidth 1 kHz, the new bandpass
-  filter has width 2 kHz. The filter can be re-tuned repeatedly.
+  Tune a low pass filter with float coefficients into an analytic I/Q bandpass
+filter with complex coefficients.  The "freq" is the center frequency / sample
+rate. If the float coefs represent a low pass filter with bandwidth 1 kHz, the
+new bandpass filter has width 2 kHz. The filter can be re-tuned repeatedly.
 
 \*---------------------------------------------------------------------------*/
 
-void quisk_cfTune(struct quisk_cfFilter * filter, float freq) {
-    float D, tune;
-    int i;
+void quisk_cfTune(struct quisk_cfFilter *filter, float freq) {
+  float D, tune;
+  int i;
 
-    if ( ! filter->cpxCoefs)
-        filter->cpxCoefs = (complex float *)MALLOC(filter->nTaps * sizeof(complex float));
+  if (!filter->cpxCoefs)
+    filter->cpxCoefs =
+        (complex float *)MALLOC(filter->nTaps * sizeof(complex float));
 
-    tune = 2.0 * M_PI * freq;
-    D = (filter->nTaps - 1.0) / 2.0;
+  tune = 2.0 * M_PI * freq;
+  D = (filter->nTaps - 1.0) / 2.0;
 
-    for (i = 0; i < filter->nTaps; i++) {
-        float tval = tune * (i - D);
-        filter->cpxCoefs[i] = cmplx(tval) * filter->dCoefs[i];
-    }
+  for (i = 0; i < filter->nTaps; i++) {
+    float tval = tune * (i - D);
+    filter->cpxCoefs[i] = cmplx(tval) * filter->dCoefs[i];
+  }
 }
 
 /*---------------------------------------------------------------------------*\
@@ -246,36 +252,37 @@ void quisk_cfTune(struct quisk_cfFilter * filter, float freq) {
   AUTHOR......: Jim Ahlstrom
   DATE CREATED: 4 June 2018
 
-  Filter complex samples using complex coefficients. The inSamples and outSamples may be
-  the same array. The loop runs forward over coefficients but backwards over samples.
-  Therefore, the coefficients must be reversed unless they are created by quisk_cfTune.
-  Low pass filter coefficients are symmetrical, so this does not usually matter.
+  Filter complex samples using complex coefficients. The inSamples and
+outSamples may be the same array. The loop runs forward over coefficients but
+backwards over samples. Therefore, the coefficients must be reversed unless they
+are created by quisk_cfTune. Low pass filter coefficients are symmetrical, so
+this does not usually matter.
 
 \*---------------------------------------------------------------------------*/
 
-void quisk_ccfFilter(complex float * inSamples, complex float * outSamples, int count, struct quisk_cfFilter * filter) {
-    int i, k;
-    complex float * ptSample;
-    complex float * ptCoef;
-    complex float accum;
+void quisk_ccfFilter(complex float *inSamples, complex float *outSamples,
+                     int count, struct quisk_cfFilter *filter) {
+  int i, k;
+  complex float *ptSample;
+  complex float *ptCoef;
+  complex float accum;
 
-    for (i = 0; i < count; i++) {
-        *filter->ptcSamp = inSamples[i];
-        accum = 0;
-        ptSample = filter->ptcSamp;
-        ptCoef = filter->cpxCoefs;
+  for (i = 0; i < count; i++) {
+    *filter->ptcSamp = inSamples[i];
+    accum = 0;
+    ptSample = filter->ptcSamp;
+    ptCoef = filter->cpxCoefs;
 
-        for (k = 0; k < filter->nTaps; k++, ptCoef++) {
-            accum += *ptSample  *  *ptCoef;
+    for (k = 0; k < filter->nTaps; k++, ptCoef++) {
+      accum += *ptSample * *ptCoef;
 
-            if (--ptSample < filter->cSamples)
-                ptSample = filter->cSamples + filter->nTaps - 1;
-        }
-
-        outSamples[i] = accum;
-
-        if (++filter->ptcSamp >= filter->cSamples + filter->nTaps)
-            filter->ptcSamp = filter->cSamples;
+      if (--ptSample < filter->cSamples)
+        ptSample = filter->cSamples + filter->nTaps - 1;
     }
-}
 
+    outSamples[i] = accum;
+
+    if (++filter->ptcSamp >= filter->cSamples + filter->nTaps)
+      filter->ptcSamp = filter->cSamples;
+  }
+}

@@ -80,7 +80,7 @@ function ofdm_ldpc_tx(filename, mode="700D", N, SNR3kdB=100, channel='awgn', var
       payload_bits(end-15:end) = unpacked_crc16;
     end
   end
-  [packet_bits bits_per_packet] = fec_encode(states, code_param, mode, payload_bits, Ncodecframespermodemframe, Nbitspercodecframe);
+  [packet_bits bits_per_packet] = fec_encode(states, code_param, mode, payload_bits);
 
   % modulate to create symbols and interleave
   tx_symbols = [];

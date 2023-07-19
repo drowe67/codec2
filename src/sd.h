@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------------*\
 
-	FILE........: sd.h
-	AUTHOR......: David Rowe
-	DATE CREATED: 22/7/93
+        FILE........: sd.h
+        AUTHOR......: David Rowe
+        DATE CREATED: 22/7/93
 
-	Function to determine spectral distortion between two sets of LPCs.
+        Function to determine spectral distortion between two sets of LPCs.
 
 \*--------------------------------------------------------------------------*/
 
@@ -30,6 +30,7 @@
 
 #include "codec2_fft.h"
 
-float spectral_dist(float ak1[], float ak2[], int p, codec2_fft_cfg fft_fwd_cfg, int n);
+float spectral_dist(float ak1[], float ak2[], int p, codec2_fft_cfg fft_fwd_cfg,
+                    int n);
 
-#endif	/* __SD__  */
+#endif /* __SD__  */

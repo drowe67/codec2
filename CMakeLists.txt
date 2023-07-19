@@ -119,7 +119,7 @@ option(BUILD_SHARED_LIBS
     "Build shared library. Set to OFF for static library." ON)
 option(UNITTEST "Build unittest binaries." OFF)
 
-# LPCNet needs to be bootstraped because codec2 and freedvlpcnet are
+# LPCNet needs to be bootstrapped because codec2 and freedvlpcnet are
 # cross dependent.
 option(LPCNET "Build codec2 with LPCNet support." OFF)
 set(LPCNET_BUILD_DIR FALSE CACHE PATH "Location of lpcnet build tree.")
@@ -307,6 +307,10 @@ install(
 if(UNITTEST)
     include(CTest)
     enable_testing()
+
+    add_test(NAME test_clang_format
+             COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR};
+                            clang-format --dry-run --Werror src/*.c src/*.h unittest/*.c demo/*.c")
 
     add_test(NAME test_freedv_get_hash
              COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/unittest/thash")
@@ -585,14 +589,7 @@ endif()
                             ./ofdm_mod --in /dev/zero --testframes 10 --mode 2020B --ldpc --clip --txbpf |
                             ./ch - - --No -19 |
                             ./ofdm_demod --mode 2020B --testframes --ldpc -v 2 > /dev/null")
-           
-    # 2020C AWGN test 
-    add_test(NAME test_OFDM_modem_2020C_AWGN
-             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
-                            ./ofdm_mod --in /dev/zero --testframes 10 --mode 2020C --ldpc --clip --txbpf |
-                            ./ch - - --No -21 |
-                            ./ofdm_demod --mode 2020C --testframes --ldpc -v 2 > /dev/null")
-           
+                      
     # -------------------------------------------------------------------------
     #                                OFDM Data modes
     # -------------------------------------------------------------------------
@@ -861,13 +858,6 @@ if(LPCNET)
                             ./freedv_rx 2020B - /dev/null --testframes"
              )
 
-     add_test(NAME test_freedv_api_2020C_mpd
-              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
-                            dd bs=32000 count=60 if=/dev/zero |
-                            ./freedv_tx 2020C - - --testframes --clip 1 |
-                            ./ch - - --No -32 --mpd --fading_dir ../unittest |
-                            ./freedv_rx 2020C - /dev/null --testframes"
-             )
 endif()
 
      add_test(NAME test_freedv_api_2400A
@@ -1140,14 +1130,6 @@ endif(NOT APPLE)
              )
      add_test(NAME test_codec2_mode_700C
              COMMAND sh -c "./c2enc 700C ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw - | ./c2dec 700C - - | sox -t .s16 -r 8000 - hts1a_700C.wav"
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
-             )
-     add_test(NAME test_codec2_mode_450
-             COMMAND sh -c "./c2enc 450 ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw - | ./c2dec 450 - - | sox -t .s16 -r 8000 - hts1a_450.wav"
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
-             )
-     add_test(NAME test_codec2_mode_450PWB
-             COMMAND sh -c "./c2enc 450PWB ${CMAKE_CURRENT_SOURCE_DIR}/raw/hts1a.raw - | ./c2dec 450PWB - - | sox -t .s16 -r 16000 - hts1a_450PWB.wav"
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
              )
 

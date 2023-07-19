@@ -33,10 +33,10 @@ extern "C" {
 #endif
 
 void golay23_init(void);
-int  golay23_encode(int data);
-int  golay23_decode(int received_codeword);
-int  golay23_count_errors(int recd_codeword, int corrected_codeword);
-int  golay23_syndrome(int c);
+int golay23_encode(int data);
+int golay23_decode(int received_codeword);
+int golay23_count_errors(int recd_codeword, int corrected_codeword);
+int golay23_syndrome(int c);
 
 #ifdef __cplusplus
 }

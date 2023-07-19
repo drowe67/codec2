@@ -169,7 +169,6 @@ set(CODEC2_SRCS
     lsp.c
     mbest.c
     newamp1.c
-    newamp2.c
     ofdm.c
     ofdm_mode.c
     phase.c

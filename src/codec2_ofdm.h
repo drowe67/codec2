@@ -42,25 +42,27 @@
 extern "C" {
 #endif
 
-#define OFDM_PEAK 16384                    /* peak level of OFDM TX signal */
-#define OFDM_CLIP (32767*0.35)             /* experimentally derived constant to reduce PAPR to about 8dB */
+#define OFDM_PEAK 16384 /* peak level of OFDM TX signal */
+#define OFDM_CLIP \
+  (32767 *        \
+   0.35) /* experimentally derived constant to reduce PAPR to about 8dB */
 
-#define UN_SYNC      0  /* Used with the ofdm_set_sync() */
-#define AUTO_SYNC    1
-#define MANUAL_SYNC  2
+#define UN_SYNC 0 /* Used with the ofdm_set_sync() */
+#define AUTO_SYNC 1
+#define MANUAL_SYNC 2
 
-#define AUTO_PHASE_EST   0
+#define AUTO_PHASE_EST 0
 #define LOCKED_PHASE_EST 1
 
-#define LOW_BW       0
-#define HIGH_BW      1
+#define LOW_BW 0
+#define HIGH_BW 1
 
 struct OFDM_CONFIG;
 struct OFDM;
 
 /* create and destroy modem states */
 
-struct OFDM *ofdm_create(const struct OFDM_CONFIG * config);
+struct OFDM *ofdm_create(const struct OFDM_CONFIG *config);
 void ofdm_destroy(struct OFDM *);
 void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config);
 
@@ -69,8 +71,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config);
 void ofdm_mod(struct OFDM *, COMP *, const int *);
 void ofdm_demod(struct OFDM *, int *, COMP *);
 void ofdm_demod_shorts(struct OFDM *, int *, short *, float);
-int  ofdm_sync_search(struct OFDM *, COMP *);
-int  ofdm_sync_search_shorts(struct OFDM *, short *, float);
+int ofdm_sync_search(struct OFDM *, COMP *);
+int ofdm_sync_search_shorts(struct OFDM *, short *, float);
 void ofdm_sync_state_machine(struct OFDM *, uint8_t *);
 void ofdm_sync_state_machine2(struct OFDM *, uint8_t *);
 

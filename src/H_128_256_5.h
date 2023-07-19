@@ -12,8 +12,9 @@
 #define H_128_256_5_DEC_TYPE 0
 #define H_128_256_5_MAX_ITER 100
 
+#include <stdint.h>
+
 extern const uint16_t H_128_256_5_H_rows[];
 extern const uint16_t H_128_256_5_H_cols[];
 extern const float H_128_256_5_input[];
 extern const char H_128_256_5_detected_data[];
-

@@ -12,8 +12,9 @@
 #define HRA_112_112_DEC_TYPE 0
 #define HRA_112_112_MAX_ITER 100
 
+#include <stdint.h>
+
 extern const uint16_t HRA_112_112_H_rows[];
 extern const uint16_t HRA_112_112_H_cols[];
 extern const float HRA_112_112_input[];
 extern const char HRA_112_112_detected_data[];
-

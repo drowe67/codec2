@@ -28,18 +28,20 @@
 #ifndef __INTERP__
 #define __INTERP__
 
+#include "defines.h"
 #include "kiss_fft.h"
 
 void interpolate(MODEL *interp, MODEL *prev, MODEL *next);
-void interpolate_lsp(kiss_fft_cfg  fft_dec_cfg,
-		     MODEL *interp, MODEL *prev, MODEL *next,
-		     float *prev_lsps, float  prev_e,
-		     float *next_lsps, float  next_e,
-		     float *ak_interp, float *lsps_interp, float Wo_min);
+void interpolate_lsp(kiss_fft_cfg fft_dec_cfg, MODEL *interp, MODEL *prev,
+                     MODEL *next, float *prev_lsps, float prev_e,
+                     float *next_lsps, float next_e, float *ak_interp,
+                     float *lsps_interp, float Wo_min);
 void interp_Wo(MODEL *interp, MODEL *prev, MODEL *next, float Wo_min);
-void interp_Wo2(MODEL *interp, MODEL *prev, MODEL *next, float weight, float Wo_min);
+void interp_Wo2(MODEL *interp, MODEL *prev, MODEL *next, float weight,
+                float Wo_min);
 float interp_energy(float prev, float next);
 float interp_energy2(float prev, float next, float weight);
-void interpolate_lsp_ver2(float interp[], float prev[],  float next[], float weight, int order);
+void interpolate_lsp_ver2(float interp[], float prev[], float next[],
+                          float weight, int order);
 
 #endif

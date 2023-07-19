@@ -12,5 +12,7 @@
 #define H_1024_2048_4f_DEC_TYPE 0
 #define H_1024_2048_4f_MAX_ITER 100
 
+#include <stdint.h>
+
 extern const uint16_t H_1024_2048_4f_H_rows[];
 extern const uint16_t H_1024_2048_4f_H_cols[];

@@ -25,7 +25,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 /* Forward define struct freedv for use by the function prototypes below. */
 struct freedv;
@@ -34,7 +34,8 @@ struct freedv;
 typedef void* reliable_text_t;
 
 /* Function type for callback (when full reliable text has been received). */
-typedef void(*on_text_rx_t)(reliable_text_t rt, const char* txt_ptr, int length, void* state);
+typedef void (*on_text_rx_t)(reliable_text_t rt, const char* txt_ptr,
+                             int length, void* state);
 
 /* Allocate reliable_text object. */
 reliable_text_t reliable_text_create();
@@ -46,10 +47,12 @@ void reliable_text_destroy(reliable_text_t ptr);
 void reliable_text_reset(reliable_text_t ptr);
 
 /* Sets string that is sent on TX. */
-void reliable_text_set_string(reliable_text_t ptr, const char* str, int strlength);
+void reliable_text_set_string(reliable_text_t ptr, const char* str,
+                              int strlength);
 
 /* Link FreeDV object to reliable_text object. */
-void reliable_text_use_with_freedv(reliable_text_t ptr, struct freedv* fdv, on_text_rx_t text_rx_fn, void* state);
+void reliable_text_use_with_freedv(reliable_text_t ptr, struct freedv* fdv,
+                                   on_text_rx_t text_rx_fn, void* state);
 
 /* Returns associated struct freedv object. */
 struct freedv* reliable_text_get_freedv_obj(reliable_text_t ptr);
@@ -59,6 +62,6 @@ void reliable_text_unlink_from_freedv(reliable_text_t ptr);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
-    
-#endif // RELIABLE_TEXT_H
+#endif  // __cplusplus
+
+#endif  // RELIABLE_TEXT_H

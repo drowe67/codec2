@@ -12,5 +12,7 @@
 #define H_16200_9720_DEC_TYPE 0
 #define H_16200_9720_MAX_ITER 100
 
+#include <stdint.h>
+
 extern const uint16_t H_16200_9720_H_rows[];
 extern const uint16_t H_16200_9720_H_cols[];

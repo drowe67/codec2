@@ -9,7 +9,6 @@
 
 \*---------------------------------------------------------------------------*/
 
-
 /*
   Copyright (C) 2012 David Rowe
 
@@ -30,10 +29,14 @@
 #ifndef __OCTAVE__
 #define __OCTAVE__
 
+#include <stdio.h>
+
 #include "comp.h"
 
 void octave_save_int(FILE *f, char name[], int data[], int rows, int cols);
-void octave_save_float(FILE *f, char name[], float data[], int rows, int cols, int col_len);
-void octave_save_complex(FILE *f, char name[], COMP data[], int rows, int cols, int col_len);
+void octave_save_float(FILE *f, char name[], float data[], int rows, int cols,
+                       int col_len);
+void octave_save_complex(FILE *f, char name[], COMP data[], int rows, int cols,
+                         int col_len);
 
 #endif

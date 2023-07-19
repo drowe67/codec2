@@ -12,8 +12,9 @@
 #define HRAb_396_504_DEC_TYPE 0
 #define HRAb_396_504_MAX_ITER 100
 
+#include <stdint.h>
+
 extern const uint16_t HRAb_396_504_H_rows[];
 extern const uint16_t HRAb_396_504_H_cols[];
 extern const float HRAb_396_504_input[];
 extern const char HRAb_396_504_detected_data[];
-

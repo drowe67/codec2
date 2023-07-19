@@ -20,22 +20,24 @@
 
 #include <complex.h>
 
-struct quisk_cfFilter {        // Structure to hold the static data for FIR filters
-    float * dCoefs;            // real filter coefficients
-    complex float * cpxCoefs;  // complex filter coefficients
-    int nBuf;                  // dimension of cBuf
-    int nTaps;                 // dimension of dSamples, cSamples, dCoefs
-    int decim_index;           // index of next sample for decimation
-    complex float * cSamples;  // storage for old samples
-    complex float * ptcSamp;   // next available position in cSamples
-    complex float * cBuf;      // auxiliary buffer for interpolation
-} ;
+struct quisk_cfFilter {     // Structure to hold the static data for FIR filters
+  float *dCoefs;            // real filter coefficients
+  complex float *cpxCoefs;  // complex filter coefficients
+  int nBuf;                 // dimension of cBuf
+  int nTaps;                // dimension of dSamples, cSamples, dCoefs
+  int decim_index;          // index of next sample for decimation
+  complex float *cSamples;  // storage for old samples
+  complex float *ptcSamp;   // next available position in cSamples
+  complex float *cBuf;      // auxiliary buffer for interpolation
+};
 
-extern int quisk_cfInterpDecim(complex float *, int, struct quisk_cfFilter *, int, int);
+extern int quisk_cfInterpDecim(complex float *, int, struct quisk_cfFilter *,
+                               int, int);
 extern void quisk_filt_cfInit(struct quisk_cfFilter *, float *, int);
 extern void quisk_filt_destroy(struct quisk_cfFilter *);
 extern void quisk_cfTune(struct quisk_cfFilter *, float);
-extern void quisk_ccfFilter(complex float *, complex float *, int, struct quisk_cfFilter *);
+extern void quisk_ccfFilter(complex float *, complex float *, int,
+                            struct quisk_cfFilter *);
 
 extern float filtP400S600[100];
 extern float filtP550S750[160];

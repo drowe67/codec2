@@ -7,7 +7,7 @@
   Demonstrates receiving frames of raw data bytes using the FreeDV API.
 
   See freedv_datac1_tx.c for instructions.
-  
+
 \*---------------------------------------------------------------------------*/
 
 /*
@@ -28,37 +28,36 @@
 */
 
 #include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "freedv_api.h"
 
 int main(int argc, char *argv[]) {
-    struct freedv             *freedv;
+  struct freedv *freedv;
 
-    freedv = freedv_open(FREEDV_MODE_DATAC1);
-    assert(freedv != NULL);
-    freedv_set_frames_per_burst(freedv, 1);
-    freedv_set_verbose(freedv, 2);
-    
-    int bytes_per_modem_frame = freedv_get_bits_per_modem_frame(freedv)/8;
-    uint8_t bytes_out[bytes_per_modem_frame];
-    short  demod_in[freedv_get_n_max_modem_samples(freedv)];
+  freedv = freedv_open(FREEDV_MODE_DATAC1);
+  assert(freedv != NULL);
+  freedv_set_frames_per_burst(freedv, 1);
+  freedv_set_verbose(freedv, 2);
 
-    size_t nin, nbytes_out;
-    nin = freedv_nin(freedv);
-    while(fread(demod_in, sizeof(short), nin, stdin) == nin) {
+  int bytes_per_modem_frame = freedv_get_bits_per_modem_frame(freedv) / 8;
+  uint8_t bytes_out[bytes_per_modem_frame];
+  short demod_in[freedv_get_n_max_modem_samples(freedv)];
 
-        nbytes_out = freedv_rawdatarx(freedv, bytes_out, demod_in);    
-        nin = freedv_nin(freedv); /* must call this every loop */
-        if (nbytes_out) {
-            /* don't output CRC */
-            fwrite(bytes_out, sizeof(uint8_t), nbytes_out-2, stdout);
-        }
+  size_t nin, nbytes_out;
+  nin = freedv_nin(freedv);
+  while (fread(demod_in, sizeof(short), nin, stdin) == nin) {
+    nbytes_out = freedv_rawdatarx(freedv, bytes_out, demod_in);
+    nin = freedv_nin(freedv); /* must call this every loop */
+    if (nbytes_out) {
+      /* don't output CRC */
+      fwrite(bytes_out, sizeof(uint8_t), nbytes_out - 2, stdout);
     }
+  }
 
-    freedv_close(freedv);
+  freedv_close(freedv);
 
-    return 0;
+  return 0;
 }

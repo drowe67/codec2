@@ -30,74 +30,74 @@
 
 /*---------------------------------------------------------------------------*\
 
-				DEFINES
+                                DEFINES
 
 \*---------------------------------------------------------------------------*/
 
 /* General defines */
 
-#define N_S        0.01         /* internal proc frame length in secs   */
-#define TW_S       0.005        /* trapezoidal synth window overlap     */
-#define MAX_AMP    160		/* maximum number of harmonics          */
+#define N_S 0.01    /* internal proc frame length in secs   */
+#define TW_S 0.005  /* trapezoidal synth window overlap     */
+#define MAX_AMP 160 /* maximum number of harmonics          */
 #ifndef PI
-#define PI         3.141592654	/* mathematical constant                */
+#define PI 3.141592654 /* mathematical constant                */
 #endif
-#define TWO_PI     6.283185307	/* mathematical constant                */
-#define MAX_STR    2048         /* maximum string size                  */
+#define TWO_PI 6.283185307 /* mathematical constant                */
+#define MAX_STR 2048       /* maximum string size                  */
 
-#define FFT_ENC    512		/* size of FFT used for encoder         */
-#define FFT_DEC    512	    	/* size of FFT used in decoder          */
-#define V_THRESH   6.0          /* voicing threshold in dB              */
-#define LPC_ORD    10		/* LPC order                            */
-#define LPC_ORD_LOW 6		/* LPC order for lower rates            */
+#define FFT_ENC 512   /* size of FFT used for encoder         */
+#define FFT_DEC 512   /* size of FFT used in decoder          */
+#define V_THRESH 6.0  /* voicing threshold in dB              */
+#define LPC_ORD 10    /* LPC order                            */
+#define LPC_ORD_LOW 6 /* LPC order for lower rates            */
 
 /* Pitch estimation defines */
 
-#define M_PITCH_S  0.0400       /* pitch analysis window in s           */
-#define P_MIN_S    0.0025	/* minimum pitch period in s            */
-#define P_MAX_S    0.0200	/* maximum pitch period in s            */
+#define M_PITCH_S 0.0400 /* pitch analysis window in s           */
+#define P_MIN_S 0.0025   /* minimum pitch period in s            */
+#define P_MAX_S 0.0200   /* maximum pitch period in s            */
 
 /*---------------------------------------------------------------------------*\
 
-				TYPEDEFS
+                                TYPEDEFS
 
 \*---------------------------------------------------------------------------*/
 
 /* Structure to hold constants calculated at run time based on sample rate */
 
 typedef struct {
-    int   Fs;            /* sample rate of this instance             */
-    int   n_samp;        /* number of samples per 10ms frame at Fs   */
-    int   max_amp;       /* maximum number of harmonics              */
-    int   m_pitch;       /* pitch estimation window size in samples  */
-    int   p_min;         /* minimum pitch period in samples          */
-    int   p_max;         /* maximum pitch period in samples          */
-    float Wo_min;        
-    float Wo_max;  
-    int   nw;            /* analysis window size in samples          */      
-    int   tw;            /* trapezoidal synthesis window overlap     */
+  int Fs;      /* sample rate of this instance             */
+  int n_samp;  /* number of samples per 10ms frame at Fs   */
+  int max_amp; /* maximum number of harmonics              */
+  int m_pitch; /* pitch estimation window size in samples  */
+  int p_min;   /* minimum pitch period in samples          */
+  int p_max;   /* maximum pitch period in samples          */
+  float Wo_min;
+  float Wo_max;
+  int nw; /* analysis window size in samples          */
+  int tw; /* trapezoidal synthesis window overlap     */
 } C2CONST;
 
 /* Structure to hold model parameters for one frame */
 
 typedef struct {
-    float Wo;		  /* fundamental frequency estimate in radians  */
-    int   L;		  /* number of harmonics                        */
-    float A[MAX_AMP+1];	  /* amplitiude of each harmonic                */
-    float phi[MAX_AMP+1]; /* phase of each harmonic                     */
-    int   voiced;	  /* non-zero if this frame is voiced           */
+  float Wo;               /* fundamental frequency estimate in radians  */
+  int L;                  /* number of harmonics                        */
+  float A[MAX_AMP + 1];   /* amplitiude of each harmonic                */
+  float phi[MAX_AMP + 1]; /* phase of each harmonic                     */
+  int voiced;             /* non-zero if this frame is voiced           */
 } MODEL;
 
 /* describes each codebook  */
 
 struct lsp_codebook {
-    int			k;        /* dimension of vector	*/
-    int			log2m;    /* number of bits in m	*/
-    int			m;        /* elements in codebook	*/
-#ifdef __EMBEDDED__               /* make sure stored in flash  */
-  const float        *cb;	  /* The elements		*/
+  int k;            /* dimension of vector	*/
+  int log2m;        /* number of bits in m	*/
+  int m;            /* elements in codebook	*/
+#ifdef __EMBEDDED__ /* make sure stored in flash  */
+  const float *cb;  /* The elements		*/
 #else
-  float              *cb;	  /* The elements		*/
+  float *cb; /* The elements		*/
 #endif
 };
 
@@ -111,9 +111,9 @@ extern const struct lsp_codebook newamp2vq_cb[];
 extern const struct lsp_codebook newamp2_energy_cb[];
 
 #ifdef _GNU_SOURCE
-    #define POW10F(x) exp10f((x))
+#define POW10F(x) exp10f((x))
 #else
-    #define POW10F(x) expf(2.302585092994046f*(x))
+#define POW10F(x) expf(2.302585092994046f * (x))
 #endif
 
 #endif

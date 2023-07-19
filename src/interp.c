@@ -25,13 +25,14 @@
   along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "interp.h"
+
 #include <assert.h>
 #include <math.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "defines.h"
-#include "interp.h"
 #include "lsp.h"
 #include "quantise.h"
 
@@ -107,29 +108,27 @@ void interpolate(
 
 \*---------------------------------------------------------------------------*/
 
-float sample_log_amp(MODEL *model, float w)
-{
-    int   m;
-    float f, log_amp;
+float sample_log_amp(MODEL *model, float w) {
+  int m;
+  float f, log_amp;
 
-    assert(w > 0.0); assert (w <= PI);
+  assert(w > 0.0);
+  assert(w <= PI);
 
-    m = floorf(w/model->Wo + 0.5);
-    f = (w - m*model->Wo)/w;
-    assert(f <= 1.0);
+  m = floorf(w / model->Wo + 0.5);
+  f = (w - m * model->Wo) / w;
+  assert(f <= 1.0);
 
-    if (m < 1) {
-	log_amp = f*log10f(model->A[1] + 1E-6);
-    }
-    else if ((m+1) > model->L) {
-	log_amp = (1.0-f)*log10f(model->A[model->L] + 1E-6);
-    }
-    else {
-	log_amp = (1.0-f)*log10f(model->A[m] + 1E-6) +
-                  f*log10f(model->A[m+1] + 1E-6);
-    }
+  if (m < 1) {
+    log_amp = f * log10f(model->A[1] + 1E-6);
+  } else if ((m + 1) > model->L) {
+    log_amp = (1.0 - f) * log10f(model->A[model->L] + 1E-6);
+  } else {
+    log_amp = (1.0 - f) * log10f(model->A[m] + 1E-6) +
+              f * log10f(model->A[m + 1] + 1E-6);
+  }
 
-    return log_amp;
+  return log_amp;
 }
 
 #ifdef NOT_NEEDED
@@ -150,65 +149,59 @@ float sample_log_amp(MODEL *model, float w)
 
 \*---------------------------------------------------------------------------*/
 
-void interpolate_lsp(
-  codec2_fft_cfg  fft_fwd_cfg,
-  MODEL *interp,      /* interpolated model params                     */
-  MODEL *prev,        /* previous frames model params                  */
-  MODEL *next,        /* next frames model params                      */
-  float *prev_lsps,   /* previous frames LSPs                          */
-  float  prev_e,      /* previous frames LPC energy                    */
-  float *next_lsps,   /* next frames LSPs                              */
-  float  next_e,      /* next frames LPC energy                        */
-  float *ak_interp,   /* interpolated aks for this frame               */
-  float *lsps_interp, /* interpolated lsps for this frame              */
-  float  Wo_min
-)
-{
-    int   i;
-    float e;
-    float snr;
+void interpolate_lsp(codec2_fft_cfg fft_fwd_cfg,
+                     MODEL *interp,    /* interpolated model params      */
+                     MODEL *prev,      /* previous frames model params        */
+                     MODEL *next,      /* next frames model params        */
+                     float *prev_lsps, /* previous frames LSPs   */
+                     float prev_e,     /* previous frames LPC energy       */
+                     float *next_lsps, /* next frames LSPs   */
+                     float next_e,     /* next frames LPC energy       */
+                     float *ak_interp, /* interpolated aks for this frame   */
+                     float *lsps_interp, /* interpolated lsps for this frame */
+                     float Wo_min) {
+  int i;
+  float e;
+  float snr;
 
-    /* trap corner case where V est is probably wrong */
+  /* trap corner case where V est is probably wrong */
 
-    if (interp->voiced && !prev->voiced && !next->voiced) {
-	interp->voiced = 0;
-    }
+  if (interp->voiced && !prev->voiced && !next->voiced) {
+    interp->voiced = 0;
+  }
 
-    /* Wo depends on voicing of this and adjacent frames */
+  /* Wo depends on voicing of this and adjacent frames */
 
-    if (interp->voiced) {
-	if (prev->voiced && next->voiced)
-	    interp->Wo = (prev->Wo + next->Wo)/2.0;
-	if (!prev->voiced && next->voiced)
-	    interp->Wo = next->Wo;
-	if (prev->voiced && !next->voiced)
-	    interp->Wo = prev->Wo;
-    }
-    else {
-	interp->Wo = Wo_min;
-    }
-    interp->L = PI/interp->Wo;
+  if (interp->voiced) {
+    if (prev->voiced && next->voiced) interp->Wo = (prev->Wo + next->Wo) / 2.0;
+    if (!prev->voiced && next->voiced) interp->Wo = next->Wo;
+    if (prev->voiced && !next->voiced) interp->Wo = prev->Wo;
+  } else {
+    interp->Wo = Wo_min;
+  }
+  interp->L = PI / interp->Wo;
 
-    //printf("  interp: prev_v: %d next_v: %d prev_Wo: %f next_Wo: %f\n",
-    //	   prev->voiced, next->voiced, prev->Wo, next->Wo);
-    //printf("  interp: Wo: %1.5f  L: %d\n", interp->Wo, interp->L);
+  // printf("  interp: prev_v: %d next_v: %d prev_Wo: %f next_Wo: %f\n",
+  //	   prev->voiced, next->voiced, prev->Wo, next->Wo);
+  // printf("  interp: Wo: %1.5f  L: %d\n", interp->Wo, interp->L);
 
-    /* interpolate LSPs */
+  /* interpolate LSPs */
 
-    for(i=0; i<LPC_ORD; i++) {
-	lsps_interp[i] = (prev_lsps[i] + next_lsps[i])/2.0;
-    }
+  for (i = 0; i < LPC_ORD; i++) {
+    lsps_interp[i] = (prev_lsps[i] + next_lsps[i]) / 2.0;
+  }
 
-    /* Interpolate LPC energy in log domain */
+  /* Interpolate LPC energy in log domain */
 
-    e = powf(10.0, (log10f(prev_e) + log10f(next_e))/2.0);
-    //printf("  interp: e: %f\n", e);
+  e = powf(10.0, (log10f(prev_e) + log10f(next_e)) / 2.0);
+  // printf("  interp: e: %f\n", e);
 
-    /* convert back to amplitudes */
+  /* convert back to amplitudes */
 
-    lsp_to_lpc(lsps_interp, ak_interp, LPC_ORD);
-    aks_to_M2(fft_fwd_cfg, ak_interp, LPC_ORD, interp, e, &snr, 0, 0, 1, 1, LPCPF_BETA, LPCPF_GAMMA);
-    //printf("  interp: ak[1]: %f A[1] %f\n", ak_interp[1], interp->A[1]);
+  lsp_to_lpc(lsps_interp, ak_interp, LPC_ORD);
+  aks_to_M2(fft_fwd_cfg, ak_interp, LPC_ORD, interp, e, &snr, 0, 0, 1, 1,
+            LPCPF_BETA, LPCPF_GAMMA);
+  // printf("  interp: ak[1]: %f A[1] %f\n", ak_interp[1], interp->A[1]);
 }
 #endif
 
@@ -224,14 +217,11 @@ void interpolate_lsp(
 
 \*---------------------------------------------------------------------------*/
 
-void interp_Wo(
-  MODEL *interp,    /* interpolated model params                     */
-  MODEL *prev,      /* previous frames model params                  */
-  MODEL *next,      /* next frames model params                      */
-  float  Wo_min
-	       )
-{
-    interp_Wo2(interp, prev, next, 0.5, Wo_min);
+void interp_Wo(MODEL *interp, /* interpolated model params */
+               MODEL *prev, /* previous frames model params                  */
+               MODEL *next, /* next frames model params                      */
+               float Wo_min) {
+  interp_Wo2(interp, prev, next, 0.5, Wo_min);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -244,36 +234,28 @@ void interp_Wo(
 
 \*---------------------------------------------------------------------------*/
 
-void interp_Wo2(
-  MODEL *interp,    /* interpolated model params                     */
-  MODEL *prev,      /* previous frames model params                  */
-  MODEL *next,      /* next frames model params                      */
-  float  weight,
-  float  Wo_min
-)
-{
-    /* trap corner case where voicing est is probably wrong */
+void interp_Wo2(MODEL *interp, /* interpolated model params */
+                MODEL *prev, /* previous frames model params                  */
+                MODEL *next, /* next frames model params                      */
+                float weight, float Wo_min) {
+  /* trap corner case where voicing est is probably wrong */
 
-    if (interp->voiced && !prev->voiced && !next->voiced) {
-	interp->voiced = 0;
-    }
+  if (interp->voiced && !prev->voiced && !next->voiced) {
+    interp->voiced = 0;
+  }
 
-    /* Wo depends on voicing of this and adjacent frames */
+  /* Wo depends on voicing of this and adjacent frames */
 
-    if (interp->voiced) {
-	if (prev->voiced && next->voiced)
-	    interp->Wo = (1.0 - weight)*prev->Wo + weight*next->Wo;
-	if (!prev->voiced && next->voiced)
-	    interp->Wo = next->Wo;
-	if (prev->voiced && !next->voiced)
-	    interp->Wo = prev->Wo;
-    }
-    else {
-	interp->Wo = Wo_min;
-    }
-    interp->L = PI/interp->Wo;
+  if (interp->voiced) {
+    if (prev->voiced && next->voiced)
+      interp->Wo = (1.0 - weight) * prev->Wo + weight * next->Wo;
+    if (!prev->voiced && next->voiced) interp->Wo = next->Wo;
+    if (prev->voiced && !next->voiced) interp->Wo = prev->Wo;
+  } else {
+    interp->Wo = Wo_min;
+  }
+  interp->L = PI / interp->Wo;
 }
-
 
 /*---------------------------------------------------------------------------*\
 
@@ -286,12 +268,11 @@ void interp_Wo2(
 
 \*---------------------------------------------------------------------------*/
 
-float interp_energy(float prev_e, float next_e)
-{
-    //return powf(10.0, (log10f(prev_e) + log10f(next_e))/2.0);
-    return sqrtf(prev_e * next_e); //looks better is math. identical and faster math
+float interp_energy(float prev_e, float next_e) {
+  // return powf(10.0, (log10f(prev_e) + log10f(next_e))/2.0);
+  return sqrtf(prev_e *
+               next_e);  // looks better is math. identical and faster math
 }
-
 
 /*---------------------------------------------------------------------------*\
 
@@ -304,12 +285,9 @@ float interp_energy(float prev_e, float next_e)
 
 \*---------------------------------------------------------------------------*/
 
-float interp_energy2(float prev_e, float next_e, float weight)
-{
-    return POW10F((1.0 - weight)*log10f(prev_e) + weight*log10f(next_e));
-
+float interp_energy2(float prev_e, float next_e, float weight) {
+  return POW10F((1.0 - weight) * log10f(prev_e) + weight * log10f(next_e));
 }
-
 
 /*---------------------------------------------------------------------------*\
 
@@ -321,11 +299,10 @@ float interp_energy2(float prev_e, float next_e, float weight)
 
 \*---------------------------------------------------------------------------*/
 
-void interpolate_lsp_ver2(float interp[], float prev[],  float next[], float weight, int order)
-{
-    int i;
+void interpolate_lsp_ver2(float interp[], float prev[], float next[],
+                          float weight, int order) {
+  int i;
 
-    for(i=0; i<order; i++)
-	interp[i] = (1.0 - weight)*prev[i] + weight*next[i];
+  for (i = 0; i < order; i++)
+    interp[i] = (1.0 - weight) * prev[i] + weight * next[i];
 }
-
