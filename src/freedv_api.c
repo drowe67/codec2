@@ -1054,25 +1054,46 @@ int freedv_rawdatacomprx(struct freedv *f, unsigned char *packed_payload_bits,
     return ret;
   }
 
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_1600, f->mode))
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_1600, f->mode)) {
     rx_status = freedv_comprx_fdmdv_1600(f, demod_in);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_700C, f->mode))
+  }
+
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_700C, f->mode)) {
     rx_status = freedv_comprx_700c(f, demod_in);
+  }
+
   if (FDV_MODE_ACTIVE(FREEDV_MODE_700D, f->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_700E, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC0, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC1, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode))
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode)) {
     rx_status = freedv_comp_short_rx_ofdm(f, (void *)demod_in, 0, 1.0f);
+  }
+
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_2020, f->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_2020B, f->mode)) {
+#ifdef __LPCNET__
+    rx_status = freedv_comprx_2020(f, demod_in);
+#endif
+  }
+
   if (FDV_MODE_ACTIVE(FREEDV_MODE_FSK_LDPC, f->mode)) {
     rx_status = freedv_rx_fsk_ldpc_data(f, demod_in);
   }
 
   if (rx_status & FREEDV_RX_BITS) {
-    ret = (f->bits_per_modem_frame + 7) / 8;
-    freedv_pack(packed_payload_bits, f->rx_payload_bits,
-                f->bits_per_modem_frame);
+    if(FDV_MODE_ACTIVE(FREEDV_MODE_1600, f->mode) ){
+      ret = (f->bits_per_codec_frame + 7) / 8;
+      freedv_pack(packed_payload_bits, f->rx_payload_bits,
+                  f->bits_per_codec_frame);
+    }
+    else {
+      ret = (f->bits_per_modem_frame + 7) / 8;
+      freedv_pack(packed_payload_bits, f->rx_payload_bits,
+                  f->bits_per_modem_frame);
+    }
   }
 
   /* might want to check this for errors, e.g. if reliable data is important */
