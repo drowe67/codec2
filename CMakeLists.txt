@@ -162,7 +162,7 @@ check_symbol_exists(getopt getopt.h HAVE_GETOPT)
 configure_file ("${PROJECT_SOURCE_DIR}/cmake/config.h.in"
                 "${PROJECT_BINARY_DIR}/config.h" )
 # Output path is such that #include <codec2/version.h> in codec2.h works
-set(CODEC2_VERSION_PATH "${PROJECT_BINARY_DIR}/codec2")
+set(CODEC2_VERSION_PATH "${PROJECT_BINARY_DIR}")
 configure_file ("${PROJECT_SOURCE_DIR}/cmake/version.h.in"
                 "${CODEC2_VERSION_PATH}/version.h" )
 include_directories(${PROJECT_BINARY_DIR})
@@ -189,7 +189,7 @@ if(LPCNET)
         find_package(lpcnetfreedv REQUIRED
             PATHS ${LPCNET_BUILD_DIR}
             NO_DEFAULT_PATH
-            CONFIGS lpcnetfreedv.cmake
+#            CONFIGS lpcnetfreedv.cmake
         )
         if(lpcnetfreedv_FOUND)
             message(STATUS "liblpcnetfreedv found in build tree.")
