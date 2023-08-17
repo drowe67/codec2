@@ -140,14 +140,11 @@ void ldpc_encode_frame(struct LDPC *ldpc, int codeword[],
 void qpsk_modulate_frame(COMP tx_symbols[], int codeword[], int n) {
   int s, i;
   int dibit[2];
-  complex float qpsk_symb;
 
   for (s = 0, i = 0; i < n; s += 2, i++) {
     dibit[0] = codeword[s + 1] & 0x1;
     dibit[1] = codeword[s] & 0x1;
-    qpsk_symb = qpsk_mod(dibit);
-    tx_symbols[i].real = crealf(qpsk_symb);
-    tx_symbols[i].imag = cimagf(qpsk_symb);
+    tx_symbols[i] = qpsk_mod(dibit);
   }
 }
 
@@ -253,8 +250,7 @@ int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config,
 
   for (i = 0; i < coded_syms_per_frame; i++) {
     int bits[2];
-    complex float s =
-        codeword_symbols_de[i].real + I * codeword_symbols_de[i].imag;
+    COMP s = codeword_symbols_de[i];
     qpsk_demod(s, bits);
     rx_bits_raw[config->bps * i] = bits[1];
     rx_bits_raw[config->bps * i + 1] = bits[0];
@@ -322,7 +318,7 @@ void count_errors_protection_mode(int protection_mode, int *pNerrs,
  */
 
 void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc,
-                             complex float tx_sams[], uint8_t tx_bits[],
+                             COMP tx_sams[], uint8_t tx_bits[],
                              uint8_t txt_bits[]) {
   int Npayloadsymsperpacket = ldpc->coded_bits_per_frame / ofdm->bps;
   int Npayloadbitsperpacket = ldpc->coded_bits_per_frame;
@@ -330,7 +326,7 @@ void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc,
   VLA_CALLOC(int, codeword, Npayloadbitsperpacket);
   VLA_CALLOC(COMP, payload_symbols, Npayloadsymsperpacket);
   VLA_CALLOC(COMP, payload_symbols_inter, Npayloadsymsperpacket);
-  VLA_CALLOC(complex float, tx_symbols, Nbitsperpacket / ofdm->bps);
+  VLA_CALLOC(COMP, tx_symbols, Nbitsperpacket / ofdm->bps);
 
   ldpc_encode_frame(ldpc, codeword, tx_bits);
   qpsk_modulate_frame(payload_symbols, codeword, Npayloadsymsperpacket);

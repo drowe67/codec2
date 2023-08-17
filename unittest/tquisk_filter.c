@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include "filter.h"
+#include "comp_prim.h"
 #include "filter_coef.h"
 
 #define N 159 /* processing buffer size  (odd number deliberate) */
@@ -23,7 +24,7 @@
 
 int main() {
   short buf_short[N];
-  complex float buf[N];
+  COMP buf[N];
   struct quisk_cfFilter *bpf;
   int i;
 
@@ -33,10 +34,10 @@ int main() {
   quisk_cfTune(bpf, CENTRE / FS);
 
   while (fread(buf_short, sizeof(short), N, stdin) == N) {
-    for (i = 0; i < N; i++) buf[i] = buf_short[i];
+    for (i = 0; i < N; i++) buf[i] = comp((float)buf_short[i], 0.f);
     quisk_ccfFilter(buf, buf, N, bpf);
     /* we only output the real part in this test */
-    for (i = 0; i < N; i++) buf_short[i] = creal(buf[i]);
+    for (i = 0; i < N; i++) buf_short[i] = buf[i].real;
     fwrite(buf_short, sizeof(short), N, stdout);
   }
 

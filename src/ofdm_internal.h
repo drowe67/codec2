@@ -28,12 +28,12 @@
 #ifndef OFDM_INTERNAL_H
 #define OFDM_INTERNAL_H
 
-#include <complex.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "codec2_ofdm.h"
+#include "comp.h"
 #include "filter.h"
 
 #ifdef __cplusplus
@@ -47,9 +47,6 @@ extern "C" {
 #define TAU (2.0f * M_PI)
 #define ROT45 (M_PI / 4.0f)
 #define MAX_UW_BITS 64
-
-#define cmplx(value) (cosf(value) + sinf(value) * I)
-#define cmplxconj(value) (cosf(value) + sinf(value) * -I)
 
 /* modem state machine states */
 typedef enum { search, trial, synced } State;
@@ -181,12 +178,12 @@ struct OFDM {
   struct quisk_cfFilter *tx_bpf;
   struct quisk_cfFilter *rx_bpf;
 
-  complex float *pilot_samples;
-  complex float *rxbuf;
-  complex float *pilots;
-  complex float **rx_sym;
-  complex float *rx_np;
-  complex float *tx_uw_syms;
+  COMP *pilot_samples;
+  COMP *rxbuf;
+  COMP *pilots;
+  COMP **rx_sym;
+  COMP *rx_np;
+  COMP *tx_uw_syms;
   COMP *tx_preamble;
   COMP *tx_postamble;
 
@@ -210,7 +207,7 @@ struct OFDM {
   int phase_est_bandwidth_mode;
 
   // Complex
-  complex float foff_metric;
+  COMP foff_metric;
 
   // Float
   float foff_est_gain;
@@ -253,36 +250,36 @@ struct OFDM {
 
 /* Prototypes */
 
-complex float qpsk_mod(int *);
-complex float qam16_mod(int *);
-void qpsk_demod(complex float, int *);
-void qam16_demod(complex float, int *);
-void ofdm_txframe(struct OFDM *, complex float *, complex float[]);
+COMP qpsk_mod(int *);
+COMP qam16_mod(int *);
+void qpsk_demod(COMP, int *);
+void qam16_demod(COMP, int *);
+void ofdm_txframe(struct OFDM *, COMP *, COMP[]);
 void ofdm_assemble_qpsk_modem_packet(struct OFDM *, uint8_t[], uint8_t[],
                                      uint8_t[]);
-void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *, complex float[],
-                                             COMP[], uint8_t[]);
-void ofdm_disassemble_qpsk_modem_packet(struct OFDM *, complex float rx_syms[],
+void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *, COMP[], COMP[],
+                                             uint8_t[]);
+void ofdm_disassemble_qpsk_modem_packet(struct OFDM *, COMP rx_syms[],
                                         float rx_amps[], COMP[], float[],
                                         short[]);
 void ofdm_disassemble_qpsk_modem_packet_with_text_amps(struct OFDM *,
-                                                       complex float rx_syms[],
+                                                       COMP rx_syms[],
                                                        float rx_amps[], COMP[],
                                                        float[], short[], int *);
-void ofdm_extract_uw(struct OFDM *ofdm, complex float rx_syms[],
-                     float rx_amps[], uint8_t rx_uw[]);
+void ofdm_extract_uw(struct OFDM *ofdm, COMP rx_syms[], float rx_amps[],
+                     uint8_t rx_uw[]);
 void ofdm_rand(uint16_t[], int);
 void ofdm_rand_seed(uint16_t r[], int n, uint64_t seed);
 void ofdm_generate_payload_data_bits(uint8_t data_bits[], int n);
 void ofdm_generate_preamble(struct OFDM *ofdm, COMP *tx_preamble, int seed);
 int ofdm_get_phase_est_bandwidth_mode(struct OFDM *);
 void ofdm_set_phase_est_bandwidth_mode(struct OFDM *, int);
-void ofdm_clip(complex float tx[], float clip_thresh, int n);
-void ofdm_hilbert_clipper(struct OFDM *ofdm, complex float *tx, size_t n);
-float ofdm_esno_est_calc(complex float *rx_sym, int nsym);
+void ofdm_clip(COMP tx[], float clip_thresh, int n);
+void ofdm_hilbert_clipper(struct OFDM *ofdm, COMP *tx, size_t n);
+float ofdm_esno_est_calc(COMP *rx_sym, int nsym);
 float ofdm_snr_from_esno(struct OFDM *ofdm, float EsNodB);
 void ofdm_get_demod_stats(struct OFDM *ofdm, struct MODEM_STATS *stats,
-                          complex float *rx_syms, int Nsymsperpacket);
+                          COMP *rx_syms, int Nsymsperpacket);
 
 #ifdef __cplusplus
 }

@@ -81,8 +81,20 @@ inline static COMP cadd(COMP a, COMP b) {
   return res;
 }
 
+inline static COMP cfmac(COMP a, float b, COMP c) {
+  return cadd(a, fcmult(b, c));
+}
+
+inline static COMP cmac(COMP a, COMP b, COMP c) {
+  return cadd(a, cmult(b, c));  //
+}
+
+inline static float cnorm(COMP a) {
+  return (a.real * a.real) + (a.imag * a.imag);
+}
+
 inline static float cabsolute(COMP a) {
-  return sqrtf((a.real * a.real) + (a.imag * a.imag));
+  return sqrtf(cnorm(a));  //
 }
 
 /*
@@ -95,14 +107,18 @@ inline static COMP comp_exp_j(float phi) {
   return res;
 }
 
+inline static COMP comp(float re, float im) {
+  COMP res;
+  res.real = re;
+  res.imag = im;
+  return res;
+}
+
 /*
  * Quick and easy complex 0
  */
 inline static COMP comp0() {
-  COMP res;
-  res.real = 0;
-  res.imag = 0;
-  return res;
+  return comp(0.f, 0.f);  //
 }
 
 /*
@@ -133,6 +149,10 @@ inline static COMP comp_normalize(COMP a) {
   b.real = a.real / av;
   b.imag = a.imag / av;
   return b;
+}
+
+inline static float comp_arg(COMP a) {
+  return atan2(a.imag, a.real);  //
 }
 
 #endif

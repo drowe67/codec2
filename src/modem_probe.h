@@ -28,7 +28,6 @@
 #ifndef __MODEMPROBE_H
 #define __MODEMPROBE_H
 
-#include <complex.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -96,7 +95,7 @@ static inline void modem_probe_samp_c(char *tracename, COMP samp[],
  * float complex samp[] - int samples
  * size_t cnt - how many samples to save
  */
-static inline void modem_probe_samp_cft(char *tracename, complex float samp[],
+static inline void modem_probe_samp_cft(char *tracename, COMP samp[],
                                         size_t cnt) {
   modem_probe_samp_c_int(tracename, (COMP *)samp, cnt);
 }
@@ -119,7 +118,7 @@ static inline void modem_probe_samp_c(char *name, COMP samp[], size_t cnt) {
   return;
 }
 
-static inline void modem_probe_samp_cft(char *name, complex float samp[],
+static inline void modem_probe_samp_cft(char *name, COMP samp[],
                                         size_t cnt) {
   return;
 }

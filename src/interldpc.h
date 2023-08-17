@@ -55,7 +55,7 @@ void count_errors_protection_mode(int protection_mode, int *pNerrs,
                                   int *pNcoded, uint8_t tx_bits[],
                                   uint8_t rx_bits[], int n);
 void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc,
-                             complex float tx_sams[], uint8_t tx_bits[],
+                             COMP tx_sams[], uint8_t tx_bits[],
                              uint8_t txt_bits[]);
 
 #endif

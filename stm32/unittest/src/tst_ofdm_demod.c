@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
 
             /* SNR estimation and smoothing */
             if (config_profile) PROFILE_SAMPLE(ofdm_demod_snr);
-            float EsNodB = ofdm_esno_est_calc((complex float*)payload_syms, coded_syms_per_frame);
+            float EsNodB = ofdm_esno_est_calc((COMP*)payload_syms, coded_syms_per_frame);
             float snr_est_dB = ofdm_snr_from_esno(ofdm, EsNodB);
             snr_est_smoothed_dB = 0.9f * snr_est_smoothed_dB + 0.1f  *snr_est_dB;
             if (config_profile) {
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
                 assert(coded_syms_per_frame*ofdm_config->bps == coded_bits_per_frame);
                 for (i = 0; i < coded_syms_per_frame; i++) {
                     int bits[2];
-                    complex float s = payload_syms[i].real + I * payload_syms[i].imag;
+                    COMP s = payload_syms[i].real + I * payload_syms[i].imag;
                     qpsk_demod(s, bits);
                     rx_bits_char[ofdm_config->bps * i] = bits[1];
                     rx_bits_char[ofdm_config->bps * i + 1] = bits[0];

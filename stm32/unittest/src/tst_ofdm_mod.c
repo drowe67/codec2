@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 
             if (config_ldpc_en) {
 
-                complex float tx_sams[Nsamperframe];
+                COMP tx_sams[Nsamperframe];
                 ofdm_ldpc_interleave_tx(ofdm, &ldpc, tx_sams, tx_bits_char, txt_bits_char);
 
                 for(i=0; i<Nsamperframe; i++) {

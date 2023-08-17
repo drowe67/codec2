@@ -524,7 +524,7 @@ int freedv_rawdatapreamblecomptx(struct freedv *f, COMP mod_out[]) {
                                      npreamble_samples);
   } else if (is_ofdm_data_mode(f)) {
     struct OFDM *ofdm = f->ofdm;
-    complex float *tx_preamble = (complex float *)mod_out;
+    COMP *tx_preamble = (COMP *)mod_out;
     memcpy(tx_preamble, ofdm->tx_preamble,
            sizeof(COMP) * ofdm->samplesperframe);
     ofdm_hilbert_clipper(ofdm, tx_preamble, ofdm->samplesperframe);
@@ -553,7 +553,7 @@ int freedv_rawdatapostamblecomptx(struct freedv *f, COMP mod_out[]) {
 
   if (is_ofdm_data_mode(f)) {
     struct OFDM *ofdm = f->ofdm;
-    complex float *tx_postamble = (complex float *)mod_out;
+    COMP *tx_postamble = (COMP *)mod_out;
     memcpy(tx_postamble, ofdm->tx_postamble,
            sizeof(COMP) * ofdm->samplesperframe);
     ofdm_hilbert_clipper(ofdm, tx_postamble, ofdm->samplesperframe);
