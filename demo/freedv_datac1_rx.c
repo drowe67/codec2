@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 
 int main(int argc, char *argv[]) {
@@ -43,8 +44,8 @@ int main(int argc, char *argv[]) {
   freedv_set_verbose(freedv, 2);
 
   int bytes_per_modem_frame = freedv_get_bits_per_modem_frame(freedv) / 8;
-  uint8_t bytes_out[bytes_per_modem_frame];
-  short demod_in[freedv_get_n_max_modem_samples(freedv)];
+  VLA_CALLOC(uint8_t, bytes_out, bytes_per_modem_frame);
+  VLA_CALLOC(short, demod_in, freedv_get_n_max_modem_samples(freedv));
 
   size_t nin, nbytes_out;
   nin = freedv_nin(freedv);
@@ -58,6 +59,6 @@ int main(int argc, char *argv[]) {
   }
 
   freedv_close(freedv);
-
+  VLA_FREE(bytes_out, demod_in);
   return 0;
 }

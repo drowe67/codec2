@@ -58,6 +58,7 @@ void synth_one_frame(int n_samp, codec2_fftr_cfg fftr_inv_cfg, short buf[],
 void print_help(const struct option *long_options, int num_opts, char *argv[]);
 
 #define N_SAMP n_samp /* quick fix for run time sample rate selection */
+#define K 20
 
 /*---------------------------------------------------------------------------*\
 
@@ -106,7 +107,6 @@ int main(int argc, char *argv[]) {
   int rateK = 0, newamp1vq = 0, rate_K_dec = 0, perframe = 0;
   int bands = 0, bands_lower_en;
   float bands_lower = -1E32;
-  int K = 20;
   float framelength_s = N_S;
   int lspEWov = 0, rateKWov = 0, first = 0;
   FILE *frateKWov = NULL;
@@ -461,20 +461,20 @@ int main(int argc, char *argv[]) {
   int n_samp = c2const.n_samp;
   int m_pitch = c2const.m_pitch;
 
-  short buf[N_SAMP]; /* input/output buffer                   */
-  float buf_float[N_SAMP];
-  float Sn[m_pitch];     /* float input speech samples            */
-  float Sn_pre[m_pitch]; /* pre-emphasised input speech samples   */
-  COMP Sw[FFT_ENC];      /* DFT of Sn[]                           */
+  VLA_CALLOC(short, buf, N_SAMP); /* input/output buffer                   */
+  VLA_CALLOC(float, buf_float, N_SAMP);
+  VLA_CALLOC(float, Sn, m_pitch); /* float input speech samples            */
+  VLA_CALLOC(float, Sn_pre, m_pitch); /* pre-emphasised input speech samples */
+  COMP Sw[FFT_ENC]; /* DFT of Sn[]                           */
   codec2_fft_cfg fft_fwd_cfg;
   codec2_fftr_cfg fftr_fwd_cfg;
   codec2_fftr_cfg fftr_inv_cfg;
-  float w[m_pitch]; /* time domain hamming window            */
-  float W[FFT_ENC]; /* DFT of w[]                            */
+  VLA_CALLOC(float, w, m_pitch); /* time domain hamming window            */
+  float W[FFT_ENC];              /* DFT of w[]                            */
   MODEL model;
-  float Pn[2 * N_SAMP];  /* trapezoidal synthesis window          */
-  float Sn_[2 * N_SAMP]; /* synthesised speech */
-  int i, m;              /* loop variable                         */
+  VLA_CALLOC(float, Pn, 2 * N_SAMP); /* trapezoidal synthesis window          */
+  VLA_CALLOC(float, Sn_, 2 * N_SAMP); /* synthesised speech */
+  int i, m; /* loop variable                         */
   int frames;
   float prev_f0;
   float pitch;
@@ -482,7 +482,7 @@ int main(int argc, char *argv[]) {
   float sum_snr;
 
   float pre_mem = 0.0, de_mem = 0.0;
-  float ak[1 + order];
+  VLA_CALLOC(float, ak, 1 + order);
   // COMP  Sw_[FFT_ENC];
   // COMP  Ew[FFT_ENC];
 
@@ -491,15 +491,18 @@ int main(int argc, char *argv[]) {
   float bg_est = 0.0;
 
   MODEL prev_model;
-  float lsps[order];
+  VLA_CALLOC(float, lsps, order);
   float e, prev_e;
-  int lsp_indexes[order];
-  float lsps_[order];
+  VLA_CALLOC(int, lsp_indexes, order);
+  VLA_CALLOC(float, lsps_, order);
   float Woe_[2];
 
-  float lsps_dec[4][order], e_dec[4], weight, weight_inc, ak_dec[4][order];
+  VLA_CALLOC_DIM2(float, lsps_dec, 4, order);
+  float e_dec[4], weight, weight_inc;
+  VLA_CALLOC_DIM2(float, ak_dec, 4, order);
   MODEL model_dec[4], prev_model_dec;
-  float prev_lsps_dec[order], prev_e_dec;
+  VLA_CALLOC(float, prev_lsps_dec, order);
+  float prev_e_dec;
 
   void *nlp_states;
   float hpf_states[2];
@@ -507,7 +510,7 @@ int main(int argc, char *argv[]) {
     struct PEXP *pexp = NULL;
     struct AEXP *aexp = NULL;
 #endif
-  float bpf_buf[BPF_N + N_SAMP];
+  VLA_CALLOC(float, bpf_buf, BPF_N + N_SAMP);
 
   COMP Aw[FFT_ENC];
   COMP H[MAX_AMP];
@@ -580,9 +583,10 @@ int main(int argc, char *argv[]) {
     mel_sample_freqs_kHz(rate_K_sample_freqs_kHz, NEWAMP1_K, ftomel(200.0),
                          ftomel(3700.0));
   }
-  float rate_K_vec_delay[rate_K_dec + 1][K];
-  float rate_K_vec_delay_[rate_K_dec + 1][K];
-  MODEL rate_K_model_delay[rate_K_dec + 1];
+  VLA_CALLOC_DIM2(float, rate_K_vec_delay, rate_K_dec + 1, K);
+  VLA_CALLOC_DIM2(float, rate_K_vec_delay_, rate_K_dec + 1, K);
+  VLA_CALLOC(MODEL, rate_K_model_delay, rate_K_dec + 1);
+
   for (int d = 0; d <= rate_K_dec; d++) {
     for (int k = 0; k < K; k++) {
       rate_K_vec_delay[d][k] = 0;
@@ -664,11 +668,12 @@ int main(int argc, char *argv[]) {
     if (ten_ms_centre) {
       int n_10_ms = Fs * 0.01;
       int n_5_ms = Fs * 0.005;
-      short buf[n_10_ms];
+      VLA_CALLOC(short, buf, n_10_ms);
       for (i = 0; i < n_10_ms; i++) {
         buf[i] = Sn[m_pitch / 2 - n_5_ms + i];
       }
       fwrite(buf, n_10_ms, sizeof(short), ften_ms_centre);
+      VLA_FREE(buf);
     }
 
     if (hi) {
@@ -908,7 +913,7 @@ int main(int argc, char *argv[]) {
           model_.Wo = model.Wo;
           model_.L = model.L;
           model_.voiced = model.voiced;
-          float Rk[order + 1], ak[order + 1];
+          VLA_CALLOC2(float, Rk, ak, order + 1);
           resample_rate_L(&c2const, &model_, rate_K_vec_,
                           rate_K_sample_freqs_kHz, K);
           determine_autoc(&c2const, Rk, order, &model_, NEWAMP1_PHASE_NFFT,
@@ -920,6 +925,8 @@ int main(int argc, char *argv[]) {
           levinson_durbin(Rk, ak, order);
 
           for (int i = 0; i < order; i++) features[18 + i] = ak[i + 1];
+
+          VLA_FREE(Rk, ak);
         }
         fwrite(features, 55, sizeof(float), frateKWov);
       }
@@ -1128,6 +1135,14 @@ int main(int argc, char *argv[]) {
   if (fmodelout != NULL) fclose(fmodelout);
   if (fbands != NULL) fclose(fbands);
   if (frateKWov != NULL) fclose(frateKWov);
+
+  VLA_FREE(buf, buf_float, Sn, Sn_pre, w, Pn, Sn_, ak, lsps, lsp_indexes, lsps_,
+           prev_lsps_dec, bpf_buf, rate_K_model_delay);
+
+  VLA_FREE_DIM2(lsps_dec);
+  VLA_FREE_DIM2(ak_dec);
+  VLA_FREE_DIM2(rate_K_vec_delay);
+  VLA_FREE_DIM2(rate_K_vec_delay_);
 
   return 0;
 }

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "defines.h"
 #include "ofdm_internal.h"
 
 int main(int argc, char *argv[]) {
@@ -20,13 +21,14 @@ int main(int argc, char *argv[]) {
   assert(fin != NULL);
   size_t nsym = atoi(argv[2]);
   assert(nsym >= 0);
-  complex float rx_sym[nsym];
-  size_t nread = fread(rx_sym, sizeof(complex float), nsym, fin);
+  VLA_CALLOC(COMP, rx_sym, nsym);
+  size_t nread = fread(rx_sym, sizeof(COMP), nsym, fin);
   assert(nread == nsym);
   fclose(fin);
 
   float EsNodB = ofdm_esno_est_calc(rx_sym, nsym);
   printf("%f\n", EsNodB);
 
+  VLA_FREE(rx_sym);
   return 0;
 }

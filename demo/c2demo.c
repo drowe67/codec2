@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 #include "codec2.h"
+#include "defines.h"
 
 int main(int argc, char *argv[]) {
   struct CODEC2 *codec2;
@@ -59,9 +60,9 @@ int main(int argc, char *argv[]) {
      and decoder pair. */
   codec2 = codec2_create(CODEC2_MODE_1300);
   size_t nsam = codec2_samples_per_frame(codec2);
-  short speech_samples[nsam];
+  VLA_CALLOC(short, speech_samples, nsam);
   /* Bits from the encoder are packed into bytes */
-  unsigned char compressed_bytes[codec2_bytes_per_frame(codec2)];
+  VLA_CALLOC(unsigned char, compressed_bytes, codec2_bytes_per_frame(codec2));
 
   while (fread(speech_samples, sizeof(short), nsam, fin) == nsam) {
     codec2_encode(codec2, compressed_bytes, speech_samples);
@@ -73,5 +74,6 @@ int main(int argc, char *argv[]) {
   fclose(fin);
   fclose(fout);
 
+  VLA_FREE(speech_samples, compressed_bytes);
   return 0;
 }

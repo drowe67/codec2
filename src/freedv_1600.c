@@ -68,8 +68,7 @@ void freedv_1600_open(struct freedv *f) {
 void freedv_comptx_fdmdv_1600(struct freedv *f, COMP mod_out[]) {
   int i, j;
   int data, codeword1, data_flag_index;
-  COMP tx_fdm[f->n_nat_modem_samples];
-
+  VLA_CALLOC(COMP, tx_fdm, f->n_nat_modem_samples);
   // spare bit in frame that codec defines.  Use this 1
   // bit/frame to send txt messages
 
@@ -143,6 +142,8 @@ void freedv_comptx_fdmdv_1600(struct freedv *f, COMP mod_out[]) {
 
   for (i = 0; i < f->n_nom_modem_samples; i++)
     mod_out[i] = fcmult(FDMDV_SCALE, tx_fdm[i]);
+
+  VLA_FREE(tx_fdm);
 }
 
 int freedv_comprx_fdmdv_1600(struct freedv *f, COMP demod_in[]) {
@@ -154,7 +155,7 @@ int freedv_comprx_fdmdv_1600(struct freedv *f, COMP demod_in[]) {
   int reliable_sync_bit;
   int rx_status = 0;
 
-  COMP ademod_in[f->nin];
+  VLA_CALLOC(COMP, ademod_in, f->nin);
   for (i = 0; i < f->nin; i++)
     ademod_in[i] = fcmult(1.0 / FDMDV_SCALE, demod_in[i]);
 
@@ -226,7 +227,7 @@ int freedv_comprx_fdmdv_1600(struct freedv *f, COMP demod_in[]) {
         rx_status |= FREEDV_RX_BITS;
       } else {
         int test_frame_sync, bit_errors, ntest_bits, k;
-        short error_pattern[fdmdv_error_pattern_size(f->fdmdv)];
+        VLA_CALLOC(short, error_pattern, fdmdv_error_pattern_size(f->fdmdv));
 
         for (k = 0; k < 2; k++) {
           /* test frames, so lets sync up to the test frames and count any
@@ -255,6 +256,7 @@ int freedv_comprx_fdmdv_1600(struct freedv *f, COMP demod_in[]) {
             if (f->test_frame_count == 4) f->test_frame_count = 0;
           }
         }
+        VLA_FREE(error_pattern);
       } /* if (test_frames == 0) .... */
     }
 
@@ -267,5 +269,6 @@ int freedv_comprx_fdmdv_1600(struct freedv *f, COMP demod_in[]) {
 
   } /* if (sync) .... */
 
+  VLA_FREE(ademod_in);
   return rx_status;
 }

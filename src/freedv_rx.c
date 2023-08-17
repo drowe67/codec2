@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 #include "modem_stats.h"
 #include "reliable_text.h"
@@ -234,8 +235,8 @@ int main(int argc, char *argv[]) {
 
   /* note use of API functions to tell us how big our buffers need to be -----*/
 
-  short speech_out[freedv_get_n_max_speech_samples(freedv)];
-  short demod_in[freedv_get_n_max_modem_samples(freedv)];
+  VLA_CALLOC(short, speech_out, freedv_get_n_max_speech_samples(freedv));
+  VLA_CALLOC(short, demod_in, freedv_get_n_max_modem_samples(freedv));
 
   /* We need to work out how many samples the demod needs on each
      call (nin).  This is used to adjust for differences in the tx
@@ -250,7 +251,7 @@ int main(int argc, char *argv[]) {
       /* exercise the complex version of the API (useful
          for testing 700D which has a different code path for
          short samples) */
-      COMP demod_in_complex[nin];
+      VLA_CALLOC(COMP, demod_in_complex, nin);
 
       for (int i = 0; i < nin; i++) {
         demod_in_complex[i].real = (float)demod_in[i];
@@ -339,5 +340,6 @@ int main(int argc, char *argv[]) {
 
   freedv_close(freedv);
 
+  VLA_FREE(speech_out, demod_in);
   return 0;
 }

@@ -38,6 +38,7 @@
 #include "codec2_ofdm.h"
 #include "comp.h"
 #include "debug_alloc.h"
+#include "defines.h"
 #include "filter.h"
 #include "machdep.h"
 #include "ofdm_internal.h"
@@ -803,7 +804,7 @@ static int est_timing(struct OFDM *ofdm, complex float *rx, int length,
                       int step) {
   complex float corr_st, corr_en;
   int Ncorr = length - (ofdm->samplesperframe + ofdm->samplespersymbol);
-  float corr[Ncorr];
+  VLA_CALLOC(float, corr, Ncorr);
   int i, j;
   float acc = 0.0f;
 
@@ -820,7 +821,7 @@ static int est_timing(struct OFDM *ofdm, complex float *rx, int length,
   PROFILE_VAR(wvecpilot);
   PROFILE_SAMPLE(wvecpilot);
 
-  complex float wvec_pilot[ofdm->samplespersymbol];
+  VLA_CALLOC(complex float, wvec_pilot, ofdm->samplespersymbol);
 
   switch (fcoarse) {
     case -40:
@@ -926,6 +927,7 @@ static int est_timing(struct OFDM *ofdm, complex float *rx, int length,
             (double)av_level, (double)*timing_mx, timing_est, *timing_valid);
   }
 
+  VLA_FREE(wvec_pilot, corr);
   return timing_est;
 }
 
@@ -944,7 +946,7 @@ static float est_freq_offset_pilot_corr(struct OFDM *ofdm, complex float *rx,
   /* precompute the freq shift multiplied by pilot samples outside of main loop
    */
 
-  complex float wvec_pilot[ofdm->samplespersymbol];
+  VLA_CALLOC(complex float, wvec_pilot, ofdm->samplespersymbol);
   int j;
 
   switch (fcoarse) {
@@ -1000,6 +1002,7 @@ static float est_freq_offset_pilot_corr(struct OFDM *ofdm, complex float *rx,
             (double)foff_est);
   }
 
+  VLA_FREE(wvec_pilot);
   return foff_est;
 }
 
@@ -1010,9 +1013,9 @@ static float est_freq_offset_pilot_corr(struct OFDM *ofdm, complex float *rx,
  */
 void ofdm_txframe(struct OFDM *ofdm, complex float *tx,
                   complex float *tx_sym_lin) {
-  complex float aframe[ofdm->np * ofdm->ns][ofdm->nc + 2];
-  complex float asymbol[ofdm->m];
-  complex float asymbol_cp[ofdm->samplespersymbol];
+  VLA_CALLOC_DIM2(complex float, aframe, ofdm->np * ofdm->ns, ofdm->nc + 2);
+  VLA_CALLOC(complex float, asymbol, ofdm->m);
+  VLA_CALLOC(complex float, asymbol_cp, ofdm->samplespersymbol);
   int i, j, k, m;
 
   /* initialize aframe to complex zero */
@@ -1072,6 +1075,8 @@ void ofdm_txframe(struct OFDM *ofdm, complex float *tx,
 
   size_t samplesperpacket = ofdm->np * ofdm->samplesperframe;
   ofdm_hilbert_clipper(ofdm, tx, samplesperpacket);
+  VLA_FREE_DIM2(aframe);
+  VLA_FREE(asymbol, asymbol_cp);
 }
 
 /* Scale Tx signal and optionally apply two stage Hilbert clipper to improve
@@ -1089,10 +1094,11 @@ void ofdm_hilbert_clipper(struct OFDM *ofdm, complex float *tx, size_t n) {
   /* BPF to remove out of band energy clipper introduces */
   if (ofdm->tx_bpf_en) {
     assert(ofdm->tx_bpf != NULL);
-    complex float tx_filt[n];
+    VLA_CALLOC(complex float, tx_filt, n);
 
     quisk_ccfFilter(tx, tx_filt, n, ofdm->tx_bpf);
     memmove(tx, tx_filt, n * sizeof(complex float));
+    VLA_FREE(tx_filt);
   }
 
   /* BPF messes up peak levels, this gain gets back to approx OFDM_PEAK */
@@ -1184,7 +1190,7 @@ void ofdm_mod(struct OFDM *ofdm, COMP *result, const int *tx_bits) {
   int length = ofdm->bitsperpacket / ofdm->bps;
   complex float *tx =
       (complex float *)result;  // complex has same memory layout
-  complex float tx_sym_lin[length];
+  VLA_CALLOC(complex float, tx_sym_lin, length);
   int dibit[2];
   int s, i;
 
@@ -1206,6 +1212,7 @@ void ofdm_mod(struct OFDM *ofdm, COMP *result, const int *tx_bits) {
   } /* else if (ofdm->bps == 3) { } TODO */
 
   ofdm_txframe(ofdm, tx, tx_sym_lin);
+  VLA_FREE(tx_sym_lin);
 }
 
 /*
@@ -1268,7 +1275,7 @@ static float est_timing_and_freq(struct OFDM *ofdm, int *t_est, float *foff_est,
   *foff_est = 0.0;
   for (float afcoarse = fmin; afcoarse <= fmax; afcoarse += fstep) {
     float w = TAU * afcoarse / ofdm->fs;
-    complex float mvec[Npsam];
+    VLA_CALLOC(complex float, mvec, Npsam);
     for (int i = 0; i < Npsam; i++) {
       complex float ph = cmplx(w * i);
       mvec[i] = conjf(known_samples[i] * ph);
@@ -1282,6 +1289,7 @@ static float est_timing_and_freq(struct OFDM *ofdm, int *t_est, float *foff_est,
         *foff_est = afcoarse;
       }
     }
+    VLA_FREE(mvec);
   }
 
   /* obtain normalised real number for timing_mx */
@@ -1560,7 +1568,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
     en = st + ofdm->samplesperframe - 1 + ofdm->samplespersymbol +
          ofdm->ftwindowwidth;
 
-    complex float work[(en - st)];
+    VLA_CALLOC(complex float, work, en - st);
 
     /*
      * Adjust for the frequency error by shifting the phase
@@ -1586,6 +1594,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
     ofdm->sample_point = max(ofdm->timing_est + 4, ofdm->sample_point);
     ofdm->sample_point =
         min(ofdm->timing_est + ofdm->ncp - 4, ofdm->sample_point);
+    VLA_FREE(work);
   }
 
   /*
@@ -1638,7 +1647,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
   st = ofdm->rxbufst + ofdm->samplespersymbol + 1 + ofdm->sample_point;
   en = st + ofdm->m;
 
-  complex float work[ofdm->m];
+  VLA_CALLOC(complex float, work, ofdm->m);
 
   /* down-convert at current timing instant------------------------------- */
 
@@ -1778,8 +1787,8 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
   /* OK - now estimate and correct pilot phase  -------------------------- */
 
   complex float aphase_est_pilot_rect;
-  float aphase_est_pilot[ofdm->nc + 2];
-  float aamp_est_pilot[ofdm->nc + 2];
+  VLA_CALLOC(float, aphase_est_pilot, ofdm->nc + 2);
+  VLA_CALLOC(float, aamp_est_pilot, ofdm->nc + 2);
 
   for (i = 0; i < (ofdm->nc + 2); i++) {
     aphase_est_pilot[i] = 10.0f;
@@ -1966,6 +1975,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
     ofdm->rxbufst = rxbufst_next;
     ofdm->nin = 0;
   }
+  VLA_FREE(aphase_est_pilot, aamp_est_pilot, work);
 }
 
 /*
@@ -2586,7 +2596,7 @@ void ofdm_rand_seed(uint16_t r[], int n, uint64_t seed) {
 }
 
 void ofdm_generate_payload_data_bits(uint8_t payload_data_bits[], int n) {
-  uint16_t r[n];
+  VLA_CALLOC(uint16_t, r, n);
   int i;
 
   ofdm_rand(r, n);
@@ -2594,6 +2604,7 @@ void ofdm_generate_payload_data_bits(uint8_t payload_data_bits[], int n) {
   for (i = 0; i < n; i++) {
     payload_data_bits[i] = r[i] > 16384;
   }
+  VLA_FREE(r);
 }
 
 void ofdm_generate_preamble(struct OFDM *ofdm, COMP *tx_preamble, int seed) {
@@ -2603,9 +2614,9 @@ void ofdm_generate_preamble(struct OFDM *ofdm, COMP *tx_preamble, int seed) {
   memcpy(&ofdm_preamble, ofdm, sizeof(struct OFDM));
   ofdm_preamble.np = 1;
   ofdm_preamble.bitsperpacket = ofdm_preamble.bitsperframe;
-  uint16_t r[ofdm_preamble.bitsperpacket];
+  VLA_CALLOC(uint16_t, r, ofdm_preamble.bitsperpacket);
   ofdm_rand_seed(r, ofdm_preamble.bitsperpacket, seed);
-  int preamble_bits[ofdm_preamble.bitsperpacket];
+  VLA_CALLOC(int, preamble_bits, ofdm_preamble.bitsperpacket);
   for (int i = 0; i < ofdm_preamble.bitsperpacket; i++)
     preamble_bits[i] = r[i] > 16384;
   // ensures the signal passes through hilbert clipper unchanged
@@ -2613,6 +2624,7 @@ void ofdm_generate_preamble(struct OFDM *ofdm, COMP *tx_preamble, int seed) {
   ofdm_preamble.tx_bpf_en = false;
   ofdm_preamble.clip_en = false;
   ofdm_mod(&ofdm_preamble, tx_preamble, preamble_bits);
+  VLA_FREE(r, preamble_bits);
 }
 
 void ofdm_print_info(struct OFDM *ofdm) {

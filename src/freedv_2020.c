@@ -21,6 +21,7 @@
 #include "codec2_ofdm.h"
 #include "comp_prim.h"
 #include "debug_alloc.h"
+#include "defines.h"
 #include "fmfsk.h"
 #include "freedv_api.h"
 #include "freedv_api_internal.h"
@@ -155,7 +156,7 @@ void freedv_comptx_2020(struct freedv *f, COMP mod_out[]) {
   int i, k;
 
   int data_bits_per_frame = f->ldpc->data_bits_per_frame;
-  uint8_t tx_bits[data_bits_per_frame];
+  VLA_CALLOC(uint8_t, tx_bits, data_bits_per_frame);
 
   memcpy(tx_bits, f->tx_payload_bits, data_bits_per_frame);
 
@@ -164,7 +165,7 @@ void freedv_comptx_2020(struct freedv *f, COMP mod_out[]) {
   // added to each frame after interleaver as done it's thing
 
   int nspare = f->ofdm_ntxtbits;
-  uint8_t txt_bits[nspare];
+  VLA_CALLOC(uint8_t, txt_bits, nspare);
 
   for (k = 0; k < nspare; k++) {
     if (f->nvaricode_bits == 0) {
@@ -188,17 +189,20 @@ void freedv_comptx_2020(struct freedv *f, COMP mod_out[]) {
   /* optionally replace codec payload bits with test frames known to rx */
 
   if (f->test_frames) {
-    uint8_t payload_data_bits[data_bits_per_frame];
+    VLA_CALLOC(uint8_t, payload_data_bits, data_bits_per_frame);
     ofdm_generate_payload_data_bits(payload_data_bits, data_bits_per_frame);
 
     for (i = 0; i < data_bits_per_frame; i++) {
       tx_bits[i] = payload_data_bits[i];
     }
+    VLA_FREE(payload_data_bits);
   }
 
   /* OK now ready to LDPC encode, interleave, and OFDM modulate */
   ofdm_ldpc_interleave_tx(f->ofdm, f->ldpc, (complex float *)mod_out, tx_bits,
                           txt_bits);
+
+  VLA_FREE(tx_bits, txt_bits);
 }
 
 int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
@@ -213,10 +217,10 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
   int coded_syms_per_frame = ldpc->coded_bits_per_frame / ofdm->bps;
   COMP *codeword_symbols = f->codeword_symbols;
   float *codeword_amps = f->codeword_amps;
-  int rx_bits[f->ofdm_bitsperframe];
-  short txt_bits[f->ofdm_ntxtbits];
-  COMP payload_syms[coded_syms_per_frame];
-  float payload_amps[coded_syms_per_frame];
+  VLA_CALLOC(int, rx_bits, f->ofdm_bitsperframe);
+  VLA_CALLOC(short, txt_bits, f->ofdm_ntxtbits);
+  VLA_CALLOC(COMP, payload_syms, coded_syms_per_frame);
+  VLA_CALLOC(float, payload_amps, coded_syms_per_frame);
 
   int rx_status = 0;
 
@@ -225,7 +229,7 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
   int Ncoded;
   int iter = 0;
   int parityCheckCount = 0;
-  uint8_t rx_uw[f->ofdm_nuwbits];
+  VLA_CALLOC(uint8_t, rx_uw, f->ofdm_nuwbits);
 
   f->sync = 0;
 
@@ -268,16 +272,17 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
 
     /* run de-interleaver */
 
-    COMP codeword_symbols_de[coded_syms_per_frame];
-    float codeword_amps_de[coded_syms_per_frame];
+    VLA_CALLOC(COMP, codeword_symbols_de, coded_syms_per_frame);
+    VLA_CALLOC(float, codeword_amps_de, coded_syms_per_frame);
 
     gp_deinterleave_comp(codeword_symbols_de, codeword_symbols,
                          coded_syms_per_frame);
     gp_deinterleave_float(codeword_amps_de, codeword_amps,
                           coded_syms_per_frame);
 
-    float llr[coded_bits_per_frame];
-    uint8_t out_char[coded_bits_per_frame];
+    VLA_CALLOC(float, llr, coded_bits_per_frame);
+    // TODO: correct length?
+    VLA_CALLOC(uint8_t, out_char, ldpc->CodeLength + data_bits_per_frame);
 
     if (f->test_frames) {
       Nerrs_raw =
@@ -293,7 +298,7 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
       rx_status |= FREEDV_RX_BIT_ERRORS;
 
     if (f->test_frames) {
-      uint8_t payload_data_bits[data_bits_per_frame];
+      VLA_CALLOC(uint8_t, payload_data_bits, data_bits_per_frame);
       ofdm_generate_payload_data_bits(payload_data_bits, data_bits_per_frame);
       count_errors_protection_mode(ldpc->protection_mode, &Nerrs_coded, &Ncoded,
                                    payload_data_bits, out_char,
@@ -302,6 +307,7 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
       f->total_bits_coded += Ncoded;
       if (Nerrs_coded) f->total_packet_errors++;
       f->total_packets++;
+      VLA_FREE(payload_data_bits);
     } else {
       memcpy(f->rx_payload_bits, out_char, data_bits_per_frame);
     }
@@ -340,6 +346,8 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
     ofdm_get_demod_stats(f->ofdm, &f->stats, ofdm->rx_np,
                          ofdm->rowsperframe * ofdm->nc);
     f->snr_est = f->stats.snr_est;
+
+    VLA_FREE(codeword_symbols_de, codeword_amps_de, llr, out_char);
   }
 
   /* iterate state machine and update nin for next call */
@@ -357,6 +365,8 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
             ofdm->phase_est_bandwidth, f->snr_est, Nerrs_raw, Nerrs_coded, iter,
             parityCheckCount, rx_sync_flags_to_text[rx_status]);
   }
+
+  VLA_FREE(rx_bits, txt_bits, payload_syms, payload_amps, rx_uw);
 
   return rx_status;
 }

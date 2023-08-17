@@ -15,6 +15,7 @@
 
 #include "codec2_cohpsk.h"
 #include "comp_prim.h"
+#include "defines.h"
 #include "freedv_api.h"
 #include "freedv_api_internal.h"
 #include "ofdm_internal.h"
@@ -37,9 +38,9 @@ int main(int argc, char *argv[]) {
   assert(freedv != NULL);
 
   /* note API functions to tell us how big our buffers need to be */
-  short speech_out[freedv_get_n_max_speech_samples(freedv)];
-  short demod_in[2 * freedv_get_n_max_modem_samples(freedv)];
-  COMP demod_in_comp[2 * freedv_get_n_max_modem_samples(freedv)];
+  VLA_CALLOC(short, speech_out, freedv_get_n_max_speech_samples(freedv));
+  VLA_CALLOC(short, demod_in, 2 * freedv_get_n_max_modem_samples(freedv));
+  VLA_CALLOC(COMP, demod_in_comp, 2 * freedv_get_n_max_modem_samples(freedv));
 
   /* set up small freq offset */
   float foff_hz = 25;
@@ -132,6 +133,8 @@ int main(int argc, char *argv[]) {
   float snr_av = sum_snr / frames_snr;
   fprintf(stderr, "frames: %d sum_sync: %d snr_av: %3.2f dB\n", frames,
           sum_sync, snr_av);
+
+  VLA_FREE(speech_out, demod_in, demod_in_comp);
 
   if (snr_av > 8.0)
     return 0;

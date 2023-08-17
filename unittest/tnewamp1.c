@@ -38,18 +38,20 @@
 #include "sine.h"
 
 #define FRAMES 300
+#define M 4
+#define K 20
 
 int main(int argc, char *argv[]) {
   int Fs = 8000;
   C2CONST c2const = c2const_create(Fs, N_S);
   int n_samp = c2const.n_samp;
   int m_pitch = c2const.m_pitch;
-  short buf[n_samp];          /* input/output buffer                   */
-  float Sn[m_pitch];          /* float input speech samples            */
-  COMP Sw[FFT_ENC];           /* DFT of Sn[]                           */
-  codec2_fft_cfg fft_fwd_cfg; /* fwd FFT states                        */
-  float w[m_pitch];           /* time domain hamming window            */
-  float W[FFT_ENC];           /* DFT of w[]                            */
+  VLA_CALLOC(short, buf, n_samp); /* input/output buffer                   */
+  VLA_CALLOC(float, Sn, m_pitch); /* float input speech samples            */
+  VLA_CALLOC(COMP, Sw, FFT_ENC);  /* DFT of Sn[]                           */
+  codec2_fft_cfg fft_fwd_cfg;     /* fwd FFT states                        */
+  VLA_CALLOC(float, w, m_pitch);  /* time domain hamming window            */
+  VLA_CALLOC(float, W, FFT_ENC);  /* DFT of w[]                            */
   MODEL model;
   void *nlp_states;
   codec2_fft_cfg phase_fft_fwd_cfg, phase_fft_inv_cfg;
@@ -72,7 +74,6 @@ int main(int argc, char *argv[]) {
     Sn[i] = 1.0;
   }
 
-  int K = 20;
   float rate_K_sample_freqs_kHz[K];
   float model_octave[FRAMES][MAX_AMP + 2];  // model params in matrix format,
                                             // useful for C <-> Octave
@@ -119,7 +120,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  int M = 4;
+
 
   for (f = 0; f < FRAMES; f++) {
     assert(fread(buf, sizeof(short), n_samp, fin) == n_samp);
@@ -291,5 +292,6 @@ int main(int argc, char *argv[]) {
       "Done! Now run\n  octave:1> "
       "tnewamp1(\"../path/to/build_linux/src/hts1a\", "
       "\"../path/to/build_linux/unittest\")\n");
+  VLA_FREE(buf, Sn, Sw, w, W);
   return 0;
 }

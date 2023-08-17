@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "codec2_ofdm.h"
+#include "defines.h"
 #include "gp_interleaver.h"
 #include "interldpc.h"
 #include "ldpc_codes.h"
@@ -310,7 +311,7 @@ int main(int argc, char *argv[]) {
     ofdm_set_tx_bpf(ofdm, 1);
   }
 
-  uint8_t txt_bits[ofdm->ntxtbits];
+  VLA_CALLOC(uint8_t, txt_bits, ofdm->ntxtbits);
   memset(txt_bits, 0, ofdm->ntxtbits);
   char text_str[] =
       "cq cq cq hello world\r";  // Add text bits to match other tests
@@ -320,28 +321,29 @@ int main(int argc, char *argv[]) {
   int nvaricode_bits = 0;
   int varicode_bit_index = 0;
 
-  complex float tx_sams[Nsamperpacket];
-  short tx_real[Nsamperpacket];
+  VLA_CALLOC(COMP, tx_sams, Nsamperpacket);
+  VLA_CALLOC(short, tx_real, Nsamperpacket);
 
   if (verbose > 1) ofdm_print_info(ofdm);
 
   for (int b = 0; b < Nbursts; b++) {
     if (burst_mode) {
       fprintf(stderr, "Tx preamble\n");
-      complex float tx_preamble[ofdm->samplesperframe];
+      VLA_CALLOC(COMP, tx_preamble, ofdm->samplesperframe);
       memcpy(tx_preamble, ofdm->tx_preamble,
              sizeof(COMP) * ofdm->samplesperframe);
       ofdm_hilbert_clipper(ofdm, tx_preamble, ofdm->samplesperframe);
       for (i = 0; i < ofdm->samplesperframe; i++)
-        tx_real[i] = crealf(tx_preamble[i]);
+        tx_real[i] = tx_preamble[i].real;
       fwrite(tx_real, sizeof(short), ofdm->samplesperframe, fout);
+      VLA_FREE(tx_preamble);
     }
 
     /* main loop
      * ----------------------------------------------------------------*/
 
     int packet = 0;
-    uint8_t data_bits[Ndatabitsperpacket];
+    VLA_CALLOC(uint8_t, data_bits, Ndatabitsperpacket);
     while (fread(data_bits, sizeof(uint8_t), Ndatabitsperpacket, fin) ==
            Ndatabitsperpacket) {
       if (ldpc_en) {
@@ -380,7 +382,7 @@ int main(int argc, char *argv[]) {
         }
 
         ofdm_ldpc_interleave_tx(ofdm, &ldpc, tx_sams, data_bits, txt_bits);
-        for (i = 0; i < Nsamperpacket; i++) tx_real[i] = crealf(tx_sams[i]);
+        for (i = 0; i < Nsamperpacket; i++) tx_real[i] = tx_sams[i].real;
       } else {
         /* just modulate uncoded raw bits ------------------------------------*/
 
@@ -397,14 +399,16 @@ int main(int argc, char *argv[]) {
         }
 
         /* assemble packet of bits then modulate */
-        uint8_t tx_bits_char[Nbitsperpacket];
+        VLA_CALLOC(uint8_t, tx_bits_char, Nbitsperpacket);
         ofdm_assemble_qpsk_modem_packet(ofdm, tx_bits_char, data_bits,
                                         txt_bits);
-        int tx_bits[Nbitsperpacket];
+        VLA_CALLOC(int, tx_bits, Nbitsperpacket);
         for (i = 0; i < Nbitsperpacket; i++) tx_bits[i] = tx_bits_char[i];
-        COMP tx_sams[Nsamperpacket];
+        VLA_CALLOC(COMP, tx_sams, Nsamperpacket);
         ofdm_mod(ofdm, tx_sams, tx_bits);
         for (i = 0; i < Nsamperpacket; i++) tx_real[i] = tx_sams[i].real;
+
+        VLA_FREE(tx_bits_char, tx_bits, tx_sams);
       }
 
       fwrite(tx_real, sizeof(short), Nsamperpacket, fout);
@@ -416,19 +420,21 @@ int main(int argc, char *argv[]) {
     if (burst_mode) {
       // Post-amble
       fprintf(stderr, "Tx postamble\n");
-      complex float tx_postamble[ofdm->samplesperframe];
+      VLA_CALLOC(COMP, tx_postamble, ofdm->samplesperframe);
       memcpy(tx_postamble, ofdm->tx_postamble,
              sizeof(COMP) * ofdm->samplesperframe);
       ofdm_hilbert_clipper(ofdm, tx_postamble, ofdm->samplesperframe);
       for (i = 0; i < ofdm->samplesperframe; i++)
-        tx_real[i] = crealf(tx_postamble[i]);
+        tx_real[i] = tx_postamble[i].real;
       fwrite(tx_real, sizeof(short), ofdm->samplesperframe, fout);
       // Interburst silence
       int samples_delay = ofdm->fs;
-      short sil_short[samples_delay];
+      VLA_CALLOC(short, sil_short, samples_delay);
       for (int i = 0; i < samples_delay; i++) sil_short[i] = 0;
       fwrite(sil_short, sizeof(short), samples_delay, fout);
+      VLA_FREE(tx_postamble, sil_short);
     }
+    VLA_FREE(data_bits);
   }
 
   if (input_specified) fclose(fin);
@@ -437,5 +443,6 @@ int main(int argc, char *argv[]) {
 
   ofdm_destroy(ofdm);
 
+  VLA_FREE(txt_bits, tx_sams, tx_real);
   return 0;
 }

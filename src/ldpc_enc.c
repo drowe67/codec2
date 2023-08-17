@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "ldpc_codes.h"
 #include "mpdecode_core.h"
 #include "ofdm_internal.h"
@@ -67,9 +68,9 @@ int main(int argc, char *argv[]) {
   data_bits_per_frame = ldpc.NumberRowsHcols;
   parity_bits_per_frame = ldpc.NumberParityBits;
 
-  unsigned char ibits[data_bits_per_frame];
-  unsigned char pbits[parity_bits_per_frame];
-  float sdout[data_bits_per_frame + parity_bits_per_frame];
+  VLA_CALLOC(unsigned char, ibits, data_bits_per_frame);
+  VLA_CALLOC(unsigned char, pbits, parity_bits_per_frame);
+  VLA_CALLOC(float, sdout, data_bits_per_frame + parity_bits_per_frame);
 
   if (strcmp(argv[1], "-") == 0)
     fin = stdin;
@@ -111,7 +112,7 @@ int main(int argc, char *argv[]) {
   while (fread(ibits, sizeof(char), data_bits_per_frame, fin) ==
          data_bits_per_frame) {
     if (testframes) {
-      uint16_t r[data_bits_per_frame];
+      VLA_CALLOC(uint16_t, r, data_bits_per_frame);
       ofdm_rand(r, data_bits_per_frame);
 
       for (i = 0; i < data_bits_per_frame - unused_data_bits; i++) {
@@ -121,6 +122,8 @@ int main(int argc, char *argv[]) {
            i++) {
         ibits[i] = 1;
       }
+
+      VLA_FREE(r);
     }
 
     encode(&ldpc, ibits, pbits);
@@ -151,6 +154,8 @@ finished:
   fprintf(stderr, "written: %d\n", written);
   fclose(fin);
   fclose(fout);
+
+  VLA_FREE(ibits, pbits, sdout);
 
   return 1;
 }

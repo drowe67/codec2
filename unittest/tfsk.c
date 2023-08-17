@@ -27,7 +27,7 @@
   along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
-//#define MODEMPROBE_ENABLE
+// #define MODEMPROBE_ENABLE
 
 #include <stdio.h>
 
@@ -197,13 +197,14 @@ int main(int argc, char *argv[]) {
     if (test_type == TEST_DEMOD) {
       while (fread(modbuf, sizeof(float), fsk_nin(fsk), fin) == fsk_nin(fsk)) {
         int n = fsk_nin(fsk);
-        COMP modbuf_comp[n];
+        VLA_CALLOC(COMP, modbuf_comp, n);
         for (i = 0; i < n; i++) {
           modbuf_comp[i].real = modbuf[i];
           modbuf_comp[i].imag = 0.0;
         }
         fsk_demod(fsk, bitbuf, modbuf_comp);
         fwrite(bitbuf, sizeof(uint8_t), fsk->Nbits, fout);
+        VLA_FREE(modbuf_comp);
       }
     }
     /* Demod after channel imp. and mod */
@@ -212,13 +213,14 @@ int main(int argc, char *argv[]) {
       modbufp = modbuf;
       while (modbufp < modbuf + modbufsize) {
         int n = fsk_nin(fsk);
-        COMP modbuf_comp[n];
+        VLA_CALLOC(COMP, modbuf_comp, n);
         for (i = 0; i < n; i++) {
           modbuf_comp[i].real = modbuf[i];
           modbuf_comp[i].imag = 0.0;
         }
         fsk_demod(fsk, bitbuf, modbuf_comp);
         modbufp += fsk_nin(fsk);
+        VLA_FREE(modbuf_comp);
       }
     }
     free(bitbuf);

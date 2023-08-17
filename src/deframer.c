@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "fsk.h"
 
 unsigned int toInt(char c) {
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   size_t framesize = atoi(argv[3]);
   char *uw_hex = argv[4];
-  uint8_t uw[4 * strlen(uw_hex)];
+  VLA_CALLOC(uint8_t, uw, 4 * strlen(uw_hex));
   int uwsize = 0;
   for (int c = 0; c < strlen(uw_hex); c++)
     for (int i = 0; i < 4; i++)
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
 
   /* main loop */
 
-  uint8_t twoframes[2 * framedsize];
+  VLA_CALLOC(uint8_t, twoframes, 2 * framedsize);
   memset(twoframes, 0, 2 * framedsize);
   int state = 0;
   int thresh1 = 0.1 * uwsize;
@@ -178,5 +179,6 @@ int main(int argc, char *argv[]) {
   fclose(fin);
   fclose(fout);
 
+  VLA_FREE(twoframes);
   return 0;
 }

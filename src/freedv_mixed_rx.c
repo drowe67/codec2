@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "codec2.h"
+#include "defines.h"
 #include "freedv_api.h"
 #include "modem_stats.h"
 
@@ -140,9 +141,8 @@ int main(int argc, char *argv[]) {
 
   freedv_set_verbose(freedv, verbose);
 
-  short speech_out[freedv_get_n_max_speech_samples(freedv)];
-  short demod_in[freedv_get_n_max_modem_samples(freedv)];
-
+  VLA_CALLOC(short, speech_out, freedv_get_n_max_speech_samples(freedv));
+  VLA_CALLOC(short, demod_in, freedv_get_n_max_modem_samples(freedv));
   ftxt = fopen("freedv_rx_log.txt", "wt");
   assert(ftxt != NULL);
   my_cb_state.ftxt = ftxt;
@@ -169,8 +169,8 @@ int main(int argc, char *argv[]) {
       int bytes_per_modem_frame = (bits_per_modem_frame + 7) / 8;
       int codec_frames = bits_per_modem_frame / bits_per_codec_frame;
       int samples_per_frame = codec2_samples_per_frame(c2);
-      unsigned char encoded[bytes_per_codec_frame * codec_frames];
-      unsigned char rawdata[bytes_per_modem_frame];
+      VLA_CALLOC(unsigned char, encoded, bytes_per_codec_frame *codec_frames);
+      VLA_CALLOC(unsigned char, rawdata, bytes_per_modem_frame);
 
       nout = 0;
 
@@ -190,6 +190,7 @@ int main(int argc, char *argv[]) {
           nout += samples_per_frame;
         }
       }
+      VLA_FREE(encoded, rawdata);
     }
     fprintf(ftxt, "Demod of %d samples resulted %d speech samples\n", nin,
             nout);
@@ -222,5 +223,6 @@ int main(int argc, char *argv[]) {
           frame, nout_total, my_cb_state.calls);
 
   freedv_close(freedv);
+  VLA_FREE(speech_out, demod_in);
   return 0;
 }

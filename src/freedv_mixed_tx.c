@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "codec2.h"
+#include "defines.h"
 #include "freedv_api.h"
 
 /**********************************************************
@@ -324,8 +325,8 @@ int main(int argc, char *argv[]) {
       int bytes_per_modem_frame = (bits_per_modem_frame + 7) / 8;
       int codec_frames = bits_per_modem_frame / bits_per_codec_frame;
       int samples_per_frame = codec2_samples_per_frame(c2);
-      unsigned char encoded[bytes_per_codec_frame * codec_frames];
-      unsigned char rawdata[bytes_per_modem_frame];
+      VLA_CALLOC(unsigned char, encoded, bytes_per_codec_frame *codec_frames);
+      VLA_CALLOC(unsigned char, rawdata, bytes_per_modem_frame);
       unsigned char *enc_frame = encoded;
       short *speech_frame = speech_in;
       float energy = 0;
@@ -348,6 +349,7 @@ int main(int argc, char *argv[]) {
         freedv_rawdata_from_codec_frames(freedv, rawdata, encoded);
         freedv_rawdatatx(freedv, mod_out, rawdata);
       }
+      VLA_FREE(encoded, rawdata);
     }
 
     fwrite(mod_out, sizeof(short), n_nom_modem_samples, fout);

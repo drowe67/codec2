@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "codec2_ofdm.h"
+#include "defines.h"
 #include "octave.h"
 #include "ofdm_internal.h"
 
@@ -41,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   FILE *fin = fopen(argv[1], "rb");
   assert(fin != NULL);
-  short rx_scaled[ofdm_get_max_samples_per_frame(ofdm)];
+  VLA_CALLOC(short, rx_scaled, ofdm_get_max_samples_per_frame(ofdm));
   int f = 0;
 
   float timing_mx_log[MAX_FRAMES];
@@ -89,6 +90,6 @@ int main(int argc, char *argv[]) {
   fclose(fout);
 
   ofdm_destroy(ofdm);
-
+  VLA_FREE(rx_scaled);
   return 0;
 }

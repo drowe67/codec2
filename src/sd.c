@@ -49,9 +49,9 @@ float spectral_dist(float ak1[], float ak2[], int p, codec2_fft_cfg fft_fwd_cfg,
 /*  fft_fwd_cfg         FFT constants                                    */
 /*  int n;		DFT size to use for SD calculations (power of 2) */
 {
-  COMP A1[n];   /* DFT of ak1[] 		*/
-  COMP A2[n];   /* DFT of ak2[]			*/
-  float P1, P2; /* power of current bin		*/
+  VLA_CALLOC(COMP, A1, n); /* DFT of ak1[] 		*/
+  VLA_CALLOC(COMP, A2, n); /* DFT of ak2[]			*/
+  float P1, P2;            /* power of current bin		*/
   float sd;
   int i;
 
@@ -78,6 +78,6 @@ float spectral_dist(float ak1[], float ak2[], int p, codec2_fft_cfg fft_fwd_cfg,
   }
   sd = sd / n; /* mean sd for this frame in dB*dB, which can be further averaged
                   across frames */
-
+  VLA_FREE(A1, A2);
   return (sd);
 }

@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 
 int main(int argc, char *argv[]) {
@@ -39,8 +40,8 @@ int main(int argc, char *argv[]) {
   assert(freedv != NULL);
 
   /* note API functions to tell us how big our buffers need to be */
-  short speech_out[freedv_get_n_max_speech_samples(freedv)];
-  short demod_in[freedv_get_n_max_modem_samples(freedv)];
+  VLA_CALLOC(short, speech_out, freedv_get_n_max_speech_samples(freedv));
+  VLA_CALLOC(short, demod_in, freedv_get_n_max_modem_samples(freedv));
 
   size_t nin, nout;
   nin = freedv_nin(freedv);
@@ -51,5 +52,6 @@ int main(int argc, char *argv[]) {
   }
 
   freedv_close(freedv);
+  VLA_FREE(speech_out, demod_in);
   return 0;
 }

@@ -34,6 +34,89 @@
 
 \*---------------------------------------------------------------------------*/
 
+/* VLA workaround */
+
+#if __STDC_NO_VLA__ | 1
+#include "stdlib.h"
+#include "string.h"
+
+#define VLA_CALLOC(type, name, len) \
+  type* name = (type*)calloc(len, sizeof(type))
+
+#define VLA_CALLOC2(type, name1, name2, len) \
+  VLA_CALLOC(type, name1, len);              \
+  VLA_CALLOC(type, name2, len)
+
+#define VLA_CALLOC3(type, name1, name2, name3, len) \
+  VLA_CALLOC2(type, name1, name2, len);             \
+  VLA_CALLOC(type, name3, len)
+
+#define VLA_CALLOC4(type, name1, name2, name3, name4, len) \
+  VLA_CALLOC3(type, name1, name2, name3, len);             \
+  VLA_CALLOC(type, name4, len)
+
+// Helper macro to free a single pointer
+#define VLA_FREE_SINGLE_PTR(ptr) \
+  do {                           \
+    if (ptr != NULL) {           \
+      free(ptr);                 \
+      ptr = NULL;                \
+    }                            \
+  } while (0)
+
+// Variadic macro to free multiple pointers
+#define VLA_FREE(...)                                       \
+  do {                                                      \
+    void* ptrs__[] = {__VA_ARGS__};                         \
+    size_t num_ptrs__ = sizeof(ptrs__) / sizeof(ptrs__[0]); \
+    for (size_t i__ = 0; i__ < num_ptrs__; i__++) {         \
+      VLA_FREE_SINGLE_PTR(ptrs__[i__]);                     \
+    }                                                       \
+  } while (0)
+
+#define VLA_LEN_DIM1_NAME(name) name##_VLA_DIM1_LENGTH_XY__
+
+#define VLA_CALLOC_DIM2(type, name, len1, len2)      \
+  type** name = (type**)calloc(len1, sizeof(type*)); \
+  const int VLA_LEN_DIM1_NAME(name) = len1;          \
+  do {                                               \
+    for (int i__ = 0; i__ < len1; i__++) {           \
+      name[i__] = (type*)calloc(len2, sizeof(type)); \
+    }                                                \
+                                                     \
+  } while (0)
+
+#define VLA_FREE_DIM2(name)                                   \
+  do {                                                        \
+    for (int i__ = 0; i__ < VLA_LEN_DIM1_NAME(name); i__++) { \
+      VLA_FREE_SINGLE_PTR(name[i__]);                         \
+    }                                                         \
+    VLA_FREE_SINGLE_PTR(name);                                \
+  } while (0)
+
+#else
+
+#define VLA_CALLOC(type, name, len) type name[len]
+
+#define VLA_CALLOC2(type, name1, name2, len) \
+  VLA_CALLOC(type, name1, len);              \
+  VLA_CALLOC(type, name2, len)
+
+#define VLA_CALLOC3(type, name1, name2, name3, len) \
+  VLA_CALLOC2(type, name1, name2, len);             \
+  VLA_CALLOC(type, name3, len)
+
+#define VLA_CALLOC4(type, name1, name2, name3, name4, len) \
+  VLA_CALLOC3(type, name1, name2, name3, len);             \
+  VLA_CALLOC(type, name4, len)
+
+#define VLA_FREE(...)
+
+#define VLA_CALLOC_DIM2(type, name, len1, len2) type name[len1][len2]
+#define VLA_FREE_DIM2(name)
+
+#endif
+
 /* General defines */
 
 #define N_S 0.01    /* internal proc frame length in secs   */
@@ -63,7 +146,8 @@
 
 \*---------------------------------------------------------------------------*/
 
-/* Structure to hold constants calculated at run time based on sample rate */
+/* Structure to hold constants calculated at run time based on sample rate
+ */
 
 typedef struct {
   int Fs;      /* sample rate of this instance             */
@@ -95,9 +179,9 @@ struct lsp_codebook {
   int log2m;        /* number of bits in m	*/
   int m;            /* elements in codebook	*/
 #ifdef __EMBEDDED__ /* make sure stored in flash  */
-  const float *cb;  /* The elements		*/
+  const float* cb;  /* The elements		*/
 #else
-  float *cb; /* The elements		*/
+  float* cb; /* The elements		*/
 #endif
 };
 

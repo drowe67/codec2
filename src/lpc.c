@@ -143,7 +143,7 @@ void levinson_durbin(float R[],    /* order+1 autocorrelation coeff */
                      float lpcs[], /* order+1 LPC's */
                      int order     /* order of the LPC analysis */
 ) {
-  float a[order + 1][order + 1];
+  VLA_CALLOC_DIM2(float, a, order + 1, order + 1);
   float sum, e, k;
   int i, j; /* loop variables */
 
@@ -165,6 +165,8 @@ void levinson_durbin(float R[],    /* order+1 autocorrelation coeff */
 
   for (i = 1; i <= order; i++) lpcs[i] = a[order][i];
   lpcs[0] = 1.0;
+
+  VLA_FREE_DIM2(a);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -243,8 +245,8 @@ void find_aks(float Sn[], /* Nsam samples with order sample memory */
               int order,  /* order of the LPC analysis */
               float *E    /* residual energy */
 ) {
-  float Wn[LPC_MAX_N]; /* windowed frame of Nsam speech samples */
-  float R[order + 1];  /* order+1 autocorrelation values of Sn[] */
+  float Wn[LPC_MAX_N];             /* windowed frame of Nsam speech samples */
+  VLA_CALLOC(float, R, order + 1); /* order+1 autocorrelation values of Sn[] */
   int i;
 
   assert(Nsam < LPC_MAX_N);
@@ -256,6 +258,8 @@ void find_aks(float Sn[], /* Nsam samples with order sample memory */
   *E = 0.0;
   for (i = 0; i <= order; i++) *E += a[i] * R[i];
   if (*E < 0.0) *E = 1E-12;
+
+  VLA_FREE(R);
 }
 
 /*---------------------------------------------------------------------------*\

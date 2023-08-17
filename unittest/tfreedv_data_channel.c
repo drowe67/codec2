@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_data_channel.h"
 
 unsigned char test_header[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
@@ -205,7 +206,7 @@ int main(int argc, char **argv) {
 
   while (vector < sizeof(testvec) / sizeof(struct testvec)) {
     size_t frame_size = testvec[vector].frame_size;
-    unsigned char frame[frame_size];
+    VLA_CALLOC(unsigned char, frame, frame_size);
     int from, bcast, crc, end;
     int i;
     size_t check_size;
@@ -266,6 +267,7 @@ int main(int argc, char **argv) {
         ret++;
       }
     }
+    VLA_FREE(frame);
   }
 
   freedv_data_channel_destroy(fdc);

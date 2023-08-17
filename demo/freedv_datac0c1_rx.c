@@ -49,6 +49,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 
 #define NBUF 160
@@ -63,17 +64,16 @@ int main(int argc, char *argv[]) {
   freedv_set_frames_per_burst(freedv_c0, 1);
   freedv_set_verbose(freedv_c0, 0);
   int bytes_per_modem_frame_c0 = freedv_get_bits_per_modem_frame(freedv_c0) / 8;
-  uint8_t bytes_out_c0[bytes_per_modem_frame_c0];
-  short demod_in_c0[freedv_get_n_max_modem_samples(freedv_c0)];
-
+  VLA_CALLOC(uint8_t, bytes_out_c0, bytes_per_modem_frame_c0);
+  VLA_CALLOC(short, demod_in_c0, freedv_get_n_max_modem_samples(freedv_c0));
   // set up DATAC1 Rx
   struct freedv *freedv_c1 = freedv_open(FREEDV_MODE_DATAC1);
   assert(freedv_c1 != NULL);
   freedv_set_frames_per_burst(freedv_c1, 1);
   freedv_set_verbose(freedv_c1, 0);
   int bytes_per_modem_frame_c1 = freedv_get_bits_per_modem_frame(freedv_c1) / 8;
-  uint8_t bytes_out_c1[bytes_per_modem_frame_c1];
-  short demod_in_c1[freedv_get_n_max_modem_samples(freedv_c1)];
+  VLA_CALLOC(uint8_t, bytes_out_c1, bytes_per_modem_frame_c1);
+  VLA_CALLOC(short, demod_in_c1, freedv_get_n_max_modem_samples(freedv_c1));
 
   // number of samples in demod_in buffer for each Rx
   int n_c0 = 0;
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
   freedv_close(freedv_c0);
   freedv_close(freedv_c1);
 
+  VLA_FREE(bytes_out_c0, demod_in_c0);
   return 0;
 }
 

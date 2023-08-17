@@ -121,11 +121,11 @@ long quantise(const float *cb, float vec[], float w[], int k, int m, float *se)
 
 void encode_lspds_scalar(int indexes[], float lsp[], int order) {
   int i, k, m;
-  float lsp_hz[order];
-  float lsp__hz[order];
-  float dlsp[order];
-  float dlsp_[order];
-  float wt[order];
+  VLA_CALLOC(float, lsp_hz, order);
+  VLA_CALLOC(float, lsp__hz, order);
+  VLA_CALLOC(float, dlsp, order);
+  VLA_CALLOC(float, dlsp_, order);
+  VLA_CALLOC(float, wt, order);
   const float *cb;
   float se;
 
@@ -158,12 +158,13 @@ void encode_lspds_scalar(int indexes[], float lsp[], int order) {
     else
       lsp__hz[0] = dlsp_[0];
   }
+  VLA_FREE(lsp_hz, lsp__hz, dlsp, dlsp_, wt);
 }
 
 void decode_lspds_scalar(float lsp_[], int indexes[], int order) {
   int i, k;
-  float lsp__hz[order];
-  float dlsp_[order];
+  VLA_CALLOC(float, lsp__hz, order);
+  VLA_CALLOC(float, dlsp_, order);
   const float *cb;
 
   for (i = 0; i < order; i++) {
@@ -178,6 +179,7 @@ void decode_lspds_scalar(float lsp_[], int indexes[], int order) {
 
     lsp_[i] = (PI / 4000.0) * lsp__hz[i];
   }
+  VLA_FREE(lsp__hz, dlsp_);
 }
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -230,8 +232,8 @@ int find_nearest_weighted(const float *codebook, int nb_entries, float *x,
 
 void lspjmv_quantise(float *x, float *xq, int order) {
   int i, n1, n2, n3;
-  float err[order], err2[order], err3[order];
-  float w[order], w2[order], w3[order];
+  VLA_CALLOC3(float, err, err2, err3, order);
+  VLA_CALLOC3(float, w, w2, w3, order);
   const float *codebook1 = lsp_cbjmv[0].cb;
   const float *codebook2 = lsp_cbjmv[1].cb;
   const float *codebook3 = lsp_cbjmv[2].cb;
@@ -261,6 +263,7 @@ void lspjmv_quantise(float *x, float *xq, int order) {
     xq[2 * i] += codebook2[order * n2 / 2 + i];
     xq[2 * i + 1] += codebook3[order * n3 / 2 + i];
   }
+  VLA_FREE(err, err2, err3, w, w2, w3);
 }
 
 int check_lsp_order(float lsp[], int order) {
@@ -653,8 +656,8 @@ float decode_log_Wo(C2CONST *c2const, int index, int bits) {
 float speech_to_uq_lsps(float lsp[], float ak[], float Sn[], float w[],
                         int m_pitch, int order) {
   int i, roots;
-  float Wn[m_pitch];
-  float R[order + 1];
+  VLA_CALLOC(float, Wn, m_pitch);
+  VLA_CALLOC(float, R, order + 1);
   float e, E;
 
   e = 0.0;
@@ -689,6 +692,7 @@ float speech_to_uq_lsps(float lsp[], float ak[], float Sn[], float w[],
     for (i = 0; i < order; i++) lsp[i] = (PI / order) * (float)i;
   }
 
+  VLA_FREE(Wn, R);
   return E;
 }
 
@@ -706,7 +710,7 @@ float speech_to_uq_lsps(float lsp[], float ak[], float Sn[], float w[],
 void encode_lsps_scalar(int indexes[], float lsp[], int order) {
   int i, k, m;
   float wt[1];
-  float lsp_hz[order];
+  VLA_CALLOC(float, lsp_hz, order);
   const float *cb;
   float se;
 
@@ -724,6 +728,7 @@ void encode_lsps_scalar(int indexes[], float lsp[], int order) {
     cb = lsp_cb[i].cb;
     indexes[i] = quantise(cb, &lsp_hz[i], wt, k, m, &se);
   }
+  VLA_FREE(lsp_hz);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -739,7 +744,7 @@ void encode_lsps_scalar(int indexes[], float lsp[], int order) {
 
 void decode_lsps_scalar(float lsp[], int indexes[], int order) {
   int i, k;
-  float lsp_hz[order];
+  VLA_CALLOC(float, lsp_hz, order);
   const float *cb;
 
   for (i = 0; i < order; i++) {
@@ -751,6 +756,7 @@ void decode_lsps_scalar(float lsp[], int indexes[], int order) {
   /* convert back to radians */
 
   for (i = 0; i < order; i++) lsp[i] = (PI / 4000.0) * lsp_hz[i];
+  VLA_FREE(lsp_hz);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -765,8 +771,8 @@ void decode_lsps_scalar(float lsp[], int indexes[], int order) {
 
 void encode_lsps_vq(int *indexes, float *x, float *xq, int order) {
   int i, n1, n2, n3;
-  float err[order], err2[order], err3[order];
-  float w[order], w2[order], w3[order];
+  VLA_CALLOC3(float, err, err2, err3, order);
+  VLA_CALLOC3(float, w, w2, w3, order);
   const float *codebook1 = lsp_cbjmv[0].cb;
   const float *codebook2 = lsp_cbjmv[1].cb;
   const float *codebook3 = lsp_cbjmv[2].cb;
@@ -795,6 +801,8 @@ void encode_lsps_vq(int *indexes, float *x, float *xq, int order) {
   indexes[0] = n1;
   indexes[1] = n2;
   indexes[2] = n3;
+  
+  VLA_FREE(err, err2, err3, w, w2, w3);
 }
 
 /*---------------------------------------------------------------------------*\

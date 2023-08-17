@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "codec2_fdmdv.h"
+#include "defines.h"
 #include "fsk.h"
 
 int main(int argc, char *argv[]) {
@@ -113,33 +114,36 @@ int main(int argc, char *argv[]) {
   /* Mote we use the same buffer sizes as demod (fsk->Nbits, fsk->N)
      for convenience, but other sizes are possible for the
      FSK modulator. */
-  uint8_t bitbuf[fsk->Nbits];
+  VLA_CALLOC(uint8_t, bitbuf, fsk->Nbits);
 
   while (fread(bitbuf, sizeof(uint8_t), fsk->Nbits, fin) == fsk->Nbits) {
     if (test_mode) memset(bitbuf, 0, fsk->Nbits);
     if (complex == 0) {
-      float modbuf[fsk->N];
-      int16_t rawbuf[fsk->N];
+      VLA_CALLOC(float, modbuf, fsk->N);
+      VLA_CALLOC(int16_t, rawbuf, fsk->N);
       /* 16 bit signed short real output */
       fsk_mod(fsk, modbuf, bitbuf, fsk->Nbits);
       for (i = 0; i < fsk->N; i++) rawbuf[i] = (int16_t)(modbuf[i] * amp);
       fwrite(rawbuf, bytes_per_sample, fsk->N, fout);
+      VLA_FREE(modbuf, rawbuf);
     } else {
       /* 16 bit signed char complex output */
-      COMP modbuf[fsk->N];
-      int16_t rawbuf[2 * fsk->N];
+      VLA_CALLOC(COMP, modbuf, fsk->N);
+      VLA_CALLOC(int16_t, rawbuf, 2 * fsk->N);
       fsk_mod_c(fsk, (COMP *)modbuf, bitbuf, fsk->Nbits);
       for (i = 0; i < fsk->N; i++) {
         rawbuf[2 * i] = (int16_t)(modbuf[i].real * amp);
         rawbuf[2 * i + 1] = (int16_t)(modbuf[i].imag * amp);
       }
       fwrite(rawbuf, bytes_per_sample, fsk->N, fout);
+      VLA_FREE(modbuf, rawbuf);
     }
 
     if (fout == stdin) {
       fflush(fout);
     }
   }
+  VLA_FREE(bitbuf);
 
   fsk_destroy(fsk);
 }

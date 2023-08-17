@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 #include "fsk.h"
 #include "ldpc_codes.h"
@@ -270,8 +271,8 @@ int main(int argc, char *argv[]) {
   if (!quiet)
     fprintf(stderr, "payload bytes_per_modem_frame: %d\n",
             bytes_per_modem_frame - 2);
-  uint8_t bytes_out[bytes_per_modem_frame];
-  short demod_in[freedv_get_n_max_modem_samples(freedv)];
+  VLA_CALLOC(uint8_t, bytes_out, bytes_per_modem_frame);
+  VLA_CALLOC(short, demod_in, freedv_get_n_max_modem_samples(freedv));
 
   signal(SIGINT, INThandler);
   signal(SIGTERM, INThandler);

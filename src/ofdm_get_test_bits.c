@@ -40,6 +40,7 @@
 #include "ofdm_internal.h"
 #include "optparse.h"
 #include "varicode.h"
+#include "defines.h"
 
 #define IS_DIR_SEPARATOR(c) ((c) == '/')
 
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Nframes: %d Ndatabitsperframe: %d bcb: %d\n", Nframes,
             Ndatabitsperpacket, bcb_en);
 
-  uint8_t data_bits[Ndatabitsperpacket];
+  VLA_CALLOC( uint8_t, data_bits, Ndatabitsperpacket);
   ofdm_generate_payload_data_bits(data_bits, Ndatabitsperpacket);
 
   burst_control = 1;
@@ -153,5 +154,6 @@ int main(int argc, char *argv[]) {
 
   if (output_specified) fclose(fout);
 
+  VLA_FREE(data_bits);
   return 0;
 }

@@ -225,7 +225,7 @@ void mag_to_phase(
     float phase[], /* Nfft/2+1 output phase samples in radians       */
     float Gdbfk[], /* Nfft/2+1 positive freq amplitudes samples in dB */
     int Nfft, codec2_fft_cfg fft_fwd_cfg, codec2_fft_cfg fft_inv_cfg) {
-  COMP Sdb[Nfft], c[Nfft], cf[Nfft], Cf[Nfft];
+  VLA_CALLOC4(COMP, Sdb, c, cf, Cf, Nfft);
   int Ns = Nfft / 2 + 1;
   int i;
 
@@ -272,4 +272,5 @@ void mag_to_phase(
   for (i = 0; i < Ns; i++) {
     phase[i] = Cf[i].imag / scale;
   }
+  VLA_FREE(Sdb, c, cf, Cf);
 }

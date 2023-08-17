@@ -95,6 +95,7 @@ elseif(COMPILER_SUPPORTS_GNU99)
 else()
    message(SEND_ERROR "Compiler doesn't seem to support at least gnu99, might cause problems" )
 endif()
+
 endif(NOT WIN32)
 
 # -fPIC is implied on MinGW...

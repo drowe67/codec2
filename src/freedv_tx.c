@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 #include "reliable_text.h"
 
@@ -194,9 +195,9 @@ int main(int argc, char *argv[]) {
   /* handy functions to set buffer sizes, note tx/modulator always
      returns freedv_get_n_nom_modem_samples() (unlike rx side) */
   int n_speech_samples = freedv_get_n_speech_samples(freedv);
-  short speech_in[n_speech_samples];
+  VLA_CALLOC(short, speech_in, n_speech_samples);
   int n_nom_modem_samples = freedv_get_n_nom_modem_samples(freedv);
-  short mod_out[n_nom_modem_samples];
+  VLA_CALLOC(short, mod_out, n_nom_modem_samples);
 
   /* OK main loop  --------------------------------------- */
 
@@ -214,5 +215,6 @@ int main(int argc, char *argv[]) {
   fclose(fin);
   fclose(fout);
 
+  VLA_FREE(speech_in, mod_out);
   return 0;
 }

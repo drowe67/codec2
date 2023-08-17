@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "mbest.h"
 
 #define MAX_K 20
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
           }
           /* count how many entries m of dimension k are in this VQ file */
           m[num_stages] = 0;
-          float dummy[k];
+          VLA_CALLOC(float, dummy, k);
           while (fread(dummy, sizeof(float), k, fq) == (size_t)k)
             m[num_stages]++;
           assert(m[num_stages] <= MAX_ENTRIES);
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
           assert(rd == m[num_stages] * k);
           num_stages++;
           fclose(fq);
+          VLA_FREE(dummy);
         } while (comma);
         break;
       case 'm':
@@ -154,7 +156,7 @@ int main(int argc, char *argv[]) {
   if (st == -1) st = 0;
   if (en == -1) en = k - 1;
 
-  float w[k];
+  VLA_CALLOC(float, w, k);
   for (int i = 0; i < st; i++) w[i] = 0.0;
   for (int i = st; i <= en; i++) w[i] = 1.0;
   for (int i = en + 1; i < k; i++) w[i] = 0.0;
@@ -165,12 +167,13 @@ int main(int argc, char *argv[]) {
     mbest_precompute_weight(&vqw[s * k * MAX_ENTRIES], w, k, m[s]);
   }
 
-  int indexes[num_stages], nvecs = 0;
-  int vec_usage[m[0]];
+  VLA_CALLOC(int, indexes, num_stages);
+  int nvecs = 0;
+  VLA_CALLOC(int, vec_usage, m[0]);
   for (int i = 0; i < m[0]; i++) vec_usage[i] = 0;
-  float target[k], quantised[k];
+  VLA_CALLOC2(float, target, quantised, k);
   float sqe = 0.0;
-  while (fread(&target, sizeof(float), k, stdin) && (nvecs < num)) {
+  while (fread(target, sizeof(float), k, stdin) && (nvecs < num)) {
     for (int i = 0; i < k; i++) target[i] *= w[i];
     int dont_count = 0;
     /* optional clamping to lower limit or mean */
@@ -200,6 +203,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < m[0]; i++) fprintf(stderr, "%d\n", vec_usage[i]);
   }
 
+  VLA_FREE(w, indexes, vec_usage, target, quantised);
   return 0;
 }
 
@@ -218,12 +222,13 @@ void pv(char s[], float v[], int k) {
 
 void quant_mbest(float vec_out[], int indexes[], float vec_in[], int num_stages,
                  float vqw[], float vq[], int m[], int k, int mbest_survivors) {
-  float err[k], se1;
+  VLA_CALLOC(float, err, k);
+  float se1;
   int i, j, s, s1, ind;
 
-  struct MBEST *mbest_stage[num_stages];
-  int index[num_stages];
-  float target[k];
+  VLA_CALLOC(struct MBEST *, mbest_stage, num_stages);
+  VLA_CALLOC(int, index, num_stages);
+  VLA_CALLOC(float, target, k);
 
   for (i = 0; i < num_stages; i++) {
     mbest_stage[i] = mbest_create(mbest_survivors);
@@ -297,4 +302,6 @@ void quant_mbest(float vec_out[], int indexes[], float vec_in[], int num_stages,
   if (verbose) fprintf(stderr, "    se1: %f\n", se1);
 
   for (i = 0; i < num_stages; i++) mbest_destroy(mbest_stage[i]);
+
+  VLA_FREE(err, index, mbest_stage, target);
 }

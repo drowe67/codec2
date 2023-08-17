@@ -29,6 +29,7 @@
 #include <stdio.h>
 
 #include "assert.h"
+#include "defines.h"
 #include "freedv_api.h"
 
 int main(int argc, char **argv) {
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
   int frames = 0;
   fails = 0;
   {
-    short mod[nom_samples * 10];
+    VLA_CALLOC(short, mod, nom_samples * 10);
     for (i = 0; i < 10; i++) {
       freedv_rawdatatx(f, mod + i * nom_samples, payload_tx);
     }
@@ -131,6 +132,7 @@ int main(int argc, char **argv) {
         frames++;
       }
     }
+    VLA_FREE(mod);
   }
   if (!frames) {
     printf("Did not decode any frames successfully\n");

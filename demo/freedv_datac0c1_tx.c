@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 #include "ofdm_internal.h"
 
@@ -75,11 +76,11 @@ void send_burst(struct freedv *freedv) {
   size_t payload_bytes_per_modem_frame =
       bytes_per_modem_frame - 2; /* 16 bits used for the CRC */
   size_t n_mod_out = freedv_get_n_tx_modem_samples(freedv);
-  uint8_t bytes_in[bytes_per_modem_frame];
-  short mod_out_short[n_mod_out];
+  VLA_CALLOC(uint8_t, bytes_in, bytes_per_modem_frame);
+  VLA_CALLOC(short, mod_out_short, n_mod_out);
 
   /* generate a test frame */
-  uint8_t testframe_bits[bits_per_frame];
+  VLA_CALLOC(uint8_t, testframe_bits, bits_per_frame);
   ofdm_generate_payload_data_bits(testframe_bits, bits_per_frame);
   freedv_pack(bytes_in, testframe_bits, bits_per_frame);
 
@@ -103,7 +104,9 @@ void send_burst(struct freedv *freedv) {
   /* create some silence between bursts */
   int inter_burst_delay_ms = 200;
   int samples_delay = FREEDV_FS_8000 * inter_burst_delay_ms / 1000;
-  short sil_short[samples_delay];
+  VLA_CALLOC(short, sil_short, samples_delay);
   for (int i = 0; i < samples_delay; i++) sil_short[i] = 0;
   fwrite(sil_short, sizeof(short), samples_delay, stdout);
+
+  VLA_FREE(bytes_in, mod_out_short, testframe_bits, sil_short);
 }

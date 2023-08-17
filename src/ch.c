@@ -36,6 +36,7 @@
 #include "codec2_cohpsk.h"
 #include "comp_prim.h"
 #include "debug_alloc.h"
+#include "defines.h"
 #include "freedv_api.h"
 #include "ht_coeff.h"
 #include "ssbfilt_coeff.h"
@@ -466,7 +467,9 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < SSBFILT_N; i++) ssbfiltbuf[i] = ssbfiltbuf[i + BUF_N];
 
     int nout = (complex_out + 1) * BUF_N;
-    short bufout[nout], *pout = bufout;
+    VLA_CALLOC(short, bufout, nout);
+
+    short *pout = bufout;
     for (i = 0; i < BUF_N; i++) {
       sam = ssbfiltout[i].real;
       if (sam > 32767.0) {
@@ -498,6 +501,8 @@ int main(int argc, char *argv[]) {
        buffering to occur */
 
     if (fout == stdout) fflush(stdout);
+
+    VLA_FREE(bufout);
   }
 
   fclose(fin);

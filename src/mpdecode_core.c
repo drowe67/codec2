@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "defines.h"
 #ifndef USE_ORIGINAL_PHI0
 #include "phi0.h"
 #endif
@@ -596,7 +598,7 @@ void Somap(float bit_likelihood[],    /* number_bits, bps*number_symbols */
            int bps,                   /* bits per symbol                 */
            int number_symbols) {
   int n, i, j, k, mask;
-  float num[bps], den[bps];
+  VLA_CALLOC2(float, num, den, bps);
   float metric;
 
   for (n = 0; n < number_symbols; n++) { /* loop over symbols */
@@ -631,14 +633,15 @@ void Somap(float bit_likelihood[],    /* number_bits, bps*number_symbols */
       bit_likelihood[bps * n + k] = num[k] - den[k];
     }
   }
+  VLA_FREE(num, den);
 }
 
 void symbols_to_llrs(float llr[], COMP rx_qpsk_symbols[], float rx_amps[],
                      float EsNo, float mean_amp, int nsyms) {
   int i;
 
-  float symbol_likelihood[nsyms * QPSK_CONSTELLATION_SIZE];
-  float bit_likelihood[nsyms * QPSK_BITS_PER_SYMBOL];
+  VLA_CALLOC(float, symbol_likelihood, nsyms *QPSK_CONSTELLATION_SIZE);
+  VLA_CALLOC(float, bit_likelihood, nsyms *QPSK_BITS_PER_SYMBOL);
 
   Demod2D(symbol_likelihood, rx_qpsk_symbols, S_matrix, EsNo, rx_amps, mean_amp,
           nsyms);
@@ -647,6 +650,7 @@ void symbols_to_llrs(float llr[], COMP rx_qpsk_symbols[], float rx_amps[],
   for (i = 0; i < nsyms * QPSK_BITS_PER_SYMBOL; i++) {
     llr[i] = -bit_likelihood[i];
   }
+  VLA_FREE(symbol_likelihood, bit_likelihood);
 }
 
 /*
@@ -724,14 +728,15 @@ void fsk_rx_filt_to_llrs(float llr[], float rx_filt[], float v_est,
                          float SNRest, int M, int nsyms) {
   int i;
   int bps = log2(M);
-  float symbol_likelihood[M * nsyms];
-  float bit_likelihood[bps * nsyms];
+  VLA_CALLOC(float, symbol_likelihood, M *nsyms);
+  VLA_CALLOC(float, bit_likelihood, bps *nsyms);
 
   FskDemod(symbol_likelihood, rx_filt, v_est, SNRest, M, nsyms);
   Somap(bit_likelihood, symbol_likelihood, M, bps, nsyms);
   for (i = 0; i < bps * nsyms; i++) {
     llr[i] = -bit_likelihood[i];
   }
+  VLA_FREE(bit_likelihood, symbol_likelihood);
 }
 
 void ldpc_print_info(struct LDPC *ldpc) {

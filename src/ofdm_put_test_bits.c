@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "codec2_ofdm.h"
+#include "defines.h"
 #include "ofdm_internal.h"
 #include "test_bits_ofdm.h"
 
@@ -81,7 +82,7 @@ int main(int argc, char *argv[]) {
   assert(ofdm != NULL);
 
   int Nbitsperframe = ofdm_get_bits_per_frame(ofdm);
-  char rx_bits[Nbitsperframe];
+  VLA_CALLOC(char, rx_bits, Nbitsperframe);
 
   f = Terrs = Tbits = Terrs2 = Tbits2 = 0;
   while (fread(rx_bits, sizeof(char), Nbitsperframe, fin) == Nbitsperframe) {

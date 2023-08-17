@@ -46,6 +46,7 @@ binaryOut.bin diff binaryIn.bin binaryOut.bin
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 
 int main(int argc, char *argv[]) {
@@ -58,8 +59,8 @@ int main(int argc, char *argv[]) {
   size_t payload_bytes_per_modem_frame =
       bytes_per_modem_frame - 2; /* 16 bits used for the CRC */
   size_t n_mod_out = freedv_get_n_tx_modem_samples(freedv);
-  uint8_t bytes_in[bytes_per_modem_frame];
-  short mod_out_short[n_mod_out];
+  VLA_CALLOC(uint8_t, bytes_in, bytes_per_modem_frame);
+  VLA_CALLOC(short, mod_out_short, n_mod_out);
 
   for (int b = 0; b < 10; b++) {
     /* send preamble */
@@ -87,12 +88,13 @@ int main(int argc, char *argv[]) {
     /* create some silence between bursts */
     int inter_burst_delay_ms = 200;
     int samples_delay = FREEDV_FS_8000 * inter_burst_delay_ms / 1000;
-    short sil_short[samples_delay];
+    VLA_CALLOC(short, sil_short, samples_delay);
     for (int i = 0; i < samples_delay; i++) sil_short[i] = 0;
     fwrite(sil_short, sizeof(short), samples_delay, stdout);
+    VLA_FREE(sil_short);
   }
 
   freedv_close(freedv);
-
+  VLA_FREE(bytes_in, mod_out_short);
   return 0;
 }

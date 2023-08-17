@@ -38,6 +38,8 @@
 #include <string.h>
 
 #include "codec2_ofdm.h"
+#include "comp_prim.h"
+#include "defines.h"
 #include "gp_interleaver.h"
 #include "interldpc.h"
 #include "ldpc_codes.h"
@@ -310,9 +312,12 @@ int main(int argc, char *argv[]) {
   int ofdm_nuwbits = ofdm_config->nuwbits;
   int ofdm_ntxtbits = ofdm_config->txtbits;
 
-  float phase_est_pilot_log[ofdm_rowsperframe * NFRAMES][ofdm_config->nc];
-  COMP rx_np_log[ofdm_rowsperframe * ofdm_config->nc * NFRAMES];
-  float rx_amp_log[ofdm_rowsperframe * ofdm_config->nc * NFRAMES];
+  VLA_CALLOC_DIM2(float, phase_est_pilot_log, ofdm_rowsperframe *NFRAMES,
+                  ofdm_config->nc);
+
+  VLA_CALLOC(COMP, rx_np_log, ofdm_rowsperframe * ofdm_config->nc * NFRAMES);
+  VLA_CALLOC(float, rx_amp_log, ofdm_rowsperframe * ofdm_config->nc * NFRAMES);
+
   float foff_hz_log[NFRAMES];
   int timing_est_log[NFRAMES];
 
@@ -351,8 +356,8 @@ int main(int argc, char *argv[]) {
   /* Set up LPDC codes */
 
   struct LDPC ldpc;
-  COMP payload_syms[Npayloadsymsperpacket];
-  float payload_amps[Npayloadsymsperpacket];
+  VLA_CALLOC(COMP, payload_syms, Npayloadsymsperpacket);
+  VLA_CALLOC(float, payload_amps, Npayloadsymsperpacket);
 
   if (ldpc_en) {
     ldpc_codes_setup(&ldpc, ofdm->codename);
@@ -376,18 +381,18 @@ int main(int argc, char *argv[]) {
     ofdm_set_verbose(ofdm, verbose);
   }
 
-  complex float rx_syms[Nsymsperpacket];
-  float rx_amps[Nsymsperpacket];
+  VLA_CALLOC(COMP, rx_syms, Nsymsperpacket);
+  VLA_CALLOC(float, rx_amps, Nsymsperpacket);
   for (int i = 0; i < Nsymsperpacket; i++) {
-    rx_syms[i] = 0.0;
+    rx_syms[i] = comp0();
     rx_amps[i] = 0.0;
   }
 
-  short rx_scaled[Nmaxsamperframe];
-  int rx_bits[Nbitsperframe];
-  uint8_t rx_bits_char[Nbitsperframe];
-  uint8_t rx_uw[ofdm_nuwbits];
-  short txt_bits[ofdm_ntxtbits];
+  VLA_CALLOC(short, rx_scaled, Nmaxsamperframe);
+  VLA_CALLOC(int, rx_bits, Nbitsperframe);
+  VLA_CALLOC(uint8_t, rx_bits_char, Npayloadbitsperpacket);
+  VLA_CALLOC(uint8_t, rx_uw, ofdm_nuwbits);
+  VLA_CALLOC(short, txt_bits, ofdm_ntxtbits);
 
   /* error counting */
   int Terrs, Tbits, Terrs2, Tbits2, Terrs_coded, Tbits_coded, frame_count,
@@ -413,11 +418,11 @@ int main(int argc, char *argv[]) {
   if (verbose == 2) fprintf(stderr, "Warning EsNo: %f hard coded\n", EsNo);
 
   /* More logging */
-  COMP payload_syms_log[NFRAMES][Npayloadsymsperpacket];
-  float payload_amps_log[NFRAMES][Npayloadsymsperpacket];
+  VLA_CALLOC_DIM2(COMP, payload_syms_log, NFRAMES, Npayloadsymsperpacket);
+  VLA_CALLOC_DIM2(float, payload_amps_log, NFRAMES, Npayloadsymsperpacket);
 
   for (i = 0; i < NFRAMES; i++) {
-    for (j = 0; j < Npayloadsymsperframe; j++) {
+    for (j = 0; j < Npayloadsymsperpacket; j++) {
       payload_syms_log[i][j].real = 0.0f;
       payload_syms_log[i][j].imag = 0.0f;
       payload_amps_log[i][j] = 0.0f;
@@ -460,7 +465,7 @@ int main(int argc, char *argv[]) {
         rx_amps[i] = rx_amps[i + Nsymsperframe];
       }
       memcpy(&rx_syms[Nsymsperpacket - Nsymsperframe], ofdm->rx_np,
-             sizeof(complex float) * Nsymsperframe);
+             sizeof(COMP) * Nsymsperframe);
       memcpy(&rx_amps[Nsymsperpacket - Nsymsperframe], ofdm->rx_amp,
              sizeof(float) * Nsymsperframe);
 
@@ -481,16 +486,17 @@ int main(int argc, char *argv[]) {
                  Nbitsperpacket);
 
           /* run de-interleaver */
-          COMP payload_syms_de[Npayloadsymsperpacket];
-          float payload_amps_de[Npayloadsymsperpacket];
+          VLA_CALLOC(COMP, payload_syms_de, Npayloadsymsperpacket);
+          VLA_CALLOC(float, payload_amps_de, Npayloadsymsperpacket);
           gp_deinterleave_comp(payload_syms_de, payload_syms,
                                Npayloadsymsperpacket);
           gp_deinterleave_float(payload_amps_de, payload_amps,
                                 Npayloadsymsperpacket);
 
-          float llr[Npayloadbitsperpacket];
-          uint8_t out_char[Npayloadbitsperpacket];
-
+          VLA_CALLOC(float, llr, Npayloadbitsperpacket);
+          // TODO: correct length?
+          VLA_CALLOC(uint8_t, out_char,
+                     ldpc.CodeLength + ldpc.data_bits_per_frame);
           if (testframes == true) {
             Nerrs_raw =
                 count_uncoded_errors(&ldpc, ofdm_config, payload_syms_de, 0);
@@ -507,7 +513,7 @@ int main(int argc, char *argv[]) {
 
           if (testframes == true) {
             /* construct payload data bits */
-            uint8_t payload_data_bits[Ndatabitsperpacket];
+            VLA_CALLOC(uint8_t, payload_data_bits, Ndatabitsperpacket);
             ofdm_generate_payload_data_bits(payload_data_bits,
                                             Ndatabitsperpacket);
             count_errors_protection_mode(ldpc.protection_mode, &Nerrs_coded,
@@ -516,16 +522,19 @@ int main(int argc, char *argv[]) {
             Terrs_coded += Nerrs_coded;
             Tbits_coded += Ncoded;
             if (Nerrs_coded) Tper++;
+
+            VLA_FREE(payload_data_bits);
           }
 
           fwrite(out_char, sizeof(char), Ndatabitsperpacket, fout);
+          VLA_FREE(payload_syms_de, payload_amps_de, llr, out_char);
         } else {
           /* simple hard decision output of payload data bits */
           assert(Npayloadsymsperpacket * ofdm_config->bps ==
                  Npayloadbitsperpacket);
           for (i = 0; i < Npayloadsymsperpacket; i++) {
             int bits[2];
-            complex float s = payload_syms[i].real + I * payload_syms[i].imag;
+            COMP s = payload_syms[i];
             qpsk_demod(s, bits);
             rx_bits_char[ofdm_config->bps * i] = bits[1];
             rx_bits_char[ofdm_config->bps * i + 1] = bits[0];
@@ -542,16 +551,17 @@ int main(int argc, char *argv[]) {
              the same as Octave so it can interoperate with ofdm_tx.m/ofdm_rx.m
            */
 
-          uint8_t payload_bits[Npayloadbitsperpacket];
-          uint8_t txt_bits[ofdm_ntxtbits];
+          VLA_CALLOC(uint8_t, payload_bits, Npayloadbitsperpacket);
+          VLA_CALLOC(uint8_t, txt_bits, ofdm_ntxtbits);
           memset(txt_bits, 0, ofdm_ntxtbits);
-          uint8_t tx_bits[Nbitsperpacket];
+          VLA_CALLOC(uint8_t, tx_bits, Nbitsperpacket);
+
           ofdm_generate_payload_data_bits(payload_bits, Npayloadbitsperpacket);
           ofdm_assemble_qpsk_modem_packet(ofdm, tx_bits, payload_bits,
                                           txt_bits);
 
           /* count errors across UW, payload, txt bits */
-          int rx_bits[Nbitsperpacket];
+          VLA_CALLOC(int, rx_bits, Nbitsperpacket);
           int dibit[2];
           assert(ofdm->bps == 2); /* this only works for QPSK at this stage */
           for (int s = 0; s < Nsymsperpacket; s++) {
@@ -568,6 +578,7 @@ int main(int argc, char *argv[]) {
             Terrs2 += Nerrs_raw;
             Tbits2 += Nbitsperpacket;
           }
+          VLA_FREE(payload_bits, txt_bits, tx_bits, rx_bits);
         }
         packet_count++;
 
@@ -624,10 +635,7 @@ int main(int argc, char *argv[]) {
       /* note corrected phase (rx no phase) is one big linear array for frame */
 
       for (i = 0; i < ofdm_rowsperframe * ofdm_config->nc; i++) {
-        rx_np_log[ofdm_rowsperframe * ofdm_config->nc * f + i].real =
-            crealf(ofdm->rx_np[i]);
-        rx_np_log[ofdm_rowsperframe * ofdm_config->nc * f + i].imag =
-            cimagf(ofdm->rx_np[i]);
+        rx_np_log[ofdm_rowsperframe * ofdm_config->nc * f + i] = ofdm->rx_np[i];
       }
 
       /* note phase/amp ests the same for each col, but check them all anyway */
@@ -747,5 +755,10 @@ int main(int argc, char *argv[]) {
 
   ofdm_destroy(ofdm);
 
+  VLA_FREE(rx_np_log, rx_amp_log, payload_syms, payload_amps, rx_syms, rx_amps,
+           rx_scaled, rx_bits, rx_bits_char, rx_uw, txt_bits);
+  VLA_FREE_DIM2(phase_est_pilot_log);
+  VLA_FREE_DIM2(payload_syms_log);
+  VLA_FREE_DIM2(payload_amps_log);
   return ret;
 }

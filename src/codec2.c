@@ -1451,9 +1451,9 @@ void codec2_encode_700c(struct CODEC2 *c2, unsigned char *bits,
     analyse_one_frame(c2, &model, &speech[i * c2->n_samp]);
   }
 
-  int K = 20;
-  float rate_K_vec[K], mean;
-  float rate_K_vec_no_mean[K], rate_K_vec_no_mean_[K];
+  const int K = 20;
+  VLA_CALLOC3(float, rate_K_vec, rate_K_vec_no_mean, rate_K_vec_no_mean_, K);
+  float mean;
 
   newamp1_model_to_indexes(&c2->c2const, indexes, &model, rate_K_vec,
                            c2->rate_K_sample_freqs_kHz, K, &mean,
@@ -1469,11 +1469,12 @@ void codec2_encode_700c(struct CODEC2 *c2, unsigned char *bits,
     fwrite(rate_K_vec_no_mean_, K, sizeof(float), c2->fmlfeat);
     MODEL model_;
     memcpy(&model_, &model, sizeof(model));
-    float rate_K_vec_[K];
+    VLA_CALLOC(float, rate_K_vec_, K);
     for (int k = 0; k < K; k++) rate_K_vec_[k] = rate_K_vec_no_mean_[k] + mean;
     resample_rate_L(&c2->c2const, &model_, rate_K_vec_,
                     c2->rate_K_sample_freqs_kHz, K);
     fwrite(&model_.A, MAX_AMP, sizeof(float), c2->fmlfeat);
+    VLA_FREE(rate_K_vec_);
   }
   if (c2->fmlmodel != NULL) fwrite(&model, sizeof(MODEL), 1, c2->fmlmodel);
 #endif
@@ -1484,6 +1485,7 @@ void codec2_encode_700c(struct CODEC2 *c2, unsigned char *bits,
   pack_natural_or_gray(bits, &nbit, indexes[3], 6, 0);
 
   assert(nbit == (unsigned)codec2_bits_per_frame(c2));
+  VLA_FREE(rate_K_vec, rate_K_vec_no_mean, rate_K_vec_no_mean_);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -1512,7 +1514,8 @@ void codec2_decode_700c(struct CODEC2 *c2, short speech[],
   indexes[2] = unpack_natural_or_gray(bits, &nbit, 4, 0);
   indexes[3] = unpack_natural_or_gray(bits, &nbit, 6, 0);
 
-  int M = 4;
+#define M 4
+
   COMP HH[M][MAX_AMP + 1];
   float interpolated_surface_[M][NEWAMP1_K];
 
@@ -1543,6 +1546,7 @@ void codec2_decode_700c(struct CODEC2 *c2, short speech[],
     synthesise_one_frame(c2, &speech[c2->n_samp * i], &model[i], &HH[i][0],
                          1.5);
   }
+#undef M
 }
 
 /*---------------------------------------------------------------------------*\
@@ -1884,7 +1888,7 @@ void codec2_load_codebook(struct CODEC2 *codec2_state, int num,
   }
   // fprintf(stderr, "reading newamp1vq_cb[%d] k=%d m=%d\n", num,
   // newamp1vq_cb[num].k, newamp1vq_cb[num].m);
-  float tmp[newamp1vq_cb[num].k * newamp1vq_cb[num].m];
+  VLA_CALLOC(float, tmp, newamp1vq_cb[num].k *newamp1vq_cb[num].m);
   int nread =
       fread(tmp, sizeof(float), newamp1vq_cb[num].k * newamp1vq_cb[num].m, f);
   float *p = (float *)newamp1vq_cb[num].cb;
@@ -1894,6 +1898,7 @@ void codec2_load_codebook(struct CODEC2 *codec2_state, int num,
   // newamp1vq_cb[num].cb[1]);
   assert(nread == newamp1vq_cb[num].k * newamp1vq_cb[num].m);
   fclose(f);
+  VLA_FREE(tmp);
 }
 #endif
 

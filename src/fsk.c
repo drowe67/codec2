@@ -69,6 +69,7 @@
 #include <stdlib.h>
 
 #include "comp_prim.h"
+#include "defines.h"
 #include "kiss_fftr.h"
 #include "modem_probe.h"
 
@@ -286,8 +287,9 @@ void fsk_mod(struct FSK *fsk, float fsk_out[], uint8_t tx_bits[], int nbits) {
   int Ts = fsk->Ts;                     /* samples-per-symbol */
   int Fs = fsk->Fs;                     /* sample freq */
   int M = fsk->mode;
-  COMP dosc_f[M]; /* phase shift per sample */
-  COMP dph;       /* phase shift of current bit */
+  VLA_CALLOC(COMP, dosc_f, M); /* phase shift per sample */
+
+  COMP dph; /* phase shift of current bit */
   size_t i, j, m, bit_i, sym;
 
   /* trap these parameters being set to FSK_UNUSED, then calling mod */
@@ -325,6 +327,7 @@ void fsk_mod(struct FSK *fsk, float fsk_out[], uint8_t tx_bits[], int nbits) {
 
   /* save TX phase */
   fsk->tx_phase_c = tx_phase_c;
+  VLA_FREE(dosc_f);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -344,8 +347,9 @@ void fsk_mod_c(struct FSK *fsk, COMP fsk_out[], uint8_t tx_bits[], int nbits) {
   int Ts = fsk->Ts;                     /* samples-per-symbol */
   int Fs = fsk->Fs;                     /* sample freq */
   int M = fsk->mode;
-  COMP dosc_f[M]; /* phase shift per sample */
-  COMP dph;       /* phase shift of current bit */
+  VLA_CALLOC(COMP, dosc_f, M); /* phase shift per sample */
+
+  COMP dph; /* phase shift of current bit */
   size_t i, j, bit_i, sym;
   int m;
 
@@ -384,6 +388,7 @@ void fsk_mod_c(struct FSK *fsk, COMP fsk_out[], uint8_t tx_bits[], int nbits) {
 
   /* save TX phase */
   fsk->tx_phase_c = tx_phase_c;
+  VLA_FREE(dosc_f);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -470,7 +475,7 @@ void fsk_demod_freq_est(struct FSK *fsk, COMP fsk_in[], float *freqs, int M) {
   float max;
   int imax;
   kiss_fft_cfg fft_cfg = fsk->fft_cfg;
-  int freqi[M];
+  VLA_CALLOC(int, freqi, M);
   int st, en, f_zero;
 
   kiss_fft_cpx *fftin = (kiss_fft_cpx *)malloc(sizeof(kiss_fft_cpx) * Ndft);
@@ -575,7 +580,7 @@ void fsk_demod_freq_est(struct FSK *fsk, COMP fsk_in[], float *freqs, int M) {
    * at tone spacings ----- */
 
   /* construct mask */
-  float mask[Ndft];
+  VLA_CALLOC(float, mask, Ndft);
   for (i = 0; i < Ndft; i++) mask[i] = 0.0;
   for (i = 0; i < 3; i++) mask[i] = 1.0;
   int bin = 0;
@@ -611,6 +616,7 @@ void fsk_demod_freq_est(struct FSK *fsk, COMP fsk_in[], float *freqs, int M) {
 
   free(fftin);
   free(fftout);
+  VLA_FREE(freqi, mask);
 }
 
 /* core demodulator function */
@@ -628,8 +634,8 @@ void fsk_demod_core(struct FSK *fsk, uint8_t rx_bits[], float rx_filt[],
   size_t i, j, m;
   float ft1;
 
-  COMP t[M]; /* complex number temps */
-  COMP t_c;  /* another complex temp */
+  VLA_CALLOC(COMP, t, M); /* complex number temps */
+  COMP t_c;               /* another complex temp */
   COMP *phi_c = fsk->phi_c;
   COMP *f_dc = fsk->f_dc;
   COMP phi_ft;
@@ -681,7 +687,7 @@ void fsk_demod_core(struct FSK *fsk, uint8_t rx_bits[], float rx_filt[],
   }
 
   /* integrate over symbol period at a variety of offsets */
-  COMP f_int[M][(nsym + 1) * P];
+  VLA_CALLOC_DIM2(COMP, f_int, M, (nsym + 1) * P);
   for (i = 0; i < (nsym + 1) * P; i++) {
     int st = i * Ts / P;
     int en = st + Ts - 1;
@@ -727,6 +733,8 @@ void fsk_demod_core(struct FSK *fsk, uint8_t rx_bits[], float rx_filt[],
   /* Check for NaNs in the fine timing estimate, return if found */
   /* otherwise segfaults happen */
   if (isnan(t_c.real) || isnan(t_c.imag)) {
+    VLA_FREE(t);
+    VLA_FREE_DIM2(f_int);
     return;
   }
 
@@ -766,7 +774,7 @@ void fsk_demod_core(struct FSK *fsk, uint8_t rx_bits[], float rx_filt[],
   int high_sample = (int)ceilf(rx_timing);
 
   /* Vars for finding the max-of-4 for each bit */
-  float tmax[M];
+  VLA_CALLOC(float, tmax, M);
 
 #ifdef EST_EBNO
   meanebno = 0;
@@ -936,6 +944,8 @@ void fsk_demod_core(struct FSK *fsk, uint8_t rx_bits[], float rx_filt[],
   modem_probe_samp_f("t_EbNodB", &(fsk->EbNodB), 1);
   modem_probe_samp_f("t_ppm", &(fsk->ppm), 1);
   modem_probe_samp_f("t_rx_timing", &(rx_timing), 1);
+  VLA_FREE(t, tmax);
+  VLA_FREE_DIM2(f_int);
 }
 
 /*---------------------------------------------------------------------------*\

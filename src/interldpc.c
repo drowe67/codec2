@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "gp_interleaver.h"
 #include "mpdecode_core.h"
 #include "ofdm_internal.h"
@@ -84,11 +85,12 @@ void ldpc_mode_specific_setup(struct OFDM *ofdm, struct LDPC *ldpc) {
    selected FEC protection scheme */
 void ldpc_encode_frame(struct LDPC *ldpc, int codeword[],
                        unsigned char tx_bits_char[]) {
-  unsigned char pbits[ldpc->NumberParityBits];
+  VLA_CALLOC(unsigned char, pbits, ldpc->NumberParityBits);
   int codec_frame;
   int i, j;
 
-  unsigned char tx_bits_char_padded[ldpc->ldpc_data_bits_per_frame];
+  VLA_CALLOC(unsigned char, tx_bits_char_padded,
+             ldpc->ldpc_data_bits_per_frame);
 
   switch (ldpc->protection_mode) {
     case LDPC_PROT_EQUAL:
@@ -131,6 +133,8 @@ void ldpc_encode_frame(struct LDPC *ldpc, int codeword[],
      bits, we don't bother sending unused (known) data bits */
   for (i = 0; i < ldpc->data_bits_per_frame; i++) codeword[i] = tx_bits_char[i];
   for (j = 0; j < ldpc->NumberParityBits; i++, j++) codeword[i] = pbits[j];
+
+  VLA_FREE(pbits, tx_bits_char_padded);
 }
 
 void qpsk_modulate_frame(COMP tx_symbols[], int codeword[], int n) {
@@ -150,10 +154,10 @@ void qpsk_modulate_frame(COMP tx_symbols[], int codeword[], int n) {
 /* run LDPC decoder, taking into account the FEC protection scheme */
 void ldpc_decode_frame(struct LDPC *ldpc, int *parityCheckCount, int *iter,
                        uint8_t out_char[], float llr[]) {
-  float llr_full_codeword[ldpc->ldpc_coded_bits_per_frame];
+  VLA_CALLOC(float, llr_full_codeword, ldpc->ldpc_coded_bits_per_frame);
   int unused_data_bits =
       ldpc->ldpc_data_bits_per_frame - ldpc->data_bits_per_frame;
-  uint8_t out_char_ldpc[ldpc->coded_bits_per_frame];
+  VLA_CALLOC(uint8_t, out_char_ldpc, ldpc->coded_bits_per_frame);
   int i, j;
   int codec_frame;
 
@@ -213,6 +217,7 @@ void ldpc_decode_frame(struct LDPC *ldpc, int *parityCheckCount, int *iter,
     default:
       assert(0);
   }
+  VLA_FREE(llr_full_codeword, out_char_ldpc);
 }
 
 /* Count uncoded (raw) bit errors over frame, note we don't include UW
@@ -225,13 +230,13 @@ int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config,
   int coded_syms_per_frame = ldpc->coded_bits_per_frame / config->bps;
   int coded_bits_per_frame = ldpc->coded_bits_per_frame;
   int data_bits_per_frame = ldpc->data_bits_per_frame;
-  int rx_bits_raw[coded_bits_per_frame];
+  VLA_CALLOC(int, rx_bits_raw, coded_bits_per_frame);
 
   /* generate test codeword from known payload data bits */
 
-  int test_codeword[coded_bits_per_frame];
-  uint16_t r[data_bits_per_frame];
-  uint8_t tx_bits[data_bits_per_frame];
+  VLA_CALLOC(int, test_codeword, coded_bits_per_frame);
+  VLA_CALLOC(uint16_t, r, data_bits_per_frame);
+  VLA_CALLOC(uint8_t, tx_bits, data_bits_per_frame);
 
   ofdm_rand(r, data_bits_per_frame);
 
@@ -260,7 +265,7 @@ int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config,
   for (i = 0; i < coded_bits_per_frame; i++) {
     if (test_codeword[i] != rx_bits_raw[i]) Nerrs++;
   }
-
+  VLA_FREE(rx_bits_raw, test_codeword, r, tx_bits);
   return Nerrs;
 }
 
@@ -322,10 +327,10 @@ void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc,
   int Npayloadsymsperpacket = ldpc->coded_bits_per_frame / ofdm->bps;
   int Npayloadbitsperpacket = ldpc->coded_bits_per_frame;
   int Nbitsperpacket = ofdm_get_bits_per_packet(ofdm);
-  int codeword[Npayloadbitsperpacket];
-  COMP payload_symbols[Npayloadsymsperpacket];
-  COMP payload_symbols_inter[Npayloadsymsperpacket];
-  complex float tx_symbols[Nbitsperpacket / ofdm->bps];
+  VLA_CALLOC(int, codeword, Npayloadbitsperpacket);
+  VLA_CALLOC(COMP, payload_symbols, Npayloadsymsperpacket);
+  VLA_CALLOC(COMP, payload_symbols_inter, Npayloadsymsperpacket);
+  VLA_CALLOC(complex float, tx_symbols, Nbitsperpacket / ofdm->bps);
 
   ldpc_encode_frame(ldpc, codeword, tx_bits);
   qpsk_modulate_frame(payload_symbols, codeword, Npayloadsymsperpacket);
@@ -334,4 +339,5 @@ void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc,
   ofdm_assemble_qpsk_modem_packet_symbols(ofdm, tx_symbols,
                                           payload_symbols_inter, txt_bits);
   ofdm_txframe(ofdm, tx_sams, tx_symbols);
+  VLA_FREE(codeword, payload_symbols, payload_symbols_inter, tx_symbols);
 }

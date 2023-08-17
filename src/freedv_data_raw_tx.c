@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 #include "fsk.h"
 #include "ldpc_codes.h"
@@ -278,7 +279,7 @@ int main(int argc, char *argv[]) {
             payload_bytes_per_modem_frame);
   assert((freedv_get_bits_per_modem_frame(freedv) % 8) == 0);
   int n_mod_out = freedv_get_n_tx_modem_samples(freedv);
-  uint8_t bytes_in[bytes_per_modem_frame];
+  VLA_CALLOC(uint8_t, bytes_in, bytes_per_modem_frame);
 
   if (mode == FREEDV_MODE_FSK_LDPC) {
     if (!quiet)
@@ -332,10 +333,10 @@ int main(int argc, char *argv[]) {
 
   if (testframes) {
     /* generate a fixed test frame */
-    uint8_t testframe_bytes[bytes_per_modem_frame];
+    VLA_CALLOC(uint8_t, testframe_bytes, bytes_per_modem_frame);
     memset(testframe_bytes, 0, bytes_per_modem_frame);
     int bits_per_frame = freedv_get_bits_per_modem_frame(freedv);
-    uint8_t testframe_bits[bits_per_frame];
+    VLA_CALLOC(uint8_t, testframe_bits, bits_per_frame);
     ofdm_generate_payload_data_bits(testframe_bits, bits_per_frame);
     freedv_pack(testframe_bytes, testframe_bits, bits_per_frame);
     if (!quiet) fprintf(stderr, "\n");
@@ -376,7 +377,7 @@ int main(int argc, char *argv[]) {
       }
       off_samples += send_silence(fout, shorts_per_sample, samples_delay);
     }
-
+    VLA_FREE(testframe_bytes, testframe_bits);
   } else {
     /* --------- modulate data from stdin mode
      * --------------------------------------------------*/
@@ -436,72 +437,80 @@ int main(int argc, char *argv[]) {
   fclose(fin);
   fclose(fout);
 
+  VLA_FREE(bytes_in);
   return 0;
 }
 
 size_t send_preamble(struct freedv *freedv, FILE *fout, int use_complex,
                      size_t n_mod_out) {
-  short mod_out_short[2 * n_mod_out];
+  VLA_CALLOC(short, mod_out_short, 2 * n_mod_out);
   int shorts_per_sample = 1;
   int n_preamble = 0;
 
   if (use_complex == 0) {
     n_preamble = freedv_rawdatapreambletx(freedv, mod_out_short);
   } else {
-    COMP mod_out_comp[n_mod_out];
+    VLA_CALLOC(COMP, mod_out_comp, n_mod_out);
     n_preamble = freedv_rawdatapreamblecomptx(freedv, mod_out_comp);
     comp_to_short(mod_out_short, mod_out_comp, n_preamble);
     shorts_per_sample = 2;
+    VLA_FREE(mod_out_comp);
   }
   assert(n_preamble == freedv_get_n_tx_preamble_modem_samples(freedv));
   assert(n_preamble <= n_mod_out);
   fwrite(mod_out_short, sizeof(short), shorts_per_sample * n_preamble, fout);
+  VLA_FREE(mod_out_short);
   return n_preamble;
 }
 
 size_t send_modulated_data(struct freedv *freedv, FILE *fout, int use_complex,
                            size_t n_mod_out, uint8_t bytes_in[]) {
-  short mod_out_short[2 * n_mod_out];
+  VLA_CALLOC(short, mod_out_short, 2 * n_mod_out);
   int shorts_per_sample = 1;
 
   if (use_complex == 0) {
     freedv_rawdatatx(freedv, mod_out_short, bytes_in);
   } else {
-    COMP mod_out_comp[n_mod_out];
+    VLA_CALLOC(COMP, mod_out_comp, n_mod_out);
     freedv_rawdatacomptx(freedv, mod_out_comp, bytes_in);
     comp_to_short(mod_out_short, mod_out_comp, n_mod_out);
     shorts_per_sample = 2;
+    VLA_FREE(mod_out_comp);
   }
   fwrite(mod_out_short, sizeof(short), shorts_per_sample * n_mod_out, fout);
+  VLA_FREE(mod_out_short);
   return n_mod_out;
 }
 
 size_t send_postamble(struct freedv *freedv, FILE *fout, int use_complex,
                       size_t n_mod_out) {
-  short mod_out_short[2 * n_mod_out];
+  VLA_CALLOC(short, mod_out_short, 2 * n_mod_out);
   int shorts_per_sample = 1;
   int n_postamble = 0;
 
   if (use_complex == 0) {
     n_postamble = freedv_rawdatapostambletx(freedv, mod_out_short);
   } else {
-    COMP mod_out_comp[n_mod_out];
+    VLA_CALLOC(COMP, mod_out_comp, n_mod_out);
     n_postamble = freedv_rawdatapostamblecomptx(freedv, mod_out_comp);
     comp_to_short(mod_out_short, mod_out_comp, n_postamble);
     shorts_per_sample = 2;
+    VLA_FREE(mod_out_comp);
   }
   assert(n_postamble == freedv_get_n_tx_postamble_modem_samples(freedv));
   assert(n_postamble <= n_mod_out);
   fwrite(mod_out_short, sizeof(short), shorts_per_sample * n_postamble, fout);
+  VLA_FREE(mod_out_short);
   return n_postamble;
 }
 
 size_t send_silence(FILE *fout, size_t shorts_per_sample,
                     size_t samples_delay) {
   size_t n = shorts_per_sample * samples_delay;
-  short sil_short[n];
+  VLA_CALLOC(short, sil_short, n);
   for (int i = 0; i < n; i++) sil_short[i] = 0;
   fwrite(sil_short, sizeof(short), n, fout);
+  VLA_FREE(sil_short);
   return samples_delay;
 }
 

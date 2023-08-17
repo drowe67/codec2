@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "freedv_api.h"
 
 /**********************************************************
@@ -195,8 +196,8 @@ int main(int argc, char *argv[]) {
 
   freedv_set_verbose(freedv, verbose);
 
-  short speech_out[freedv_get_n_max_speech_samples(freedv)];
-  short demod_in[freedv_get_n_max_modem_samples(freedv)];
+  VLA_CALLOC(short, speech_out, freedv_get_n_max_speech_samples(freedv));
+  VLA_CALLOC(short, demod_in, freedv_get_n_max_modem_samples(freedv));
 
   freedv_set_callback_data(freedv, my_datarx, my_datatx, &my_cb_state);
 
@@ -221,5 +222,6 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "frames decoded: %d\n", frame);
 
   freedv_close(freedv);
+  VLA_FREE(speech_out, demod_in);
   return 0;
 }

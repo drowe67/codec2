@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
 #include "ldpc_codes.h"
 #include "mpdecode_core.h"
 #include "ofdm_internal.h"
@@ -99,9 +100,9 @@ int main(int argc, char *argv[]) {
   CodeLength = ldpc.CodeLength; /* length of entire codeword */
   NumberParityBits = ldpc.NumberParityBits;
   data_bits_per_frame = ldpc.NumberRowsHcols;
-  unsigned char ibits[data_bits_per_frame];
-  unsigned char pbits[NumberParityBits];
-  uint8_t out_char[CodeLength];
+  VLA_CALLOC(unsigned char, ibits, data_bits_per_frame);
+  VLA_CALLOC(unsigned char, pbits, NumberParityBits);
+  VLA_CALLOC(uint8_t, out_char, CodeLength);
 
   testframes = 0;
   total_iters = 0;
@@ -144,7 +145,7 @@ int main(int argc, char *argv[]) {
   }
   if (opt_exists(argv, argc, "--testframes")) {
     testframes = 1;
-    uint16_t r[data_bits_per_frame];
+    VLA_CALLOC(uint16_t, r, data_bits_per_frame);
     ofdm_rand(r, data_bits_per_frame);
 
     for (i = 0; i < data_bits_per_frame - unused_data_bits; i++) {
@@ -155,6 +156,7 @@ int main(int argc, char *argv[]) {
       ibits[i] = 1;
     }
     encode(&ldpc, ibits, pbits);
+    VLA_FREE(r);
   }
 
   float *input_float = calloc(CodeLength, sizeof(float));
@@ -185,12 +187,12 @@ int main(int argc, char *argv[]) {
 
     if (sdinput) {
       /* map BPSK SDs to bit LLRs */
-      float llr[CodeLength - unused_data_bits];
+      VLA_CALLOC(float, llr, CodeLength - unused_data_bits);
       sd_to_llr(llr, input_float, CodeLength - unused_data_bits);
 
       /* insert unused data LLRs */
 
-      float llr_tmp[CodeLength];
+      VLA_CALLOC(float, llr_tmp, CodeLength);
       for (i = 0; i < data_bits_per_frame - unused_data_bits; i++)
         llr_tmp[i] = llr[i];  // rx data bits
       for (i = data_bits_per_frame - unused_data_bits; i < data_bits_per_frame;
@@ -199,6 +201,7 @@ int main(int argc, char *argv[]) {
       for (i = data_bits_per_frame; i < CodeLength; i++)
         llr_tmp[i] = llr[i - unused_data_bits];  // rx parity bits
       memcpy(input_float, llr_tmp, sizeof(float) * CodeLength);
+      VLA_FREE(llr, llr_tmp);
     }
 
     iter = run_ldpc_decoder(&ldpc, out_char, input_float, &parityCheckCount);
@@ -264,5 +267,6 @@ int main(int argc, char *argv[]) {
       return 1;
   }
 
+  VLA_FREE(ibits, pbits, out_char);
   return 0;
 }
