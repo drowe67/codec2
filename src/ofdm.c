@@ -706,6 +706,8 @@ static COMP vector_sum(COMP *a, int num_elements) {
      (__clang_minor__ > 7 || \
       (__clang_minor__ == 7 && __clang_patchlevel__ > 0)))
 #define USE_VECTOR_OPS 1
+//#elif _MSC_VER > 1800
+//#define USE_VECTOR_OPS 1
 #endif
 #else
 #include "codec2_math.h"
@@ -764,7 +766,7 @@ static COMP ofdm_complex_dot_product(COMP *left, COMP *right, int numSamples) {
   result = resultReal + I * resultImag;
 #else
   for (int i = 0; i < numSamples; i++) {
-    result += left[i] * right[i];
+    result = cmac(result, left[i], right[i]);
   }
 #endif /* USE_VECTOR_OPS */
 

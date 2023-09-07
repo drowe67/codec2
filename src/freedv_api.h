@@ -38,6 +38,7 @@
 #include <sys/types.h>
 // This declares a single-precision (float) complex number
 #include "comp.h"
+#include "export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,144 +192,164 @@ typedef void (*freedv_callback_datatx)(void *, unsigned char *packet,
 
 // open, close ----------------------------------------------------------------
 
-struct freedv *freedv_open_advanced(int mode, struct freedv_advanced *adv);
-struct freedv *freedv_open(int mode);
-void freedv_close(struct freedv *freedv);
+CODEC2_API struct freedv *freedv_open_advanced(int mode,
+                                                struct freedv_advanced *adv);
+CODEC2_API struct freedv *freedv_open(int mode);
+CODEC2_API void freedv_close(struct freedv *freedv);
 
 // Transmit -------------------------------------------------------------------
 
-void freedv_tx(struct freedv *freedv, short mod_out[], short speech_in[]);
-void freedv_comptx(struct freedv *freedv, COMP mod_out[], short speech_in[]);
-void freedv_datatx(struct freedv *f, short mod_out[]);
-int freedv_data_ntxframes(struct freedv *freedv);
-void freedv_rawdatatx(struct freedv *f, short mod_out[],
-                      unsigned char *packed_payload_bits);
-void freedv_rawdatacomptx(struct freedv *f, COMP mod_out[],
-                          unsigned char *packed_payload_bits);
-int freedv_rawdatapreambletx(struct freedv *f, short mod_out[]);
-int freedv_rawdatapreamblecomptx(struct freedv *f, COMP mod_out[]);
-int freedv_rawdatapostambletx(struct freedv *f, short mod_out[]);
-int freedv_rawdatapostamblecomptx(struct freedv *f, COMP mod_out[]);
+CODEC2_API void freedv_tx(struct freedv *freedv, short mod_out[],
+                           short speech_in[]);
+CODEC2_API void freedv_comptx(struct freedv *freedv, COMP mod_out[],
+                               short speech_in[]);
+CODEC2_API void freedv_datatx(struct freedv *f, short mod_out[]);
+CODEC2_API int freedv_data_ntxframes(struct freedv *freedv);
+CODEC2_API void freedv_rawdatatx(struct freedv *f, short mod_out[],
+                                  unsigned char *packed_payload_bits);
+CODEC2_API void freedv_rawdatacomptx(struct freedv *f, COMP mod_out[],
+                                      unsigned char *packed_payload_bits);
+CODEC2_API int freedv_rawdatapreambletx(struct freedv *f, short mod_out[]);
+CODEC2_API int freedv_rawdatapreamblecomptx(struct freedv *f, COMP mod_out[]);
+CODEC2_API int freedv_rawdatapostambletx(struct freedv *f, short mod_out[]);
+CODEC2_API int freedv_rawdatapostamblecomptx(struct freedv *f, COMP mod_out[]);
 
 // Receive -------------------------------------------------------------------
 
-int freedv_nin(struct freedv *freedv);
-int freedv_rx(struct freedv *freedv, short speech_out[], short demod_in[]);
-int freedv_shortrx(struct freedv *freedv, short speech_out[], short demod_in[],
-                   float gain);
-int freedv_floatrx(struct freedv *freedv, short speech_out[], float demod_in[]);
-int freedv_comprx(struct freedv *freedv, short speech_out[], COMP demod_in[]);
-int freedv_rawdatarx(struct freedv *freedv, unsigned char *packed_payload_bits,
-                     short demod_in[]);
-int freedv_rawdatacomprx(struct freedv *freedv,
-                         unsigned char *packed_payload_bits, COMP demod_in[]);
+CODEC2_API int freedv_nin(struct freedv *freedv);
+CODEC2_API int freedv_rx(struct freedv *freedv, short speech_out[],
+                          short demod_in[]);
+CODEC2_API int freedv_shortrx(struct freedv *freedv, short speech_out[],
+                               short demod_in[], float gain);
+CODEC2_API int freedv_floatrx(struct freedv *freedv, short speech_out[],
+                               float demod_in[]);
+CODEC2_API int freedv_comprx(struct freedv *freedv, short speech_out[],
+                              COMP demod_in[]);
+CODEC2_API int freedv_rawdatarx(struct freedv *freedv,
+                                 unsigned char *packed_payload_bits,
+                                 short demod_in[]);
+CODEC2_API int freedv_rawdatacomprx(struct freedv *freedv,
+                                     unsigned char *packed_payload_bits,
+                                     COMP demod_in[]);
 
 // Helper functions
 // -------------------------------------------------------------------
 
-int freedv_codec_frames_from_rawdata(struct freedv *freedv,
-                                     unsigned char *codec_frames,
-                                     unsigned char *rawdata);
-int freedv_rawdata_from_codec_frames(struct freedv *freedv,
-                                     unsigned char *rawdata,
-                                     unsigned char *codec_frames);
-unsigned short freedv_gen_crc16(unsigned char *bytes, int nbytes);
-void freedv_pack(unsigned char *bytes, unsigned char *bits, int nbits);
-void freedv_unpack(unsigned char *bits, unsigned char *bytes, int nbits);
-unsigned short freedv_crc16_unpacked(unsigned char *bits, int nbits);
-int freedv_check_crc16_unpacked(unsigned char *unpacked_bits, int nbits);
+CODEC2_API int freedv_codec_frames_from_rawdata(struct freedv *freedv,
+                                                 unsigned char *codec_frames,
+                                                 unsigned char *rawdata);
+CODEC2_API int freedv_rawdata_from_codec_frames(struct freedv *freedv,
+                                                 unsigned char *rawdata,
+                                                 unsigned char *codec_frames);
+CODEC2_API unsigned short freedv_gen_crc16(unsigned char *bytes, int nbytes);
+CODEC2_API void freedv_pack(unsigned char *bytes, unsigned char *bits,
+                             int nbits);
+CODEC2_API void freedv_unpack(unsigned char *bits, unsigned char *bytes,
+                               int nbits);
+CODEC2_API unsigned short freedv_crc16_unpacked(unsigned char *bits,
+                                                 int nbits);
+CODEC2_API int freedv_check_crc16_unpacked(unsigned char *unpacked_bits,
+                                            int nbits);
 
 // Set parameters ------------------------------------------------------------
 
-void freedv_set_callback_txt(struct freedv *freedv, freedv_callback_rx rx,
-                             freedv_callback_tx tx, void *callback_state);
-void freedv_set_callback_protocol(struct freedv *freedv,
-                                  freedv_callback_protorx rx,
-                                  freedv_callback_prototx tx,
-                                  void *callback_state);
-void freedv_set_callback_data(struct freedv *freedv,
-                              freedv_callback_datarx datarx,
-                              freedv_callback_datatx datatx,
-                              void *callback_state);
-void freedv_set_test_frames(struct freedv *freedv, int test_frames);
-void freedv_set_test_frames_diversity(struct freedv *freedv,
-                                      int test_frames_diversity);
-void freedv_set_smooth_symbols(struct freedv *freedv, int smooth_symbols);
-void freedv_set_squelch_en(struct freedv *freedv, bool squelch_en);
-void freedv_set_snr_squelch_thresh(struct freedv *freedv,
-                                   float snr_squelch_thresh);
-void freedv_set_clip(struct freedv *freedv, bool val);
-void freedv_set_total_bit_errors(struct freedv *freedv, int val);
-void freedv_set_total_bits(struct freedv *freedv, int val);
-void freedv_set_total_bit_errors_coded(struct freedv *freedv, int val);
-void freedv_set_total_bits_coded(struct freedv *freedv, int val);
-void freedv_set_total_packets(struct freedv *freedv, int val);
-void freedv_set_total_packet_errors(struct freedv *freedv, int val);
-void freedv_set_callback_error_pattern(struct freedv *freedv,
-                                       freedv_calback_error_pattern cb,
-                                       void *state);
-void freedv_set_varicode_code_num(struct freedv *freedv, int val);
-void freedv_set_data_header(struct freedv *freedv, unsigned char *header);
-void freedv_set_carrier_ampl(struct freedv *freedv, int c, float ampl);
-void freedv_set_sync(struct freedv *freedv, int sync_cmd);
-void freedv_set_verbose(struct freedv *freedv, int verbosity);
-void freedv_set_tx_bpf(struct freedv *freedv, int val);
-void freedv_set_tx_amp(struct freedv *freedv, float amp);
-void freedv_set_ext_vco(struct freedv *f, int val);
-void freedv_set_phase_est_bandwidth_mode(struct freedv *f, int val);
-void freedv_set_eq(struct freedv *f, bool val);
-void freedv_set_frames_per_burst(struct freedv *f, int framesperburst);
-void freedv_passthrough_gain(struct freedv *f, float g);
-int freedv_set_tuning_range(struct freedv *freedv, float val_fmin,
-                            float val_fmax);
+CODEC2_API void freedv_set_callback_txt(struct freedv *freedv,
+                                         freedv_callback_rx rx,
+                                         freedv_callback_tx tx,
+                                         void *callback_state);
+CODEC2_API void freedv_set_callback_protocol(struct freedv *freedv,
+                                              freedv_callback_protorx rx,
+                                              freedv_callback_prototx tx,
+                                              void *callback_state);
+CODEC2_API void freedv_set_callback_data(struct freedv *freedv,
+                                          freedv_callback_datarx datarx,
+                                          freedv_callback_datatx datatx,
+                                          void *callback_state);
+CODEC2_API void freedv_set_test_frames(struct freedv *freedv, int test_frames);
+CODEC2_API void freedv_set_test_frames_diversity(struct freedv *freedv,
+                                                  int test_frames_diversity);
+CODEC2_API void freedv_set_smooth_symbols(struct freedv *freedv,
+                                           int smooth_symbols);
+CODEC2_API void freedv_set_squelch_en(struct freedv *freedv, bool squelch_en);
+CODEC2_API void freedv_set_snr_squelch_thresh(struct freedv *freedv,
+                                               float snr_squelch_thresh);
+CODEC2_API void freedv_set_clip(struct freedv *freedv, bool val);
+CODEC2_API void freedv_set_total_bit_errors(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_total_bits(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_total_bit_errors_coded(struct freedv *freedv,
+                                                   int val);
+CODEC2_API void freedv_set_total_bits_coded(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_total_packets(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_total_packet_errors(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_callback_error_pattern(
+    struct freedv *freedv, freedv_calback_error_pattern cb, void *state);
+CODEC2_API void freedv_set_varicode_code_num(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_data_header(struct freedv *freedv,
+                                        unsigned char *header);
+CODEC2_API void freedv_set_carrier_ampl(struct freedv *freedv, int c,
+                                         float ampl);
+CODEC2_API void freedv_set_sync(struct freedv *freedv, int sync_cmd);
+CODEC2_API void freedv_set_verbose(struct freedv *freedv, int verbosity);
+CODEC2_API void freedv_set_tx_bpf(struct freedv *freedv, int val);
+CODEC2_API void freedv_set_tx_amp(struct freedv *freedv, float amp);
+CODEC2_API void freedv_set_ext_vco(struct freedv *f, int val);
+CODEC2_API void freedv_set_phase_est_bandwidth_mode(struct freedv *f, int val);
+CODEC2_API void freedv_set_eq(struct freedv *f, bool val);
+CODEC2_API void freedv_set_frames_per_burst(struct freedv *f,
+                                             int framesperburst);
+CODEC2_API void freedv_passthrough_gain(struct freedv *f, float g);
+CODEC2_API int freedv_set_tuning_range(struct freedv *freedv, float val_fmin,
+                                        float val_fmax);
 
 // Get parameters
 // -------------------------------------------------------------------------
 
 struct MODEM_STATS;
 
-int freedv_get_version(void);
-char *freedv_get_hash(void);
-int freedv_get_mode(struct freedv *freedv);
-void freedv_get_modem_stats(struct freedv *freedv, int *sync, float *snr_est);
-void freedv_get_modem_extended_stats(struct freedv *freedv,
-                                     struct MODEM_STATS *stats);
-int freedv_get_test_frames(struct freedv *freedv);
+CODEC2_API int freedv_get_version(void);
+CODEC2_API char *freedv_get_hash(void);
+CODEC2_API int freedv_get_mode(struct freedv *freedv);
+CODEC2_API void freedv_get_modem_stats(struct freedv *freedv, int *sync,
+                                        float *snr_est);
+CODEC2_API void freedv_get_modem_extended_stats(struct freedv *freedv,
+                                                 struct MODEM_STATS *stats);
+CODEC2_API int freedv_get_test_frames(struct freedv *freedv);
 
-int freedv_get_speech_sample_rate(struct freedv *freedv);
-int freedv_get_n_speech_samples(struct freedv *freedv);
-int freedv_get_n_max_speech_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_speech_sample_rate(struct freedv *freedv);
+CODEC2_API int freedv_get_n_speech_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_n_max_speech_samples(struct freedv *freedv);
 
-int freedv_get_modem_sample_rate(struct freedv *freedv);
-int freedv_get_modem_symbol_rate(struct freedv *freedv);
-int freedv_get_n_max_modem_samples(struct freedv *freedv);
-int freedv_get_n_nom_modem_samples(struct freedv *freedv);
-int freedv_get_n_tx_modem_samples(struct freedv *freedv);
-int freedv_get_n_tx_preamble_modem_samples(struct freedv *freedv);
-int freedv_get_n_tx_postamble_modem_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_modem_sample_rate(struct freedv *freedv);
+CODEC2_API int freedv_get_modem_symbol_rate(struct freedv *freedv);
+CODEC2_API int freedv_get_n_max_modem_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_n_nom_modem_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_n_tx_modem_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_n_tx_preamble_modem_samples(struct freedv *freedv);
+CODEC2_API int freedv_get_n_tx_postamble_modem_samples(struct freedv *freedv);
 
 // bit error rate stats
-int freedv_get_total_bits(struct freedv *freedv);
-int freedv_get_total_bit_errors(struct freedv *freedv);
-int freedv_get_total_bits_coded(struct freedv *freedv);
-int freedv_get_total_bit_errors_coded(struct freedv *freedv);
-int freedv_get_total_packets(struct freedv *freedv);
-int freedv_get_total_packet_errors(struct freedv *freedv);
+CODEC2_API int freedv_get_total_bits(struct freedv *freedv);
+CODEC2_API int freedv_get_total_bit_errors(struct freedv *freedv);
+CODEC2_API int freedv_get_total_bits_coded(struct freedv *freedv);
+CODEC2_API int freedv_get_total_bit_errors_coded(struct freedv *freedv);
+CODEC2_API int freedv_get_total_packets(struct freedv *freedv);
+CODEC2_API int freedv_get_total_packet_errors(struct freedv *freedv);
 
-int freedv_get_rx_status(struct freedv *freedv);
-void freedv_get_fsk_S_and_N(struct freedv *freedv, float *S, float *N);
+CODEC2_API int freedv_get_rx_status(struct freedv *freedv);
+CODEC2_API void freedv_get_fsk_S_and_N(struct freedv *freedv, float *S,
+                                        float *N);
 
-int freedv_get_sync(struct freedv *freedv);
-int freedv_get_sync_interleaver(struct freedv *freedv);
+CODEC2_API int freedv_get_sync(struct freedv *freedv);
+CODEC2_API int freedv_get_sync_interleaver(struct freedv *freedv);
 
 // access to speech codec states
-struct FSK *freedv_get_fsk(struct freedv *f);
-struct CODEC2 *freedv_get_codec2(struct freedv *freedv);
+CODEC2_API struct FSK *freedv_get_fsk(struct freedv *f);
+CODEC2_API struct CODEC2 *freedv_get_codec2(struct freedv *freedv);
 
-int freedv_get_bits_per_codec_frame(struct freedv *freedv);
-int freedv_get_bits_per_modem_frame(struct freedv *freedv);
-int freedv_get_sz_error_pattern(struct freedv *freedv);
-int freedv_get_protocol_bits(struct freedv *freedv);
+CODEC2_API int freedv_get_bits_per_codec_frame(struct freedv *freedv);
+CODEC2_API int freedv_get_bits_per_modem_frame(struct freedv *freedv);
+CODEC2_API int freedv_get_sz_error_pattern(struct freedv *freedv);
+CODEC2_API int freedv_get_protocol_bits(struct freedv *freedv);
 
 #ifdef __cplusplus
 }

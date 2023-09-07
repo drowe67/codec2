@@ -81,7 +81,9 @@ else(CMAKE_CROSSCOMPILING)
 # Build code generator binaries. These do not get installed.
     # generate_codebook
     add_executable(generate_codebook generate_codebook.c)
-    target_link_libraries(generate_codebook m)
+	if(UNIX)
+		target_link_libraries(generate_codebook m)
+	endif()
     # Make native builds available for cross-compiling.
     export(TARGETS generate_codebook
         FILE ${CMAKE_BINARY_DIR}/ImportExecutables.cmake)
@@ -228,6 +230,7 @@ set(CODEC2_PUBLIC_HEADERS
     freedv_api.h
     reliable_text.h
     codec2_math.h
+    export.h
     ${CODEC2_VERSION_PATH}/version.h
 )
 
@@ -243,9 +246,14 @@ set(CODEC2_PUBLIC_HEADERS
 set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
 message(STATUS "codec2 version: ${CODEC2_VERSION}")
 add_library(codec2 ${CODEC2_SRCS})
+
 if(UNIX)
     target_link_libraries(codec2 PUBLIC m)
 endif(UNIX)
+if(MSVC)
+  target_compile_definitions(codec2 PUBLIC _USE_MATH_DEFINES __STDC_NO_VLA__ CODEC2_LIBRARY_EXPORTS)
+endif(MSVC)
+
 if(LPCNET AND lpcnetfreedv_FOUND)
     target_link_libraries(codec2 PRIVATE lpcnetfreedv)
 endif()
@@ -272,6 +280,7 @@ export(TARGETS codec2
     FILE ${CMAKE_BINARY_DIR}/codec2.cmake
 )
 
+if(NOT MSVC)
 add_executable(c2enc c2enc.c)
 target_link_libraries(c2enc codec2)
 
@@ -378,6 +387,7 @@ target_link_libraries(ldpc_enc codec2)
 
 add_executable(ldpc_dec ldpc_dec.c)
 target_link_libraries(ldpc_dec codec2)
+endif()
 
 install(TARGETS codec2 EXPORT codec2-config
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT lib

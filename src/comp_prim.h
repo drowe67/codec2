@@ -117,7 +117,7 @@ inline static COMP comp(float re, float im) {
 /*
  * Quick and easy complex 0
  */
-inline static COMP comp0() {
+inline static COMP comp0(void) {
   return comp(0.f, 0.f);  //
 }
 

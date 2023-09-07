@@ -32,6 +32,7 @@ octave/fsk_horus.m
 #include <stdint.h>
 
 #include "comp.h"
+#include "export.h"
 #include "kiss_fftr.h"
 #include "modem_stats.h"
 
@@ -114,7 +115,8 @@ struct FSK {
  * int tone_spacing - frequency spacing (for modulator and optional "mask" freq
  * estimator)
  */
-struct FSK *fsk_create(int Fs, int Rs, int M, int f1_tx, int tone_spacing);
+CODEC2_API struct FSK *fsk_create(int Fs, int Rs, int M, int f1_tx,
+                                   int tone_spacing);
 
 /*
  * Create a FSK modem - advanced version
@@ -128,31 +130,32 @@ struct FSK *fsk_create(int Fs, int Rs, int M, int f1_tx, int tone_spacing);
  * int tone_spacing - frequency spacing (for modulator and optional "mask" freq
  * estimator)
  */
-struct FSK *fsk_create_hbr(int Fs, int Rs, int M, int P, int Nsym, int f1_tx,
-                           int tone_spacing);
+CODEC2_API struct FSK *fsk_create_hbr(int Fs, int Rs, int M, int P, int Nsym,
+                                       int f1_tx, int tone_spacing);
 
 /*
  * Set the minimum and maximum frequencies at which the freq. estimator can find
  * tones
  */
-void fsk_set_freq_est_limits(struct FSK *fsk, int fmin, int fmax);
+CODEC2_API void fsk_set_freq_est_limits(struct FSK *fsk, int fmin, int fmax);
 
 /*
  * Clear the estimator states
  */
-void fsk_clear_estimators(struct FSK *fsk);
+CODEC2_API void fsk_clear_estimators(struct FSK *fsk);
 
 /*
  * Fills MODEM_STATS struct with demod statistics
  */
-void fsk_get_demod_stats(struct FSK *fsk, struct MODEM_STATS *stats);
+CODEC2_API void fsk_get_demod_stats(struct FSK *fsk,
+                                     struct MODEM_STATS *stats);
 
 /*
  * Destroy an FSK state struct and free it's memory
  *
  * struct FSK *fsk - FSK config/state struct to be destroyed
  */
-void fsk_destroy(struct FSK *fsk);
+CODEC2_API void fsk_destroy(struct FSK *fsk);
 
 /*
  * Modulates Nsym bits into N samples
@@ -162,7 +165,8 @@ void fsk_destroy(struct FSK *fsk);
  * fsk->Ts*(nbits/(M>>1)) in length uint8_t tx_bits[] - Buffer containing Nbits
  * unpacked bits int     nbits     - number of bits to transmit
  */
-void fsk_mod(struct FSK *fsk, float fsk_out[], uint8_t tx_bits[], int nbits);
+CODEC2_API void fsk_mod(struct FSK *fsk, float fsk_out[], uint8_t tx_bits[],
+                         int nbits);
 
 /*
  * Modulates Nsym bits into N samples
@@ -174,8 +178,8 @@ void fsk_mod(struct FSK *fsk, float fsk_out[], uint8_t tx_bits[], int nbits);
  * uint8_t tx_bits[] - Buffer containing Nbits unpacked bits
  * int     nbits     - number of bits to transmit
  */
-void fsk_mod_ext_vco(struct FSK *fsk, float vco_out[], uint8_t tx_bits[],
-                     int nbits);
+CODEC2_API void fsk_mod_ext_vco(struct FSK *fsk, float vco_out[],
+                                 uint8_t tx_bits[], int nbits);
 
 /*
  * Modulates Nsym bits into N complex samples
@@ -185,7 +189,8 @@ void fsk_mod_ext_vco(struct FSK *fsk, float vco_out[], uint8_t tx_bits[],
  * fsk->Ts*(nbits/(M>>1)) in length uint8_t tx_bits[] - Buffer containing Nbits
  * unpacked bits int     nbits     - number of bits to transmit
  */
-void fsk_mod_c(struct FSK *fsk, COMP fsk_out[], uint8_t tx_bits[], int nbits);
+CODEC2_API void fsk_mod_c(struct FSK *fsk, COMP fsk_out[], uint8_t tx_bits[],
+                           int nbits);
 
 /*
  * Returns the number of samples needed for the next fsk_demod() cycle
@@ -193,7 +198,7 @@ void fsk_mod_c(struct FSK *fsk, COMP fsk_out[], uint8_t tx_bits[], int nbits);
  * struct FSK *fsk - FSK config/state struct, set up by fsk_create
  * returns - number of samples to be fed into fsk_demod next cycle
  */
-uint32_t fsk_nin(struct FSK *fsk);
+CODEC2_API uint32_t fsk_nin(struct FSK *fsk);
 
 /*
  * Demodulate some number of FSK samples. The number of samples to be
@@ -203,7 +208,7 @@ uint32_t fsk_nin(struct FSK *fsk);
  * uint8_t rx_bits[] - Buffer for fsk->Nbits unpacked bits to be written
  * float fsk_in[]    - nin samples of modulated FSK
  */
-void fsk_demod(struct FSK *fsk, uint8_t rx_bits[], COMP fsk_in[]);
+CODEC2_API void fsk_demod(struct FSK *fsk, uint8_t rx_bits[], COMP fsk_in[]);
 
 /*
  * Soft decision demodulation
@@ -212,17 +217,17 @@ void fsk_demod(struct FSK *fsk, uint8_t rx_bits[], COMP fsk_in[]);
  * float rx_flit[] - M x Nsym array of filtermagnitude outputs
  * float fsk_in[]  - nin samples of modualted FSK
  */
-void fsk_demod_sd(struct FSK *fsk, float rx_filt[], COMP fsk_in[]);
+CODEC2_API void fsk_demod_sd(struct FSK *fsk, float rx_filt[], COMP fsk_in[]);
 
 /* enables/disables normalisation of eye diagram samples */
 
-void fsk_stats_normalise_eye(struct FSK *fsk, int normalise_enable);
+CODEC2_API void fsk_stats_normalise_eye(struct FSK *fsk, int normalise_enable);
 
 /* Set the FSK modem into burst demod mode */
 
-void fsk_enable_burst_mode(struct FSK *fsk);
+CODEC2_API void fsk_enable_burst_mode(struct FSK *fsk);
 
 /* Set freq est algorithm 0: peak 1:mask */
-void fsk_set_freq_est_alg(struct FSK *fsk, int est_type);
+CODEC2_API void fsk_set_freq_est_alg(struct FSK *fsk, int est_type);
 
 #endif

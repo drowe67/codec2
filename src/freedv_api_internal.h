@@ -188,8 +188,7 @@ struct freedv {
 
   char (*freedv_get_next_tx_char)(void *callback_state);
   void (*freedv_put_next_rx_char)(void *callback_state, char c);
-  void (*freedv_put_next_rx_symbol)(void *callback_state, COMP sym,
-                                    float amp);
+  void (*freedv_put_next_rx_symbol)(void *callback_state, COMP sym, float amp);
   void *callback_state;
   void *callback_state_sym;
 

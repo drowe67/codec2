@@ -23,6 +23,8 @@
 #ifndef RELIABLE_TEXT_H
 #define RELIABLE_TEXT_H
 
+#include "export.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -41,24 +43,26 @@ typedef void (*on_text_rx_t)(reliable_text_t rt, const char* txt_ptr,
 reliable_text_t reliable_text_create();
 
 /* Destroy reliable_text object. */
-void reliable_text_destroy(reliable_text_t ptr);
+CODEC2_API void reliable_text_destroy(reliable_text_t ptr);
 
 /* Reset reliable_text object for next sync. */
-void reliable_text_reset(reliable_text_t ptr);
+CODEC2_API void reliable_text_reset(reliable_text_t ptr);
 
 /* Sets string that is sent on TX. */
-void reliable_text_set_string(reliable_text_t ptr, const char* str,
-                              int strlength);
+CODEC2_API void reliable_text_set_string(reliable_text_t ptr, const char* str,
+                                          int strlength);
 
 /* Link FreeDV object to reliable_text object. */
-void reliable_text_use_with_freedv(reliable_text_t ptr, struct freedv* fdv,
-                                   on_text_rx_t text_rx_fn, void* state);
+CODEC2_API void reliable_text_use_with_freedv(reliable_text_t ptr,
+                                               struct freedv* fdv,
+                                               on_text_rx_t text_rx_fn,
+                                               void* state);
 
 /* Returns associated struct freedv object. */
-struct freedv* reliable_text_get_freedv_obj(reliable_text_t ptr);
+CODEC2_API struct freedv* reliable_text_get_freedv_obj(reliable_text_t ptr);
 
 /* Unlink FreeDV object from reliable_text object. */
-void reliable_text_unlink_from_freedv(reliable_text_t ptr);
+CODEC2_API void reliable_text_unlink_from_freedv(reliable_text_t ptr);
 
 #ifdef __cplusplus
 }

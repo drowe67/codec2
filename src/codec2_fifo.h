@@ -32,23 +32,25 @@
 #ifndef __FIFO__
 #define __FIFO__
 
+#include "export.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct FIFO;
 
-struct FIFO *codec2_fifo_create(int nshort);
-struct FIFO *codec2_fifo_create_buf(int nshort, short *buf);
-void codec2_fifo_destroy(struct FIFO *fifo);
-int codec2_fifo_write(struct FIFO *fifo, short data[], int n);
-int codec2_fifo_read(struct FIFO *fifo, short data[], int n);
+CODEC2_API struct FIFO *codec2_fifo_create(int nshort);
+CODEC2_API struct FIFO *codec2_fifo_create_buf(int nshort, short *buf);
+CODEC2_API void codec2_fifo_destroy(struct FIFO *fifo);
+CODEC2_API int codec2_fifo_write(struct FIFO *fifo, short data[], int n);
+CODEC2_API int codec2_fifo_read(struct FIFO *fifo, short data[], int n);
 
 /* Return the number of bytes stored in the FIFO */
-int codec2_fifo_used(const struct FIFO *const fifo);
+CODEC2_API int codec2_fifo_used(const struct FIFO *const fifo);
 
 /* Return the space available in the FIFO */
-int codec2_fifo_free(const struct FIFO *const fifo);
+CODEC2_API int codec2_fifo_free(const struct FIFO *const fifo);
 
 #ifdef __cplusplus
 }

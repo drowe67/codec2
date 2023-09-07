@@ -30,7 +30,6 @@
                                INCLUDES
 
 \*---------------------------------------------------------------------------*/
-
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -313,8 +312,8 @@ void qpsk_symbols_to_bits(struct COHPSK *coh, float rx_bits[],
   COMP y[NPILOTSFRAME + 2], yfit;
   COMP rx_symb_linear[NSYMROW * COHPSK_NC * COHPSK_ND];
   COMP m, b;
-  COMP __attribute__((unused)) corr, rot, pi_on_4, phi_rect, div_symb;
-  float mag, __attribute__((unused)) phi_, __attribute__((unused)) amp_;
+  COMP corr, rot, pi_on_4, phi_rect, div_symb;
+  float mag, phi_, amp_;
   float sum_x, sum_xx, noise_var;
   float spi_4 = M_PI / 4.0f;
   COMP s;

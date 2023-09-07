@@ -79,8 +79,13 @@ add_custom_target(dist
         | bzip2 > ${CMAKE_BINARY_DIR}/${ARCHIVE_NAME}.tar.bz2
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+
 # Set default C flags.
+if(NOT MSVC)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-strict-overflow")
+else()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+endif()
 
 # Check for what C standard is supported.
 if(NOT WIN32)
@@ -103,8 +108,16 @@ if((NOT WIN32) AND (NOT MICROCONTROLLER_BUILD))
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 endif()
 
+if(NOT MSVC)
 set(CMAKE_C_FLAGS_DEBUG "-g -O2 -DDUMP")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
+else()
+set(CMAKE_C_FLAGS_DEBUG "/Zi")
+set(CMAKE_C_FLAGS_RELEASE "/O2")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4244 /wd4305 /wd5045")
+
+ 
+endif()
 
 #
 # Setup Windows/MinGW specifics here.
@@ -125,7 +138,7 @@ option(UNITTEST "Build unittest binaries." OFF)
 option(LPCNET "Build codec2 with LPCNet support." OFF)
 set(LPCNET_BUILD_DIR FALSE CACHE PATH "Location of lpcnet build tree.")
 # Setting LPCNET_BUILD_DIR implies LPCNET=ON
-if(LPCNET_BUILD_DIR)
+if(${LPCNET_BUILD_DIR})
     set(LPCNET ON)
 endif()
 
@@ -214,8 +227,9 @@ endif()
 # codec2 library and demo apps
 #
 add_subdirectory(src)
+if(NOT MSVC)
 add_subdirectory(demo)
-
+endif()
 
 if(UNITTEST)
     # Pthread Library
@@ -252,7 +266,7 @@ message(STATUS "Compilation date = XX${DATE_RESULT}XX")
 
 set(CPACK_PACKAGE_VERSION_PATCH "${CPACK_PACKAGE_VERSION_PATCH}-${DATE_RESULT}-${CODEC2_HASH}")
 
-if(WIN32)
+if(WIN32 AND NOT MSVC)
     #
     # Cpack NSIS installer configuration for Windows.
     # See: http://nsis.sourceforge.net/Download
@@ -284,7 +298,7 @@ elseif(UNIX AND NOT APPLE)
     include(CPack)
     cpack_add_component(lib REQUIRED)
     cpack_add_component(dev DEPENDS lib)
-endif(WIN32)
+endif()
 
 ########################################################################
 # Create Pkg Config File

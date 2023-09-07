@@ -1599,7 +1599,7 @@ float codec2_get_energy(struct CODEC2 *c2, const unsigned char *bits) {
          (CODEC2_MODE_ACTIVE(CODEC2_MODE_1200, c2->mode)) ||
          (CODEC2_MODE_ACTIVE(CODEC2_MODE_700C, c2->mode)));
   MODEL model;
-  float xq_dec[2] = {};
+  float xq_dec[2] = {0, 0};
   int e_index, WoE_index;
   float e = 0.0f;
   unsigned int nbit;

@@ -36,7 +36,7 @@
 
 /* VLA workaround */
 
-#if __STDC_NO_VLA__ | 1
+#if defined(__STDC_NO_VLA__) || defined(_MSC_VER)
 #include "stdlib.h"
 #include "string.h"
 
