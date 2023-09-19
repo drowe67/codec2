@@ -237,7 +237,7 @@ add_definitions(-DFREEDV_MODE_EN_DEFAULT=0 -DFREEDV_MODE_1600_EN=1 -DFREEDV_MODE
                     
 FetchContent_Declare(codec2
     GIT_REPOSITORY https://github.com/drowe67/codec2.git
-    GIT_TAG origin/master
+    GIT_TAG origin/main
     GIT_SHALLOW ON
     GIT_PROGRESS ON
 )
