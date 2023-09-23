@@ -28,7 +28,8 @@
 
 void freedv_1600_open(struct freedv *f) {
   f->snr_squelch_thresh = 2.0;
-  f->squelch_en = true;
+  f->squelch_en = false;
+  f->passthrough_gain = 0.25;
   f->tx_sync_bit = 0;
   int Nc = 16;
   f->fdmdv = fdmdv_create(Nc);
