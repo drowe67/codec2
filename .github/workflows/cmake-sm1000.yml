@@ -21,7 +21,7 @@ jobs:
       shell: bash
       run: |
            sudo apt-get update
-           sudo apt-get install octave octave-common octave-signal liboctave-dev gnuplot sox p7zip-full python3-numpy valgrind qemu-system-arm
+           sudo apt-get install octave octave-common octave-signal liboctave-dev gnuplot sox p7zip-full python3-numpy valgrind qemu-system-arm libncurses5 libncurses5-dev
 
     - name: Install ST Standard Peripheral Library (SM1000)
       working-directory: ${{github.workspace}}/stm32
