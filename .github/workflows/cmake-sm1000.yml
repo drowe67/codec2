@@ -31,7 +31,9 @@ jobs:
     - name: Install SM1000 prerequisites
       working-directory: ${{github.workspace}}/stm32
       shell: bash
-      run: sudo apt install gcc-arm-none-eabi
+      run: |
+          wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2
+          tar xvjf gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2
 
     - name: Build x86 Codec2 (prerequisite for ctests)
       working-directory: ${{github.workspace}}
@@ -48,10 +50,13 @@ jobs:
       run: |
            mkdir build_stm32
            cd build_stm32
+           export PATH=${{github.workspace}}/gcc-arm-none-eabi-8-2018-q4-major/bin:$PATH
            cmake -DUSE_QEMU_FOR_UNITTEST=1 -DCMAKE_TOOLCHAIN_FILE=../cmake/STM32_Toolchain.cmake -DPERIPHLIBDIR=${{github.workspace}}/stm32/STM32F4xx_DSP_StdPeriph_Lib ..
            make
 
     - name: Run SM1000 ctests
       working-directory: ${{github.workspace}}/stm32/build_stm32
       shell: bash
-      run: make VERBOSE=1 test
+      run: |
+          export PATH=${{github.workspace}}/gcc-arm-none-eabi-8-2018-q4-major/bin:$PATH
+          make VERBOSE=1 test
