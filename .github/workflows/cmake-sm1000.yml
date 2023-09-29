@@ -48,7 +48,7 @@ jobs:
       run: |
            mkdir build_stm32
            cd build_stm32
-           cmake -USE_QEMU_FOR_UNITTEST=1 -DCMAKE_TOOLCHAIN_FILE=../cmake/STM32_Toolchain.cmake -DPERIPHLIBDIR=${{github.workspace}}/stm32/STM32F4xx_DSP_StdPeriph_Lib ..
+           cmake -DUSE_QEMU_FOR_UNITTEST=1 -DCMAKE_TOOLCHAIN_FILE=../cmake/STM32_Toolchain.cmake -DPERIPHLIBDIR=${{github.workspace}}/stm32/STM32F4xx_DSP_StdPeriph_Lib ..
            make
 
     - name: Run SM1000 ctests
