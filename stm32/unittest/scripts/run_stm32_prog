@@ -7,10 +7,10 @@
 
 declare -A ARGS
 for arg in "$@"; do
-    if [[ ${arg} == --* ]] ; then ARGS[${arg}]=true
-    else ELF=${arg}
-    fi
-    done
+	if [[ ${arg} == --* ]] ; then ARGS[${arg}]=true
+	else ELF=${arg}
+	fi
+done
 
 # Add the parameters for connecting via ssh to
 # your machine with an stm32 connected to
@@ -30,62 +30,72 @@ fi
 
 rm -f gdb_cmds
 
-if [ ! ${ARGS[--st-util]+_} ] ; then
-   # OpenOCD
-   if [ -n "$UT_SSH" ]; then
-        cat <<-EEOOFF >> gdb_cmds
-        shell ${UT_SSH} killall -q openocd\; sleep 1\; openocd -d0 -f board/stm32f4discovery.cfg 2> >(tee stderr.log >&2) | tee stdout.log & 
+if [ ${ARGS[--qemu]+_} ]; then
+	# QEMU
+	cat <<-EEOOFF >> gdb_cmds
+	   shell killall qemu-system-arm
+	   shell qemu-system-arm -M netduinoplus2 -s -S -semihosting -monitor null -serial null -nographic -kernel ${ELF} 2> >(tee stderr.log >&2) | tee stdout.log &
+	   shell sleep ${UT_SLEEP}
+	   target remote :1234
+	   monitor arm semihosting enable
+	   monitor arm semihosting_fileio $UT_SH_FIO 
 	EEOOFF
-   else
-        cat <<-EEOOFF >> gdb_cmds
-             shell killall -q openocd
-             shell openocd -d0 -f board/stm32f4discovery.cfg 2> >(tee stderr.log >&2) | tee stdout.log & 
-	EEOOFF
-   fi
+	SHUTDOWN="shell killall qemu-system-arm"
+elif [ ! ${ARGS[--st-util]+_} ]; then
+	# OpenOCD
+	if [ -n "$UT_SSH" ]; then
+		cat <<-EEOOFF >> gdb_cmds
+		shell ${UT_SSH} killall -q openocd\; sleep 1\; openocd -d0 -f board/stm32f4discovery.cfg 2> >(tee stderr.log >&2) | tee stdout.log & 
+		EEOOFF
+	else
+		cat <<-EEOOFF >> gdb_cmds
+			 shell killall -q openocd
+			 shell openocd -d0 -f board/stm32f4discovery.cfg 2> >(tee stderr.log >&2) | tee stdout.log & 
+		EEOOFF
+	fi
 
-    cat <<-EEOOFF >> gdb_cmds
-        shell sleep ${UT_SLEEP}
-	target remote :3333
-        monitor arm semihosting enable
-        monitor arm semihosting_fileio $UT_SH_FIO 
+	cat <<-EEOOFF >> gdb_cmds
+		shell sleep ${UT_SLEEP}
+		target remote :3333
+		monitor arm semihosting enable
+		monitor arm semihosting_fileio $UT_SH_FIO 
 	EEOOFF
-    
-       SHUTDOWN="monitor shutdown"
+	
+	SHUTDOWN="monitor shutdown"
 else
-    # ST-Util
-    echo "---------------------- STARTING gdb/st-util ------------------------------"
-    cat <<-EEOOFF >> gdb_cmds
-        shell st-util --verbose=0 --semihosting 2>stutil_stderr.log >stutil_stdout.log &
-        shell sleep ${UT_SLEEP} 
-	target remote :4242
+	# ST-Util
+	echo "---------------------- STARTING gdb/st-util ------------------------------"
+	cat <<-EEOOFF >> gdb_cmds
+		shell st-util --verbose=0 --semihosting 2>stutil_stderr.log >stutil_stdout.log &
+		shell sleep ${UT_SLEEP} 
+		target remote :4242
 	EEOOFF
 
-       SHUTDOWN=""
+	SHUTDOWN=""
 fi
 
 if [ ! ${ARGS[--noload]+_} ] ; then
-    cat <<-EEOOFF >> gdb_cmds
-	load
+	cat <<-EEOOFF >> gdb_cmds
+		load
 	EEOOFF
-    fi
+fi
 
 cat <<-EEOOFF >> gdb_cmds
-        monitor reset halt
-        monitor adapter speed 4000
+	monitor reset halt
+	monitor adapter speed 4000
 	break EndofMain
 	break abort
-	EEOOFF
+EEOOFF
 
 if [ -z ${ARGS[--debug]+_} ] ; then
-    cat <<-EEOOFF >> gdb_cmds
-        shell printf "\n----------------------------STARTING PROGRAM-------------------------\n\n"
-	continue
-	set confirm off
-        $SHUTDOWN 
-	quit
+	cat <<-EEOOFF >> gdb_cmds
+		shell printf "\n----------------------------STARTING PROGRAM-------------------------\n\n"
+		continue
+		set confirm off
+		$SHUTDOWN 
+		quit
 	EEOOFF
-    arm-none-eabi-gdb -batch -x gdb_cmds ${ELF}
-    else 
-    arm-none-eabi-gdb -x gdb_cmds ${ELF}
-    fi
-
+	arm-none-eabi-gdb -batch -x gdb_cmds ${ELF}
+else 
+	arm-none-eabi-gdb -x gdb_cmds ${ELF}
+fi

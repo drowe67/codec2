@@ -37,6 +37,7 @@ endif("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
 set(FLOAT_TYPE "hard" CACHE STRING "Floating point: defaults to hard.")
 set(CMAKE_TOOLCHAIN_FILE "../stm32/cmake/STM32_Toolchain.cmake" CACHE STRING "Toolchain defs")
+set(USE_QEMU_FOR_UNITTEST CACHE BOOL FALSE "Use QEMU to run ctests (mainly for CI).")
 
 ###################################################
 

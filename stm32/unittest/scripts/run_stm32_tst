@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# run_stm32_tst <test> <test_sub_type> [--noload] [--st-util]
+# run_stm32_tst <test> <test_sub_type> [--noload] [--st-util|--qemu]
 
 # Find the scripts directory
 SCRIPTS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -13,6 +13,7 @@ declare -i Fails=0
 #####################################################################
 LOAD=${ARGS[--noload]:+--noload}
 STUTIL=${ARGS[--st-util]:+--st-util}
+QEMU=${ARGS[--qemu]:+--qemu}
 RUN_DIR="${UNITTEST_BASE}/test_run/${FULL_TEST_NAME}"
 echo -e "test full name: ${FULL_TEST_NAME}"
 setup_common "${RUN_DIR}"
@@ -28,7 +29,7 @@ fi
 # Call setup - run - check scripts
 ${TEST}_setup ${TEST} ${TEST_OPT} --clean || { echo "ERROR in ${TEST}_setup! Exiting..."; exit 1; }
 cd "${RUN_DIR}" 
-run_stm32_prog ${UNITTEST_BIN}/${TEST}.elf ${LOAD} ${OPENOCD} | tee gdb.log
+run_stm32_prog ${UNITTEST_BIN}/${TEST}.elf ${LOAD} ${STUTIL} ${QEMU} | tee gdb.log
 [ ! ${PIPESTATUS[0]} -eq 0 ] && { echo "ERROR in run_stm32_prog! Exiting..."; exit 1; }
 # stop now if we see an assert() fire, no point running check phase
 grep -q assertion gdb.log && exit 1

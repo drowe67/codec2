@@ -35,6 +35,9 @@ profiledsemihostedBin(tst_api_demod)
 semihostedBin(tst_semihost) 
 semihostedBin(tst_codec2_fft_init)
 
+if(USE_QEMU_FOR_UNITTEST)
+set(UT_PARAMS --qemu)
+endif(USE_QEMU_FOR_UNITTEST)
 
 add_test(NAME check_ram_limit
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/check_ram_limit
