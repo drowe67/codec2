@@ -76,32 +76,32 @@ int main(int argc, char *argv[])
     ldpc.H_rows = (uint16_t *)HRA_112_112_H_rows;
     ldpc.H_cols = (uint16_t *)HRA_112_112_H_cols;
 
-    FILE* fin = fopen("stm_in.raw", "rb");
-    if (fin == NULL) {
+    int fin = open("stm_in.raw", O_BINARY | O_RDONLY);
+    if (fin < 0) {
         printf("Error opening input file\n");
         exit(1);
     }
-    setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
+    //setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
 
-    FILE* fout = fopen("stm_out.raw", "wb");
-    if (fout == NULL) {
+    int fout = open("stm_out.raw", O_BINARY | O_WRONLY);
+    if (fout < 0) {
         printf("Error opening output file\n");
         exit(1);
     }
 
-    while (fread(ibits, sizeof(char) , ldpc.NumberParityBits, fin) == 
+    while (read(fin, ibits, sizeof(char) * ldpc.NumberParityBits) == 
     		ldpc.NumberParityBits) {
 
         PROFILE_SAMPLE(ldpc_encode);
         encode(&ldpc, ibits, pbits);
         PROFILE_SAMPLE_AND_LOG2(ldpc_encode, "  ldpc_encode");
 
-        fwrite(ibits, sizeof(char) , ldpc.NumberRowsHcols, fout);
-        fwrite(pbits, sizeof(char) , ldpc.NumberParityBits, fout);
+        write(fout, ibits, sizeof(char) * ldpc.NumberRowsHcols);
+        write(fout, pbits, sizeof(char) * ldpc.NumberParityBits);
     }
 
-    fclose(fin);
-    fclose(fout);
+    close(fin);
+    close(fout);
     
     fflush(stdout);
     stdout = freopen("stm_profile", "w", stdout);

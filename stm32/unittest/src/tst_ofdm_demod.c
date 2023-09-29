@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error opening input file\n");
         exit(1);
     }
-    setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
+    //setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
 
 
     fout = fopen("stm_out.raw", "wb");
@@ -215,14 +215,14 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error opening output file\n");
         exit(1);
     }
-    setvbuf(fout, fout_buffer,_IOFBF,sizeof(fout_buffer));
+    //setvbuf(fout, fout_buffer,_IOFBF,sizeof(fout_buffer));
 
     fdiag = fopen("stm_diag.raw", "wb");
     if (fdiag == NULL) {
         fprintf(stderr, "Error opening diag file\n");
         exit(1);
     }
-    setvbuf(fdiag, fdiag_buffer,_IOFBF,sizeof(fdiag_buffer));
+    //setvbuf(fdiag, fdiag_buffer,_IOFBF,sizeof(fdiag_buffer));
 
     nin_frame = ofdm_get_nin(ofdm);
     int num_read;

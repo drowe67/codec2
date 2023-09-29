@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     uint8_t     out_data[HRA_112_112_CODELENGTH];
     struct LDPC ldpc;
     int         data_bits_per_frame;
-    FILE        *fout;
+    int         fout;
     int         iter, total_iters;
     int         Tbits, Terrs, Tbits_raw, Terrs_raw;
 
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     semihosting_init();
 
-    fprintf(stderr, "LDPC decode test and profile\n");
+    fprintf(stdout, "LDPC decode test and profile\n");
 
     PROFILE_VAR(ldpc_decode);
     machdep_profile_init();
@@ -113,30 +113,30 @@ int main(int argc, char *argv[]) {
         Tbits = Terrs = Tbits_raw = Terrs_raw = 0;
     }
 
-    FILE* fin = fopen("stm_in.raw", "rb");
-    if (fin == NULL) {
-        fprintf(stderr, "Error opening input file\n");
-        fflush(stderr);
+    int fin = open("stm_in.raw", O_BINARY | O_RDONLY);
+    if (fin < 0) {
+        fprintf(stdout, "Error opening input file\n");
+        fflush(stdout);
         exit(1);
     }
-    setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
+    //setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
 
-    fout = fopen("stm_out.raw", "wb");
-    if (fout == NULL) {
-        fprintf(stderr, "Error opening output file\n");
-        fflush(stderr);
+    fout = open("stm_out.raw", O_BINARY | O_WRONLY);
+    if (fout < 0) {
+        fprintf(stdout, "Error opening output file\n");
+        fflush(stdout);
         exit(1);
     }
-    setvbuf(fout, fout_buffer,_IOFBF,sizeof(fout_buffer));
+    //setvbuf(fout, fout_buffer,_IOFBF,sizeof(fout_buffer));
 
     float  *input_float  = calloc(CodeLength, sizeof(float));
 
     nread = CodeLength;
-    fprintf(stderr, "CodeLength: %d\n", CodeLength);
+    fprintf(stdout, "CodeLength: %d\n", CodeLength);
 
     frame = 0;
-    while(fread(input_float, sizeof(float) , nread, fin) == nread) {
-       fprintf(stderr, "frame %d\n", frame);
+    while(read(fin, input_float, sizeof(float) * nread) == nread * sizeof(float)) {
+       fprintf(stdout, "frame %d\n", frame);
 
        if (testframes) {
             char in_char;
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
         //fprintf(stderr, "iter: %d\n", iter);
         total_iters += iter;
 
-        fwrite(out_data, sizeof(char), data_bits_per_frame, fout);
+        write(fout, out_data, sizeof(char) * data_bits_per_frame);
 
         if (testframes) {
             for (i=0; i<data_bits_per_frame; i++) {
@@ -179,15 +179,15 @@ int main(int argc, char *argv[]) {
         frame++;
     }
 
-    fclose(fin);
-    fclose(fout);
+    close(fin);
+    close(fout);
 
-    fprintf(stderr, "total iters %d\n", total_iters);
+    fprintf(stdout, "total iters %d\n", total_iters);
     
     if (testframes) {
-        fprintf(stderr, "Raw Tbits..: %d Terr: %d BER: %4.3f\n", 
+        fprintf(stdout, "Raw Tbits..: %d Terr: %d BER: %4.3f\n", 
                 Tbits_raw, Terrs_raw, (double)(Terrs_raw/(Tbits_raw+1E-12)));
-        fprintf(stderr, "Coded Tbits: %d Terr: %d BER: %4.3f\n", 
+        fprintf(stdout, "Coded Tbits: %d Terr: %d BER: %4.3f\n", 
                 Tbits, Terrs, (double)(Terrs/(Tbits+1E-12)));
     }
         

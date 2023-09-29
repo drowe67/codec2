@@ -34,11 +34,13 @@ if [ ${ARGS[--qemu]+_} ]; then
 	# QEMU
 	cat <<-EEOOFF >> gdb_cmds
 	   shell killall qemu-system-arm
-	   shell qemu-system-arm -M netduinoplus2 -s -S -semihosting -monitor null -serial null -nographic -kernel ${ELF} 2> >(tee stderr.log >&2) | tee stdout.log &
+	   shell qemu-system-arm -M netduinoplus2 -s -S -semihosting -monitor null -serial null -nographic -kernel ${ELF}  &
 	   shell sleep ${UT_SLEEP}
 	   target remote :1234
 	   monitor arm semihosting enable
 	   monitor arm semihosting_fileio $UT_SH_FIO 
+	   set logging file stdout.log
+	   set logging on
 	EEOOFF
 	SHUTDOWN="shell killall qemu-system-arm"
 elif [ ! ${ARGS[--st-util]+_} ]; then
@@ -83,6 +85,7 @@ fi
 cat <<-EEOOFF >> gdb_cmds
 	monitor reset halt
 	monitor adapter speed 4000
+	set breakpoint pending on
 	break EndofMain
 	break abort
 EEOOFF
