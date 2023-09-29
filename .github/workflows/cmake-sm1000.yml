@@ -34,7 +34,7 @@ jobs:
       run: sudo apt install gcc-arm-none-eabi
 
     - name: Build x86 Codec2 (prerequisite for ctests)
-      working-directory: ${{github.workspace}}}
+      working-directory: ${{github.workspace}}
       shell: bash
       run: |
            mkdir build_linux
