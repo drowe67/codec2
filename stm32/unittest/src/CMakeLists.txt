@@ -36,6 +36,7 @@ semihostedBin(tst_semihost)
 semihostedBin(tst_codec2_fft_init)
 
 if(USE_QEMU_FOR_UNITTEST)
+message(STATUS "Using QMEU for unit tests.")
 set(UT_PARAMS --qemu)
 endif(USE_QEMU_FOR_UNITTEST)
 
