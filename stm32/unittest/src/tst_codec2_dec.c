@@ -71,9 +71,6 @@
 #include "machdep.h"
     
 
-static char fin_buffer[1024];
-static __attribute__ ((section (".ccm"))) char fout_buffer[4*8192];
-
 int main(int argc, char *argv[]) {
     int            f_cfg;
     int            frame;
@@ -128,14 +125,12 @@ int main(int argc, char *argv[]) {
         perror("Error opening input file\n");
         exit(1);
     }
-    //setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
 
     FILE *fout = fopen("stm_out.raw", "wb" );
     if (fout == NULL) {
         perror("Error opening output file\n");
         exit(1);
     }
-    //setvbuf(fout, fout_buffer,_IOFBF,sizeof(fout_buffer));
 
     frame = 0;
 

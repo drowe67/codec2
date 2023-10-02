@@ -69,10 +69,6 @@
 #include "semihosting.h"
 #include "machdep.h"
 
-static __attribute__ ((section (".ccm"))) char fin_buffer[8*8192];
-char fout_buffer[1024];
-
-
 int main(int argc, char *argv[]) {
     int            f_cfg;
 
@@ -132,7 +128,6 @@ int main(int argc, char *argv[]) {
         perror("Error opening input file\n");
         exit(1);
     }
-    //setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
 
     FILE* fout = fopen("stm_out.raw", "wb");
     if (fout == NULL) {

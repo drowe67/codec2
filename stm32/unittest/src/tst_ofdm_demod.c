@@ -92,9 +92,6 @@ static int ofdm_rowsperframe;
 static int ofdm_nuwbits;
 static int ofdm_ntxtbits;
 static int ofdm_nin;
-static char fout_buffer[4*4096];
-static __attribute__ ((section (".ccm"))) char fdiag_buffer[4*8192];
-static __attribute__ ((section (".ccm"))) char fin_buffer[4096*8];
 
 static char *statemode[] = {
     "search",
@@ -207,7 +204,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error opening input file\n");
         exit(1);
     }
-    //setvbuf(fin, fin_buffer,_IOFBF,sizeof(fin_buffer));
 
 
     fout = fopen("stm_out.raw", "wb");
@@ -215,14 +211,12 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error opening output file\n");
         exit(1);
     }
-    //setvbuf(fout, fout_buffer,_IOFBF,sizeof(fout_buffer));
 
     fdiag = fopen("stm_diag.raw", "wb");
     if (fdiag == NULL) {
         fprintf(stderr, "Error opening diag file\n");
         exit(1);
     }
-    //setvbuf(fdiag, fdiag_buffer,_IOFBF,sizeof(fdiag_buffer));
 
     nin_frame = ofdm_get_nin(ofdm);
     int num_read;
