@@ -42,6 +42,9 @@
 #ifndef PI
 #define PI 3.141592654 /* mathematical constant                */
 #endif
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 #define TWO_PI 6.283185307 /* mathematical constant                */
 #define MAX_STR 2048       /* maximum string size                  */
 
