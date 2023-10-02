@@ -2,17 +2,24 @@
 Don Reid 2018/2019
 
 This is the unittest system for the stm32 implementation of
-codec2/FreeDV which runs on Linux systems. It requires a STM32F4xx
-processor development board connected to/having a ST-LINK, e.g. a
-STM32F4 Discovery board.
+codec2/FreeDV which runs on Linux systems. It requires one of the
+following:
+
+1. A STM32F4xx processor development board connected to/having a ST-LINK
+   (e.g. a STM32F4 Discovery board), or
+2. An installation of QEMU on your machine.
 
 ## Quickstart
 
 Requirements:
+
 * python3/numpy
 * arm-none-eabi-gdb install and in your path (see codec2/stm32/README.md)
 * STM32F4xx_DSP_StdPeriph_Lib_V1.8.0 (see codec2/stm32/README.md)
-* build openocd from source and have it in your path (see below)
+* When using a STM32F4xx dev board:
+    * build openocd from source and have it in your path (see below)
+* When using QEMU:
+    * A recent version of QEMU installed (for example, the "qemu-system-arm" package on Debian/Ubuntu)
 
 Build codec2 for x86 Linux with unittests.  This generates several artifacts required for the stm32 tests:
 
@@ -30,8 +37,11 @@ $ sudo apt install python3-numpy libncurses5
 $ ctest -V
 ```
 
+(When using QEMU, additionally add `-DUSE_QEMU_FOR_UNITTEST=1` to the `cmake` command line above and ensure `qemu-system-arm` or equivalent package is installed.)
+
 You should see tests executing (and passing). They are slow to execute
-(30 to 180 seconds each), due to the speed of the semihosting system.
+(30 to 180 seconds each on an actual STM32F4xx dev board), due to the 
+speed of the semihosting system.
 
 ## If a Test fails
 
