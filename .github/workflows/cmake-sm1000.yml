@@ -59,4 +59,4 @@ jobs:
       shell: bash
       run: |
           export PATH=${{github.workspace}}/stm32/gcc-arm-none-eabi-8-2018-q4-major/bin:$PATH
-          ctest -V
+          make test
