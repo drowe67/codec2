@@ -1,6 +1,6 @@
 # Codec 2 README
 
-Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.com/codec2.html
+Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.com/codec2.html.  It is written in C99 standard C for compilation by `gcc`.
 
 Also included:
 
@@ -9,9 +9,28 @@ Also included:
   + APIs for packet data over radio [README_data](README_data.md)
   + An STM32 embedded version of FreeDV 1600/700D/700E for the [SM1000](stm32/README.md)
 
-## Older code
+## Old Code and Deprecated Features
 
-In July 2023 this repo was refactored, older code can be found in https://github.com/drowe67/codec2-dev
+In July 2023 this repo was refactored, older code can be found in https://github.com/drowe67/codec2-dev. 
+
+We are currently conducting a major re-development of Codec 2, new speech coding, modems, and FreeDV modes are under active development. As such, we have limited resources available for mantinence or development on deprecated features unless there is a major bug. We'd rather put our efforts into new features! Deprecated modes include:
+1. FreeDV 1600, 700C, 700D, 700E, 2020
+1. All Codec 2 modes
+1. Our fork of LPCNet
+
+This code won't be going away any time soon (and we will continue to include any modes/code in popular use), but we would prefer not to actively develop it at this time.
+
+## Pull Requests, Feature Requests
+
+We have a process for considering Feature Requests and Pull Requests that we will guide you through.
+
+Feature Requests can be submitted via GitHub Issues.
+
+Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue.  We would like to use your idea or skills, but it must be directed in ways that move this project forward.  We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that that will most benefit this project.
+
+## Ports to non gcc/C99 Compilers
+
+We have standardized on gcc/C99.  We and encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99/gcc compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
 
 ## Quickstart
 
@@ -173,9 +192,9 @@ wav         - speech files in wave file format
    make
    ```
 
-## Building for Windows on a Linux machine
+## Bulding for Windows
 
-We recommend using Linux to cross compile for Windows.
+We target our C code to compile with `gcc` to the [C99 standard](#ports-to-non-gccc99-compilers). We recommend using Linux to cross compile for Windows.
 
 On Ubuntu Linux:
    ```
