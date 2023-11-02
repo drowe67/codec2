@@ -26,7 +26,7 @@ We have a process for considering Feature Requests and Pull Requests that we wil
 
 Feature Requests can be submitted via GitHub Issues.
 
-Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue.  We would like to use your idea or skills, but it must be directed in ways that move this project forward.  We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that that will most benefit this project.
+Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue. We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that will most benefit this project.
 
 ## Ports to non gcc/C99 Compilers
 
