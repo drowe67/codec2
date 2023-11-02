@@ -1,6 +1,6 @@
 # Codec 2 README
 
-Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.com/codec2.html
+Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.com/codec2.html written in C99 standard C.
 
 Also included:
 
@@ -9,9 +9,29 @@ Also included:
   + APIs for packet data over radio [README_data](README_data.md)
   + An STM32 embedded version of FreeDV 1600/700D/700E for the [SM1000](stm32/README.md)
 
-## Older code
+## Old Code and Deprecated Features
 
-In July 2023 this repo was refactored, older code can be found in https://github.com/drowe67/codec2-dev
+In July 2023 this repo was refactored, older code can be found in https://github.com/drowe67/codec2-dev. 
+
+We are currently conducting a major re-development of Codec 2, new speech coding, modems, and FreeDV modes are under active development.  We have limited resources available for maintenance or development on features that may soon be replaced (with the exception of major bugs).  We'd rather put our efforts into new features! Modes and Features we are not actively maintaining at present, and likely to be superseded in the near future include:
+1. FreeDV 1600, 700C, 700D, 700E, 2020.
+1. Codec 2 modes with the exception of Codec 2 3200 for M17.
+1. Our fork of LPCNet.
+1. The stm32/SM1000 firmware (paused until new modes available).
+
+The code supporting these modes won't be going away any time soon (and we will continue to include any modes/code in popular use), but we have chosen not to actively develop it at this time.
+
+## Pull Requests, Feature Requests
+
+We have a process for considering Feature Requests and Pull Requests that we will guide you through.
+
+Feature Requests can be submitted via GitHub Issues.
+
+Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue. We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that will most benefit this project.
+
+## Ports to non C99 Compilers
+
+We have standardized on C99 and develop and test using gcc on a Linux platform.  We encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
 
 ## Quickstart
 
@@ -173,9 +193,9 @@ wav         - speech files in wave file format
    make
    ```
 
-## Building for Windows on a Linux machine
+## Bulding for Windows
 
-We recommend using Linux to cross compile for Windows.
+We develop and test on Linux to the [C99 standard](#ports-to-non-c99-compilers). We recommend using MinGW to cross compile for Windows.
 
 On Ubuntu Linux:
    ```
@@ -185,7 +205,7 @@ On Ubuntu Linux:
    make
    ```
    
-This will create a working `libcodec2.dll` file for use with other applications (e.g. FreeDV GUI which is in wide spread use on Windows).  Please note the utility/development command line applications (e.g. `freedv_rx.exe`) may not work exactly the same on the Windows CLI compared to running on a Unix machine/shell.  For example pipes may not function as expected, and ctests are not supported.  Our primary development and test environment is Unix, and we lack the resources to support and maintain these applications for other operating systems.
+This will create a working `libcodec2.dll` file for use with other applications (e.g. FreeDV GUI which is in wide spread use on Windows).  Please note the utility/development command line applications (e.g. `freedv_rx.exe`) may not work exactly the same on the Windows CLI compared to running on a Unix machine/shell.  For example pipes may not function as expected, and ctests are not supported.  Our primary development and test environment is Linux, and we lack the resources to support and maintain these applications for other operating systems.
 
 ## Including Codec 2 in an Android project
 
