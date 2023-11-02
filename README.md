@@ -194,7 +194,7 @@ wav         - speech files in wave file format
 
 ## Bulding for Windows
 
-We target our C code to compile with `gcc` to the [C99 standard](#ports-to-non-gccc99-compilers). We recommend using Linux to cross compile for Windows.
+We target our C code to compile with `gcc` to the [C99 standard](#ports-to-non-gccc99-compilers). We recommend using MinGW to cross compile for Windows.
 
 On Ubuntu Linux:
    ```
