@@ -31,7 +31,7 @@ Before writing any code or submitting a PR - **please discuss** the PR with deve
 
 ## Ports to non C99 Compilers
 
-We have standardized on C99 and develop and test using gcc on a Linux platform.  We and encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
+We have standardized on C99 and develop and test using gcc on a Linux platform.  We encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
 
 ## Quickstart
 
