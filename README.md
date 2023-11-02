@@ -19,7 +19,7 @@ We are currently conducting a major re-development of Codec 2, new speech coding
 1. Our fork of LPCNet.
 1. The stm32/SM1000 firmware (paused until new modes available).
 
-The code supporting these modes won't be going away any time soon (and we will continue to include any modes/code in popular use), but we would have chosen not to actively develop it at this time.
+The code supporting these modes won't be going away any time soon (and we will continue to include any modes/code in popular use), but we have chosen not to actively develop it at this time.
 
 ## Pull Requests, Feature Requests
 
