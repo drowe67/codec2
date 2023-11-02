@@ -14,10 +14,10 @@ Also included:
 In July 2023 this repo was refactored, older code can be found in https://github.com/drowe67/codec2-dev. 
 
 We are currently conducting a major re-development of Codec 2, new speech coding, modems, and FreeDV modes are under active development.  We have limited resources available for maintenance or development on features that may soon be replaced (with the exception of major bugs).  We'd rather put our efforts into new features! Modes and Features we are not actively maintaining at present, and likely to be superseded in the near future include:
-1. FreeDV 1600, 700C, 700D, 700E, 2020
+1. FreeDV 1600, 700C, 700D, 700E, 2020.
 1. Codec 2 modes with the exception of Codec 2 3200 for M17.
-1. Our fork of LPCNet
-1. The stm32/SM1000 firmware
+1. Our fork of LPCNet.
+1. The stm32/SM1000 firmware (paused until new modes available).
 
 The code supporting these modes won't be going away any time soon (and we will continue to include any modes/code in popular use), but we would have chosen not to actively develop it at this time.
 
