@@ -1,6 +1,6 @@
 # Codec 2 README
 
-Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.com/codec2.html.  It is written in C99 standard C for compilation by `gcc`.
+Codec 2 is an open source (LGPL 2.1) low bit rate speech codec: http://rowetel.com/codec2.html written in C99 standard C.
 
 Also included:
 
@@ -29,9 +29,9 @@ Feature Requests can be submitted via GitHub Issues.
 
 Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue. We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that will most benefit this project.
 
-## Ports to non gcc/C99 Compilers
+## Ports to non C99 Compilers
 
-We have standardized on gcc/C99.  We and encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99/gcc compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
+We have standardized on C99 and develop and test using gcc on a Linux platform.  We and encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
 
 ## Quickstart
 
@@ -195,7 +195,7 @@ wav         - speech files in wave file format
 
 ## Bulding for Windows
 
-We target our C code to compile with `gcc` to the [C99 standard](#ports-to-non-gccc99-compilers). We recommend using MinGW to cross compile for Windows.
+We develop and test on Linux to the [C99 standard](#ports-to-non-gccc99-compilers). We recommend using MinGW to cross compile for Windows.
 
 On Ubuntu Linux:
    ```
@@ -205,7 +205,7 @@ On Ubuntu Linux:
    make
    ```
    
-This will create a working `libcodec2.dll` file for use with other applications (e.g. FreeDV GUI which is in wide spread use on Windows).  Please note the utility/development command line applications (e.g. `freedv_rx.exe`) may not work exactly the same on the Windows CLI compared to running on a Unix machine/shell.  For example pipes may not function as expected, and ctests are not supported.  Our primary development and test environment is Unix, and we lack the resources to support and maintain these applications for other operating systems.
+This will create a working `libcodec2.dll` file for use with other applications (e.g. FreeDV GUI which is in wide spread use on Windows).  Please note the utility/development command line applications (e.g. `freedv_rx.exe`) may not work exactly the same on the Windows CLI compared to running on a Unix machine/shell.  For example pipes may not function as expected, and ctests are not supported.  Our primary development and test environment is Linux, and we lack the resources to support and maintain these applications for other operating systems.
 
 ## Including Codec 2 in an Android project
 
