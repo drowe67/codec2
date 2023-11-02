@@ -17,6 +17,7 @@ We are currently conducting a major re-development of Codec 2, new speech coding
 1. FreeDV 1600, 700C, 700D, 700E, 2020
 1. Codec 2 modes with the exception of Codec 2 3200 for M17.
 1. Our fork of LPCNet
+1. The stm32/SM1000 firmware
 
 The code supporting these modes won't be going away any time soon (and we will continue to include any modes/code in popular use), but we would have chosen not to actively develop it at this time.
 
