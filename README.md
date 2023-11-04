@@ -29,6 +29,11 @@ Feature Requests can be submitted via GitHub Issues.
 
 Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue. We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that will most benefit this project.
 
+Some key guidelines about the code in the `codec2` repo:
+1. Code that is required to build libcodec2, or to test libcodec2 goes in codec2.
+2. Experimental work, code used for algorithm development, should probably go into some other repo.
+3. Only widely used “production” code goes in codec2. If it has an user base of < 2 (e.g. personal projects, early R&D) - it should probably be application code or a fork.
+
 ## Ports to non C99 Compilers
 
 We have standardized on C99 and develop and test using gcc on a Linux platform.  We encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
