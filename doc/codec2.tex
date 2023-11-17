@@ -1,0 +1,48 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{tikz}
+
+\usepackage{xstring}
+\usepackage{catchfile}
+
+\CatchFileDef{\headfull}{../.git/HEAD}{}
+\StrGobbleRight{\headfull}{1}[\head]
+\StrBehind[2]{\head}{/}[\branch]
+\IfFileExists{../.git/refs/heads/\branch}{%
+    \CatchFileDef{\commit}{../.git/refs/heads/\branch}{}}{%
+    \newcommand{\commit}{\dots~(in \emph{packed-refs})}}
+\newcommand{\gitrevision}{%
+  \StrLeft{\commit}{7}%
+}
+
+\title{Codec 2}
+\author{David Rowe\\ \\ Revision: {\gitrevision} on branch: {\branch}}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+Codec 2 is an open source speech codec designed for communications quality speech between 700 and 3200 bit/s. The main application is low bandwidth HF/VHF digital radio. It fills a gap in open source voice codecs beneath 5000 bit/s and is released under the GNU Lesser General Public License (LGPL).  It is written in C99 standard C.
+
+The Codec 2 project was started in 2009 in response to the problem of closed source, patented, proprietary voice codecs in the sub-5 kbit/s range, in particular for use in the Amateur Radio service.
+
+This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level overview aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description with math and signal processing theory. This document is not a concise algorithmic description, instead the algorithm is defined by the reference C99 source code and automated tests (ctests).
+
+This production of this document was kindly supported by an ARDC grant \cite{ardc2023}.  As an open source project, many people have contributed to Codec 2 over the years - we deeply appreciate all of your support.
+
+\section{Codec 2 for the Radio Amateur}
+\label{sect:overview}
+
+\section{Signal Processing Details}
+\label{sect:details}
+
+\section{Further Work}
+
+
+\cite{griffin1988multiband}
+
+\bibliographystyle{plain}
+\bibliography{codec2_refs}
+\end{document}
