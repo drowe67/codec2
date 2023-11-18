@@ -35,12 +35,42 @@ This production of this document was kindly supported by an ARDC grant \cite{ard
 \section{Codec 2 for the Radio Amateur}
 \label{sect:overview}
 
+\subsection{Model Based Speech Coding}
+
+A speech codec takes speech samples from an A/D converter (e.g. 16 bit samples at an 8 kHz or 128 kbits/s) and compresses them down to a low bit rate that can be more easily sent over a narrow bandwidth channel (700 bits/s).  Speech coding is the art of "what can we throw away". We need to lower the bit rate of the speech while retaining intelligible speech, and making it sound as natural as possible.
+
+As such low bit rates we use a speech production model.  The input speech is anlaysed, and we extract model parameters, which are then sent over the channel.  An example of a model based parameter is the pitch of the person speaking.  We estimate the pitch of the speaker, quantise it to a 7 bit number, and send that over the channel every 20ms.
+
+The model based approach used by Codec 2 allows high compression, with some trade offs such as noticeable artefacts in the decoded speech.  Higher bit rate codecs (above 5000 bit/s), such as those use for mobile telephony or voice on the Internet, tend to pay more attention to preserving the speech waveform, or use a hybrid approach of waveform and model based techniques.
+
+Recently, machine learning has been applied to speech coding.  This technology promises high quality, artefact free speech quality at low bit rates, but currently (2023) requires significantly more memory and CPU than traditional speech coding technology such as Codec 2.  However the field is progressing rapidly, and with the progress of Moore's law will soon be a viable technology for many low bit rate speech applications.
+
+\subsection{Speech in Time and Frequency}
+
+\begin{figure}
+\caption{ A 40ms segment of the word "these" from a female speaker, sampled at 8 kHz. The waveform repeats itself every 4.3ms (230 Hz), this is the "pitch period" of this segment.}
+\label{fig:hts2a_time}
+\begin{center}
+\input hts2a_37_sn.tex
+\\
+\input hts2a_37_sw.tex
+\end{center}
+\end{figure}
+
+\subsection{Sinusoidal Speech Coding}
+
+\subsection{Spectral Magnitude Quantisation}
+
+\subsection{Bit Allocation}
+
 \section{Signal Processing Details}
 \label{sect:details}
 
 \section{Further Work}
 
-
+\begin{enumerate}
+\item How to use tools to single step through codec operation
+\end{enumerate}
 \cite{griffin1988multiband}
 
 \bibliographystyle{plain}
