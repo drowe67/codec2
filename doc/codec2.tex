@@ -2,7 +2,7 @@
 \usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{tikz}
-\usetikzlibrary{calc}
+\usetikzlibrary{calc,arrows}
 \usepackage{float}
 
 \usepackage{xstring}
@@ -75,34 +75,35 @@ A sinewave will cause a spike or spectral line on a spectrum plot, so we can see
 \caption{The Sinusoidal speech model.  If we sum a series of sine waves, we can generate speech.}
 \label{fig:sinusoidal_model}
 \begin{center}
-\begin{tikzpicture}
+\begin{tikzpicture}[>=triangle 45,x=1.0cm,y=1.0cm]
 
-\newcommand{\DrawSine}[4]{% x, y, x_scale, y_scale
-\begin{tikzpicture}
-%\draw plot [smooth] coordinates {(#1,#2) (0.5,0.707) (1,1) (1.5,0.707) (2,0) (2.5,-0.707) (3,-1) (3.5,-0.707) (4,0)};
+% draws little sine wave squiggle
+\newcommand{\drawSine}[4]{% x, y, x_scale, y_scale
 
 \draw plot [smooth] coordinates {(#1-2*#3, #2 )       (#1-1.5*#3,#2+0.707*#4)
                                  (#1-1*#3, #2+1*#4)   (#1-0.5*#3,#2+0.707*#4)
                                  (#1  ,#2+0)          (#1+0.5*#3,#2-0.707*#4) 
                                  (#1+1*#3,#2-1*#4)    (#1+1.5*#3,#2-0.707*#4)
-                                 (#1+2*#3,#2+0)};
-\end{tikzpicture}
+                                 (#1+2*#3,#2+0)}
 }
 
-%%\draw plot [smooth] coordinates {(0,0) (0.5,0.707) (1,1) (1.5,0.707) (2,0) (2.5,-0.707) (3,-1) (3.5,-0.707) (4,0)};
+% three sine wave sources
+\draw (0, 2.0) circle (0.5); \drawSine{0}{ 2.0}{0.2}{0.2};
+\draw (0, 0.5) circle (0.5); \drawSine{0}{ 0.5}{0.2}{0.2};
+\draw (0,-1.5) circle (0.5); \drawSine{0}{-1.5}{0.2}{0.2};
 
-\DrawSine {0}{1}{0.5}{0.5}
-
-\draw (0,2) circle (0.5);
-\draw (0,0.5) circle (0.5);
-\draw (0,-1.5) circle (0.5);
-
-\draw (1,2) -- (2,2);
-\draw (2.5,0.75) -- (2.5,1.5);
+% summer
 \draw (2.5,2) circle (0.5);
 \draw (2.25,2) -- (2.75,2);
 \draw (2.5,1.75) -- (2.5,2.25);
-\draw (3,2) -- (4,2);
+
+% connecting lines
+\draw [->] (0.5,2) -- (2,2);
+\draw [->] (0.45,0.7) -- (2.05,1.8);
+\draw [->] (0.3,-1.1) -- (2.2,1.6);
+
+% output
+\draw [->] (3,2) -- (4,2);
 
 
 \end{tikzpicture}
