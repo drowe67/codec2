@@ -2,6 +2,7 @@
 \usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{tikz}
+\usepackage{float}
 
 \usepackage{xstring}
 \usepackage{catchfile}
@@ -37,18 +38,26 @@ This production of this document was kindly supported by an ARDC grant \cite{ard
 
 \subsection{Model Based Speech Coding}
 
-A speech codec takes speech samples from an A/D converter (e.g. 16 bit samples at an 8 kHz or 128 kbits/s) and compresses them down to a low bit rate that can be more easily sent over a narrow bandwidth channel (700 bits/s).  Speech coding is the art of "what can we throw away". We need to lower the bit rate of the speech while retaining intelligible speech, and making it sound as natural as possible.
+A speech codec takes speech samples from an A/D converter (e.g. 16 bit samples at an 8 kHz or 128 kbits/s) and compresses them down to a low bit rate that can be more easily sent over a narrow bandwidth channel (e.g. 700 bits/s for HF).  Speech coding is the art of "what can we throw away". We need to lower the bit rate of the speech while retaining speech you can understand, and making it sound as natural as possible.
 
-As such low bit rates we use a speech production model.  The input speech is anlaysed, and we extract model parameters, which are then sent over the channel.  An example of a model based parameter is the pitch of the person speaking.  We estimate the pitch of the speaker, quantise it to a 7 bit number, and send that over the channel every 20ms.
+As such low bit rates we use a speech production ``model".  The input speech is anlaysed, and we extract model parameters, which are then sent over the channel.  An example of a model based parameter is the pitch of the person speaking.  We estimate the pitch of the speaker, quantise it to a 7 bit number, and send that over the channel every 20ms.
 
-The model based approach used by Codec 2 allows high compression, with some trade offs such as noticeable artefacts in the decoded speech.  Higher bit rate codecs (above 5000 bit/s), such as those use for mobile telephony or voice on the Internet, tend to pay more attention to preserving the speech waveform, or use a hybrid approach of waveform and model based techniques.
+The model based approach used by Codec 2 allows high compression, with some trade offs such as noticeable artefacts in the decoded speech.  Higher bit rate codecs (above 5000 bit/s), such as those use for mobile telephony or voice on the Internet, tend to pay more attention to preserving the speech waveform, or use a hybrid approach of waveform and model based techniques.  They sound better but require a higher bit rate.
 
-Recently, machine learning has been applied to speech coding.  This technology promises high quality, artefact free speech quality at low bit rates, but currently (2023) requires significantly more memory and CPU than traditional speech coding technology such as Codec 2.  However the field is progressing rapidly, and with the progress of Moore's law will soon be a viable technology for many low bit rate speech applications.
+Recently, machine learning has been applied to speech coding.  This technology promises high quality, artefact free speech quality at low bit rates, but currently (2023) requires significantly more memory and CPU resources than traditional speech coding technology such as Codec 2.  However the field is progressing rapidly, and as the cost of CPU and memory decreases (Moore's law) will soon be a viable technology for many low bit rate speech applications.
 
 \subsection{Speech in Time and Frequency}
 
-\begin{figure}
-\caption{ A 40ms segment of the word "these" from a female speaker, sampled at 8 kHz. The waveform repeats itself every 4.3ms (230 Hz), this is the "pitch period" of this segment.}
+To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the "pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
+
+The pitch changes in time, and is generally higher for females and children, and lower for males.  It only appears to be constant for a short snap shot (a few 10s of ms) in time.  For human speech pitch can vary over a range of 50 Hz to 500 Hz.
+
+Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency.
+
+Note that each harmonic has it's own amplitude, that varies slowly up and down with frequency.  The red line plots the amplitude of each harmonic. There is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
+
+\begin{figure}[H]
+\caption{ A 40ms segment of the word "these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms (230 Hz), this is the "pitch period" of this segment.}
 \label{fig:hts2a_time}
 \begin{center}
 \input hts2a_37_sn.tex
@@ -58,6 +67,34 @@ Recently, machine learning has been applied to speech coding.  This technology p
 \end{figure}
 
 \subsection{Sinusoidal Speech Coding}
+
+A sinewave will cause a spike or spectral line on a spectrum plot, so we can see each spike as a small sine wave generator.  Each sine wave generator has it's own frequency (e.g. $230, 460, 690,...$ Hz), amplitude and phase.  If we add all of the sine waves together we can produce the time domain signal at the top of Figure \ref{fig:hts2a_time}, and produce synthesised speech.  This is called sinusoidal speech coding and is the ``model" at the heart of Codec 2.
+
+\begin{figure}[h]
+\caption{The Sinusoidal speech model.  If we sum a series of sine waves, we can generate speech.}
+\label{fig:sinusoidal_model}
+\begin{center}
+\begin{tikzpicture}
+\draw (1,2) -- (2,2);
+\draw (2.5,0.75) -- (2.5,1.5);
+\draw (2.5,2) circle (0.5);
+\draw (2.25,2) -- (2.75,2);
+\draw (2.5,1.75) -- (2.5,2.25);
+\draw (3,2) -- (4,2);
+\draw (4,1.5) rectangle (5,2.5);
+\draw (5,2) -- (6,2) -- (6,1.5);
+\draw (5.75,1.5) rectangle (6.25,0.5);
+\draw (6,0.5) -- (6,0);
+\draw (5.75,0) -- (6.25,0);
+
+\node[] at (0.5,2) {$P_{sun}$};
+\node[] at (2.5,0.5) {$P_{quiet}$};
+\node[] at (4.5,2) {$G$};
+\node[align=right] at (6.75,1) {Rx};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
 
 \subsection{Spectral Magnitude Quantisation}
 

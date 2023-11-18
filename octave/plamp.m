@@ -68,7 +68,8 @@ function plamp(samname, f, epslatex=0)
     s = [ Sn(2*f-1,:) Sn(2*f,:) ];
     plot(s,'b');
     axis([1 length(s) -30000 30000]);
-
+    xlabel('Time (samples)'); ylabel('Amplitude');
+    
     figure(2);
     Wo = model(f,1);
     L = model(f,2);
@@ -78,15 +79,15 @@ function plamp(samname, f, epslatex=0)
     hold on;
     if plot_sw
       plot((0:255)*4000/256, Sw(f,:),"b");
-      legend('boxoff');
     end
+    legend('boxoff'); ylabel ('Amplitude (dB)'); xlabel('Frequency (Hz)');
 
     hold off; grid minor;
 
     % print EPS file
 
     if epslatex
-      sz = "-S300,250";
+      sz = "-S300,200";
       figure(1);
       fn = sprintf("%s_%d_sn.tex",samname,f);
       print(fn,"-depslatex",sz); printf("\nprinting... %s\n", fn);
