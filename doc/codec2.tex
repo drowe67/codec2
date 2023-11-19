@@ -51,14 +51,12 @@ Recently, machine learning has been applied to speech coding.  This technology p
 
 To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the "pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
 
-The pitch changes in time, and is generally higher for females and children, and lower for males.  It only appears to be constant for a short snap shot (a few 10s of ms) in time.  For human speech pitch can vary over a range of 50 Hz to 500 Hz.
+Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
 
-Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency.
-
-Note that each harmonic has it's own amplitude, that varies slowly up and down with frequency.  The red line plots the amplitude of each harmonic. There is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
+Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
 
 \begin{figure}[H]
-\caption{ A 40ms segment of the word "these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms (230 Hz), this is the "pitch period" of this segment.}
+\caption{ A 40ms segment from the word "these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the "pitch period" of this segment.}
 \label{fig:hts2a_time}
 \begin{center}
 \input hts2a_37_sn.tex
@@ -69,10 +67,10 @@ Note that each harmonic has it's own amplitude, that varies slowly up and down w
 
 \subsection{Sinusoidal Speech Coding}
 
-A sinewave will cause a spike or spectral line on a spectrum plot, so we can see each spike as a small sine wave generator.  Each sine wave generator has it's own frequency (e.g. $230, 460, 690,...$ Hz), amplitude and phase.  If we add all of the sine waves together we can produce the time domain signal at the top of Figure \ref{fig:hts2a_time}, and produce synthesised speech.  This is called sinusoidal speech coding and is the ``model" at the heart of Codec 2.
+A sinewave will cause a spike or spectral line on a spectrum plot, so we can see each spike as a small sine wave generator.  Each sine wave generator has it's own frequency that are all multiples of the fundamental pitch frequency (e.g. $230, 460, 690,...$ Hz).  They will also have their own amplitude and phase.  If we add all the sine waves together (Figure \ref{fig:sinusoidal_model}) we can produce reasonable quality synthesised speech.  This is called sinusoidal speech coding and is the speech production ``model" at the heart of Codec 2.
 
 \begin{figure}[h]
-\caption{The Sinusoidal speech model.  If we sum a series of sine waves, we can generate speech.}
+\caption{The sinusoidal speech model.  If we sum a series of sine waves, we can generate a speech signal.  Each sinewave has it's own amplitude ($A_1,A_2,... A_L$), frequency, and phase (not shown).  We assume the frequencies are multiples of the fundamental frequency $F_0$. $L$ is the total number of sinewaves.}
 \label{fig:sinusoidal_model}
 \begin{center}
 \begin{tikzpicture}[>=triangle 45,x=1.0cm,y=1.0cm]
@@ -111,19 +109,34 @@ A sinewave will cause a spike or spectral line on a spectrum plot, so we can see
 \end{center}
 \end{figure}
 
-\subsection{Spectral Magnitude Quantisation}
+The model parameters evolve over time, but can generally be considered constant for short snap shots in time (a few 10s of ms).  For example pitch evolves time, moving up or down as a word is articulated.
+
+As the model parameters change over time, we need to keep updating them.  This is known as the \emph{frame rate} of the codec, which can be expressed in terms of frequency (Hz) or time (ms).  For sampling model parameters Codec 2 uses a frame rate of 10ms.  For transmission over the channel we reduce this to 20-40ms, in order to lower the bit rate.  The trade off with a lower frame rate is reduced speech quality.
+
+The parameters of the sinusoidal model are:
+\begin{enumerate}
+\item Frequencies of each sine wave.  As they are all harmonics of $F_0$ we can just send $F_0$ to the decoder, and it can reconstruct the frequency of each harmonic as $F_0,2F_0,3F_0,...,LF_0$.  We used 5-7 bits/frame to represent the $F_0$ in Codec 2.
+\item The spectral magnitudes, $A_1,A_2,...,A_L$.  These are really important as they convey the information the ear needs to make the speech intelligible.  Most of the bits are used for spectral magnitude information.  Codec 2 uses between 20 and 36 bits/frame for spectral amplitude information.
+\item A voicing model.  Speech can be approximated into voiced speech (vowels) and unvoiced speech (like consonants), or some mixture of the two.  The example in Figure \ref{fig:hts2a_time} above is for voiced speech.  So we need some way to tell the decoder if the speech is voiced or unvoiced, this requires just a few bits/frame.
+\end{enumerate}
+
+\subsection{Codec 2 Block Diagram}
+
 
 \subsection{Bit Allocation}
 
 \section{Signal Processing Details}
 \label{sect:details}
 
+\cite{griffin1988multiband}
+
 \section{Further Work}
 
 \begin{enumerate}
+\item Using c2sim to ectract and plot model parameters
 \item How to use tools to single step through codec operation
 \end{enumerate}
-\cite{griffin1988multiband}
+
 
 \bibliographystyle{plain}
 \bibliography{codec2_refs}
