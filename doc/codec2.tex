@@ -2,7 +2,7 @@
 \usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{tikz}
-\usetikzlibrary{calc,arrows}
+\usetikzlibrary{calc,arrows,shapes,positioning}
 \usepackage{float}
 
 \usepackage{xstring}
@@ -22,6 +22,19 @@
 \author{David Rowe\\ \\ Revision: {\gitrevision} on branch: {\branch}}
 
 \begin{document}
+
+% Tikz code used to support block diagrams
+% credit: https://tex.stackexchange.com/questions/175969/block-diagrams-using-tikz
+
+\tikzset{
+block/.style = {draw, fill=white, rectangle, minimum height=3em, minimum width=3em},
+tmp/.style  = {coordinate}, 
+sum/.style= {draw, fill=white, circle, node distance=1cm},
+input/.style = {coordinate},
+output/.style= {coordinate},
+pinstyle/.style = {pin edge={to-,thin,black}}
+}
+
 \maketitle
 
 \section{Introduction}
@@ -117,11 +130,31 @@ The parameters of the sinusoidal model are:
 \begin{enumerate}
 \item Frequencies of each sine wave.  As they are all harmonics of $F_0$ we can just send $F_0$ to the decoder, and it can reconstruct the frequency of each harmonic as $F_0,2F_0,3F_0,...,LF_0$.  We used 5-7 bits/frame to represent the $F_0$ in Codec 2.
 \item The spectral magnitudes, $A_1,A_2,...,A_L$.  These are really important as they convey the information the ear needs to make the speech intelligible.  Most of the bits are used for spectral magnitude information.  Codec 2 uses between 20 and 36 bits/frame for spectral amplitude information.
-\item A voicing model.  Speech can be approximated into voiced speech (vowels) and unvoiced speech (like consonants), or some mixture of the two.  The example in Figure \ref{fig:hts2a_time} above is for voiced speech.  So we need some way to tell the decoder if the speech is voiced or unvoiced, this requires just a few bits/frame.
+\item A voicing model.  Speech can be approximated into voiced speech (vowels) and unvoiced speech (like consonants), or some mixture of the two.  The example in Figure \ref{fig:hts2a_time} above is for voiced speech.  So we need some way to describe voicing to the decoder. This requires just a few bits/frame.
 \end{enumerate}
 
 \subsection{Codec 2 Block Diagram}
 
+\begin{figure}[h]
+\caption{Codec 2 Encoder.}
+\label{fig:codec2_encoder}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm]
+
+\node [input] (rinput) {};
+\node [input, right of=rinput,node distance=1cm] (z) {};
+\node [block, right of=z,node distance=2cm] (pitch_est) {Pitch Estimator};
+\node [block, below of=pitch_est] (fft) {FFT};
+\node [block, right of=fft,node distance=3cm] (est_Am) {Estimate $A_m$};
+
+\draw [->] (rinput) -- node[left,text width=2cm] {Input Speech} (pitch_est);
+\draw [->] (z) |- (fft);
+\draw [->] (pitch_est) -| (est_Am);
+\draw [->] (fft) -- (est_Am);
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
 
 \subsection{Bit Allocation}
 
@@ -133,7 +166,7 @@ The parameters of the sinusoidal model are:
 \section{Further Work}
 
 \begin{enumerate}
-\item Using c2sim to ectract and plot model parameters
+\item Using c2sim to extract and plot model parameters
 \item How to use tools to single step through codec operation
 \end{enumerate}
 
