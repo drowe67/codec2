@@ -87,10 +87,11 @@ A sinewave will cause a spike or spectral line on a spectrum plot, so we can see
                                  (#1+2*#3,#2+0)}
 }
 
-% three sine wave sources
-\draw (0, 2.0) circle (0.5); \drawSine{0}{ 2.0}{0.2}{0.2};
-\draw (0, 0.5) circle (0.5); \drawSine{0}{ 0.5}{0.2}{0.2};
-\draw (0,-1.5) circle (0.5); \drawSine{0}{-1.5}{0.2}{0.2};
+% sine wave sources
+\draw (0, 2.0) circle (0.5); \drawSine{0}{ 2.0}{0.2}{0.2}; \draw (-2.0,2.0) node {$A_1, F_0$ Hz};
+\draw (0, 0.5) circle (0.5); \drawSine{0}{ 0.5}{0.2}{0.2}; \draw (-2.0,0.5) node {$A_2, 2F_0$ Hz};
+\draw (0,-2.5) circle (0.5); \drawSine{0}{-2.5}{0.2}{0.2}; \draw (-2.0,-2.5) node {$A_L, LF_0$ Hz};
+\draw [dotted,thick] (0,0) -- (0,-2);
 
 % summer
 \draw (2.5,2) circle (0.5);
@@ -100,11 +101,11 @@ A sinewave will cause a spike or spectral line on a spectrum plot, so we can see
 % connecting lines
 \draw [->] (0.5,2) -- (2,2);
 \draw [->] (0.45,0.7) -- (2.05,1.8);
-\draw [->] (0.3,-1.1) -- (2.2,1.6);
+\draw [->] (0.3,-2.1) -- (2.2,1.6);
 
-% output
+% output speec
 \draw [->] (3,2) -- (4,2);
-
+\draw [xshift=4.2cm,yshift=2cm,color=blue] plot[smooth] file {hts2a_37_sn.txt};
 
 \end{tikzpicture}
 \end{center}

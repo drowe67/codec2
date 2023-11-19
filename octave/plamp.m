@@ -92,6 +92,13 @@ function plamp(samname, f, epslatex=0)
       fn = sprintf("%s_%d_sn.tex",samname,f);
       print(fn,"-depslatex",sz); printf("\nprinting... %s\n", fn);
 
+      % file of points to plot in sinusoidal model
+      fn = sprintf("%s_%d_sn.txt",samname,f);
+      t_length = 4; s_max = 2; s=s*s_max/max(abs(s));
+      N = length(s); t = (0:N-1)*t_length/N;
+      s_save = [t' s']; size(s_save)
+      save("-ascii",fn,"s_save"); printf("printing... %s\n", fn);
+      
       figure(2);
       fn = sprintf("%s_%d_sw.tex",samname,f);
       print(fn,"-depslatex",sz); printf("printing... %s\n", fn);
