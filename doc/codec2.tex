@@ -128,9 +128,10 @@ As the model parameters change over time, we need to keep updating them.  This i
 
 The parameters of the sinusoidal model are:
 \begin{enumerate}
-\item Frequencies of each sine wave.  As they are all harmonics of $F_0$ we can just send $F_0$ to the decoder, and it can reconstruct the frequency of each harmonic as $F_0,2F_0,3F_0,...,LF_0$.  We used 5-7 bits/frame to represent the $F_0$ in Codec 2.
-\item The spectral magnitudes, $A_1,A_2,...,A_L$.  These are really important as they convey the information the ear needs to make the speech intelligible.  Most of the bits are used for spectral magnitude information.  Codec 2 uses between 20 and 36 bits/frame for spectral amplitude information.
-\item A voicing model.  Speech can be approximated into voiced speech (vowels) and unvoiced speech (like consonants), or some mixture of the two.  The example in Figure \ref{fig:hts2a_time} above is for voiced speech.  So we need some way to describe voicing to the decoder. This requires just a few bits/frame.
+\item The frequency of each sine wave.  As they are all harmonics of $F_0$ we can just send $F_0$ to the decoder, and it can reconstruct the frequency of each harmonic as $F_0,2F_0,3F_0,...,LF_0$.  We used 5-7 bits/frame to represent the $F_0$ in Codec 2.
+\item The magnitude of each sine wave, $A_1,A_2,...,A_L$.  These ``spectral magnitudes" are really important as they convey the information the ear needs to understand speech.  Most of the bits are used for spectral magnitude information.  Codec 2 uses between 20 and 36 bits/frame for spectral amplitude information.
+\item Voicing information.  Speech can be approximated into voiced speech (vowels) and unvoiced speech (like consonants), or some mixture of the two.  The example in Figure \ref{fig:hts2a_time} above is for voiced speech.  So we need some way to describe voicing to the decoder. This requires just a few bits/frame.
+\item The phase of each sine wave  Codec 2 discards the phases of each harmonic and reconstruct them at the decoder using an algorithm, so no bits are required for phases.  This results in some drop in speech quality.
 \end{enumerate}
 
 \subsection{Codec 2 Block Diagram}
@@ -139,18 +140,27 @@ The parameters of the sinusoidal model are:
 \caption{Codec 2 Encoder.}
 \label{fig:codec2_encoder}
 \begin{center}
-\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm]
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm,align=center,text width=2cm]
 
 \node [input] (rinput) {};
 \node [input, right of=rinput,node distance=1cm] (z) {};
-\node [block, right of=z,node distance=2cm] (pitch_est) {Pitch Estimator};
+\node [block, right of=z] (pitch_est) {Pitch Estimator};
 \node [block, below of=pitch_est] (fft) {FFT};
-\node [block, right of=fft,node distance=3cm] (est_Am) {Estimate $A_m$};
+\node [block, right of=fft,node distance=3cm] (est_am) {Estimate Amplitudes};
+\node [block, below of=est_am] (est_v) {Estimate Voicing};
+\node [block, right of=est_am,node distance=3cm] (quant) {Quantise};
+\node [output, right of=quant,node distance=2cm] (routput) {};
 
-\draw [->] (rinput) -- node[left,text width=2cm] {Input Speech} (pitch_est);
+\draw [->] node[align=left] {Input Speech} (rinput) --  (pitch_est);
 \draw [->] (z) |- (fft);
-\draw [->] (pitch_est) -| (est_Am);
-\draw [->] (fft) -- (est_Am);
+\draw [->] (pitch_est) -| (est_am);
+\draw [->] (fft) -- (est_am);
+\draw [->] (est_am) -- (est_v);
+\draw [->] (pitch_est) -| (quant);
+\draw [->] (est_am) -- (quant);
+\draw [->] (est_v) -| (quant);
+\draw [->] (est_v) -| (quant);
+\draw [->] (quant) -- (routput) node[right, align=left, text width=1.5cm] {Bit Stream};
 
 \end{tikzpicture}
 \end{center}
