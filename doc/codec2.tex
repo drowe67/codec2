@@ -29,10 +29,35 @@
 \tikzset{
 block/.style = {draw, fill=white, rectangle, minimum height=3em, minimum width=3em},
 tmp/.style  = {coordinate}, 
-sum/.style= {draw, fill=white, circle, node distance=1cm},
+sum/.style= {draw, fill=white, circle, node distance=1cm, minimum size=0.75cm},
+mult/.style= {draw, fill=white, circle, node distance=1cm, minimum size=0.75cm},
 input/.style = {coordinate},
 output/.style= {coordinate},
 pinstyle/.style = {pin edge={to-,thin,black}}
+}
+
+% tikz: draws a sine wave
+\newcommand{\drawSine}[4]{% x, y, x_scale, y_scale
+
+\draw plot [smooth] coordinates {(#1-2*#3, #2 )       (#1-1.5*#3,#2+0.707*#4)
+                                 (#1-1*#3, #2+1*#4)   (#1-0.5*#3,#2+0.707*#4)
+                                 (#1  ,#2+0)          (#1+0.5*#3,#2-0.707*#4) 
+                                 (#1+1*#3,#2-1*#4)    (#1+1.5*#3,#2-0.707*#4)
+                                 (#1+2*#3,#2+0)}
+}
+
+% tikz: draw a summer
+\newcommand{\drawSummer}[2]{% x, y
+	\draw (#1,#2) circle (0.5);
+	\draw (#1-0.25,#2) -- (#1+0.25,#2);
+	\draw (#1,#2-0.25) -- (#1,#2+0.25);
+}
+
+% tikz: draw a multiplier
+\newcommand{\drawMultiplier}[2]{% x, y
+	\draw (#1,#2) circle (0.5);
+	\draw (#1-0.25,#2-0.25) -- (#1+0.25,#2+0.25);
+	\draw (#1-0.25,#2+0.25) -- (#1+0.25,#2-0.25);
 }
 
 \maketitle
@@ -88,26 +113,13 @@ A sinewave will cause a spike or spectral line on a spectrum plot, so we can see
 \begin{center}
 \begin{tikzpicture}[>=triangle 45,x=1.0cm,y=1.0cm]
 
-% draws little sine wave squiggle
-\newcommand{\drawSine}[4]{% x, y, x_scale, y_scale
-
-\draw plot [smooth] coordinates {(#1-2*#3, #2 )       (#1-1.5*#3,#2+0.707*#4)
-                                 (#1-1*#3, #2+1*#4)   (#1-0.5*#3,#2+0.707*#4)
-                                 (#1  ,#2+0)          (#1+0.5*#3,#2-0.707*#4) 
-                                 (#1+1*#3,#2-1*#4)    (#1+1.5*#3,#2-0.707*#4)
-                                 (#1+2*#3,#2+0)}
-}
-
 % sine wave sources
 \draw (0, 2.0) circle (0.5); \drawSine{0}{ 2.0}{0.2}{0.2}; \draw (-2.0,2.0) node {$A_1, F_0$ Hz};
 \draw (0, 0.5) circle (0.5); \drawSine{0}{ 0.5}{0.2}{0.2}; \draw (-2.0,0.5) node {$A_2, 2F_0$ Hz};
 \draw (0,-2.5) circle (0.5); \drawSine{0}{-2.5}{0.2}{0.2}; \draw (-2.0,-2.5) node {$A_L, LF_0$ Hz};
 \draw [dotted,thick] (0,0) -- (0,-2);
 
-% summer
-\draw (2.5,2) circle (0.5);
-\draw (2.25,2) -- (2.75,2);
-\draw (2.5,1.75) -- (2.5,2.25);
+\drawSummer{2.5}{2};
 
 % connecting lines
 \draw [->] (0.5,2) -- (2,2);
@@ -265,6 +277,34 @@ Some features of Codec 2:
 
 The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}.  There is nothing particularly unique about this pitch estimator or it's performance. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.  This section presents an overview of the NLP algorithm extracted from \cite{rowe1997techniques}.
 
+\begin{figure}[h]
+\caption{The Non-Linear Pitch (NLP) algorithm}
+\label{fig:nlp}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm]
+
+\node [input] (rinput) {};
+\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
+\node [tmp, below of=z,node distance=1cm] (z1) {};
+\node [mult, right of=z,node distance=1.5cm] (mult1) {};
+\node [block, right of=mult1,node distance=2cm] (lpf) {Low Pass};
+\node [block, right of=lpf,node distance=3cm] (dec5) {5};
+\node [block, below of=dec5] (dft) {DFT};
+\node [block, below of=lpf] (peak) {Peak Pick};
+\node [output, left of=peak,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {Input Speech} (rinput) -- (mult1);
+%\draw (z) -- (z1)
+\draw [->] (z1) -| (mult1);
+\draw [->] (mult1) -- (lpf);
+\draw [->] (lpf) -- (dec5);
+\draw [->] (dec5) -- (dft);
+\draw [->] (dft) -- (peak);
+\draw [->] (peak) -- (routput) node[left, align=center] {Pitch\\Candidates};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
 
 \subsection{Sinusoidal Analysis and Synthesis}
 
