@@ -66,7 +66,7 @@ Codec 2 is an open source speech codec designed for communications quality speec
 
 Key feature includes:
 \begin{enumerate}
-\item A range of modes supporting different bit rates, currently (Nov 2023): 3200, 2400, 1600, 1400, 1300, 1200, 700C.  The number is the bit rate, and the supplementary letter the version (700C replaced the earlier 700, 700A, 700B versions). These are referred to as ``Codec 2 3200", ``Codec 700C"" etc.
+\item A range of modes supporting different bit rates, currently (Nov 2023): 3200, 2400, 1600, 1400, 1300, 1200, 700C.  The number is the bit rate, and the supplementary letter the version (700C replaced the earlier 700, 700A, 700B versions). These are referred to as ``Codec 2 3200", ``Codec 2 700C"" etc.
 \item Modest CPU (a few 10s of MIPs) and memory (a few 10s of kbytes of RAM) requirements such that it can run on stm32 class microcontrollers with hardware FPU.
 \item Codec 2 has been designed for digital voice over radio applications, and retains intelligible speech at a few percent bit error rate.
 \item An open source reference implementation in the C language for C99/gcc compilers, and a \emph{cmake} build and test framework that runs on Linux/MinGW.  Also included is a cross compiled stm32 reference implementation.
@@ -78,8 +78,6 @@ The Codec 2 project was started in 2009 in response to the problem of closed sou
 This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level description aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description with math and signal processing theory.  Combined with the C source code, it is intended to give the reader enough information to understand the operation of Codec 2 in detail and embark on source code level projects, such as improvements, ports to other languages, student or academic research projects.  Issues with the current algorithms and topics for further work are also included.
 
 This production of this document was kindly supported by an ARDC grant \cite{ardc2023}.  As an open source project, many people have contributed to Codec 2 over the years - we deeply appreciate all of your support.
-
-
 
 \section{Codec 2 for the Radio Amateur}
 \label{sect:overview}
@@ -271,16 +269,29 @@ Some features of the Codec 2 Design:
 \begin{enumerate}
 \item A pitch estimator based on a 2nd order non-linearity developed by the author.
 \item A single voiced/unvoiced binary voicing model.
-\item A frequency domain IFFT/overlap-add synthesis model for voiced and unvoiced speech speech.
+\item A frequency domain IFFT/overlap-add synthesis model for voiced and unvoiced speech.
 \item For the higher bit rate modes, spectral amplitudes are represented using LPCs extracted from time domain analysis and scalar LSP quantisation.
 \item For Codec 2 700C, vector quantisation of resampled spectral amplitudes in the log domain.
 \item Minimal interframe prediction in order to minimise error propagation and maximise robustness to channel errors.
 \item A post filter that enhances the speech quality of the baseline codec, especially for low pitched (male) speakers.
 \end{enumerate}
 
+\subsection{Naming Conventions}
+
+In Codec 2, signals are frequently moved between the time and frequency domain. In the source code and this document, time domain signals generally have the subscript $n$, and frequency domain signals the subscript $\omega$, for example $S_n$ and $S_\omega$ represent the same speech expressed in the time and frequency domain.  Section \ref{sect:glossary} contains a glossary of symbols.
+
 \subsection{Non-Linear Pitch Estimation}
 
-The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}.  There is nothing particularly unique about this pitch estimator or it's performance. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.  
+The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}, and portions of this description are reproduced here.  The post processing algorithm used for pitch estimation in Codec 2 is different from \cite{rowe1997techniques} and is described here.  The C code \emph{nlp.c} is a useful reference for the fine details of the implementation, and the Octave script \emph{plnlp.m} can by used to plot the internal states and single step through speech, illustrating the operation of the algorithm.
+
+The core pitch detector is based on a square law non-linearity, that is applied directly to the input speech signal. Given speech is composed of harmonics separated by $F_0$ the non-linearity generates intermodulation products at $F_0$, even if the fundamental is absent from the input signal due to high pass filtering.
+
+Figure \ref{fig:nlp} illustrates the algorithm. The fundamental frequency $F_0$ is estimated in the range of 50-400 Hz. The algorithm is designed to take blocks of $M = 320$ samples at a sample rate of 8 kHz (40 ms time window). This block length ensures at least two pitch periods lie within the analysis window at the lowest fundamental frequency.
+
+The speech signal is first squared then notch filtered to remove the DC component from the squared time domain signal. This prevents the large amplitude DC term from interfering with the somewhat smaller amplitude term at the fundamental. This is particularly important for male speakers, who may have low frequency fundamentals close to DC. The notch filter is applied in the time domain and has the experimentally derived transfer function:
+\begin{equation}
+H(z) = \frac{1-z^{-1}}{1-0.95z^{-1}}
+\end{equation}
 
 \begin{figure}[h]
 \caption{The Non-Linear Pitch (NLP) algorithm}
@@ -297,7 +308,9 @@ The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is d
 \node [block, right of=lpf,node distance=2.5cm] (dec5) {$\downarrow 5$};
 \node [block, below of=dec5] (dft) {DFT};
 \node [block, below of=lpf] (peak) {Peak Pick};
-\node [output, left of=peak,node distance=2cm] (routput) {};
+\node [block, below of=notch,text width=2cm] (search) {Sub \\Multiple Search};
+\node [block, left of=search,node distance=3cm] (refine) {Refinement};
+\node [output, left of=refine,node distance=2cm] (routput) {};
 
 \draw [->] node[align=left,text width=2cm] {Input Speech} (rinput) -- (mult);
 \draw [->] (z) -- (z1) -| (mult);
@@ -306,11 +319,25 @@ The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is d
 \draw [->] (lpf) -- (dec5);
 \draw [->] (dec5) -- (dft);
 \draw [->] (dft) -- (peak);
-\draw [->] (peak) -- (routput) node[left, align=center] {Pitch\\Candidates};
+\draw [->] (peak) -- (search);
+\draw [->] (search) -- (refine);
+\draw [->] (refine) -- (routput) node[left, align=center] {$F_0$};
 
 \end{tikzpicture}
 \end{center}
 \end{figure}
+
+Before transforming the squared signal to the frequency domain, the signal is low pass filtered and decimated by a factor of 5. This operation is performed to limit the bandwidth of the squared signal to the approximate range of the fundamental frequency. All energy in the squared signal above 400 Hz is superfluous and would lower the resolution of the frequency domain peak picking stage. The low pass filter used for decimation is an FIR type with 48 taps and a cut off frequency of 600 Hz. The decimated signal is then windowed and the $N_{dft} = 512$ point DFT power spectrum $F_\omega(k)$ is computed by zero padding the decimated signal, where $k$ is the DFT bin.
+
+The DFT power spectrum of the squared signal $F_\omega(k)$ generally contains several local maxima. In most cases, the global maxima will correspond to $F_0$, however occasionally the global maxima $|F_\omega(k_{max})|$ corresponds to a spurious peak or multiple of $F_0$ . Thus it is not appropriate to simply choose the global maxima as the fundamental estimate for this frame. Instead, we look at submultiples of the global maxima frequency $k_{max}/2, k_{max}/3,... k_{min}$ for local maxima.  If local maxima exists and is above an experimentally derived threshold we choose the submultiple as the $F_0$ estimate.  The threshold is biased down for $F_0$ candidates near the previous frames $F_0$ estimate, a form of backwards pitch tracking.
+
+The accuracy of the pitch estimate in then refined by maximising the function:
+\begin{equation}
+E(\omega_0)=\sum_{m=1}^L|S_{\omega}(b m \omega_0)|^2
+\end{equation}
+where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental frequency in radians/sample, $b$ is a constant that maps a frequency in radians/sample to a DFT bin, and $S_\omega$ is the DFT of the speech spectrum for the current frame. This function will be maximised when $mF_0$ samples the peak of each harmonic, corresponding with an accurate pitch estimate.   It is evaluated in a small range about the coarse $F_0$ estimate.
+
+There is nothing particularly unique about this pitch estimator or it's performance. There are occasional artefacts in the synthesised speech that can be traced to ``gross" and ``fine" pitch estimator errors.  In the real world no pitch estimator is perfect, partially because the model assumptions around pitch break down (e.g. in transition regions or unvoiced speech).  The NLP algorithm could benefit from additional review, tuning and better pitch tracking.  However it appears sufficient for the use case of a communications quality speech codec, and is a minor source of artefacts in the synthesised speech. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.
 
 \subsection{Sinusoidal Analysis and Synthesis}
 
@@ -321,12 +348,34 @@ The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is d
 \section{Further Work}
 
 \begin{enumerate}
-\item some examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters
-\item How to use tools to single step through codec operation
-\item table summarising source files with one line description
+\item Some worked examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters
+\item How to use Octave tools to single step through codec operation
+\item Table summarising source files with one line description
 \item Add doc license (Creative Commons?)
 \end{enumerate}
 
+\section{Glossary}
+\label{sect:glossary}
+
+\begin{table}[H]
+\label{tab:symbol_glossary}
+\centering
+\begin{tabular}{l l l }
+\hline
+Symbol & Description & Units \\
+\hline
+$b$ & Constant that maps a frequency in radians to a DFT bin \\
+$\{A_m\}$ & Set of spectral amplitudes $m=1,...L$ & dB \\
+$F_0$ & Fundamental frequency (pitch) & Hz \\
+$F_s$ & Sample rate (usually 8 kHz) & Hz \\
+$F_\omega(k)$ & DFT of squared speech signal in NLP pitch estimator \\
+$L$ & Number of harmonics & \\
+$P$ & Pitch period & ms or samples \\
+$\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
+\hline
+\end{tabular}
+\caption{Glossary of Symbols}
+\end{table}
 
 \bibliographystyle{plain}
 \bibliography{codec2_refs}
