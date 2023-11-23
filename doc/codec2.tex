@@ -62,13 +62,24 @@ pinstyle/.style = {pin edge={to-,thin,black}}
 
 \section{Introduction}
 
-Codec 2 is an open source speech codec designed for communications quality speech between 700 and 3200 bit/s. The main application is low bandwidth HF/VHF digital radio. It fills a gap in open source voice codecs beneath 5000 bit/s and is released under the GNU Lesser General Public License (LGPL).  It is written in C99 standard C.
+Codec 2 is an open source speech codec designed for communications quality speech between 700 and 3200 bit/s. The main application is low bandwidth HF/VHF digital radio. It fills a gap in open source voice codecs beneath 5000 bit/s and is released under the GNU Lesser General Public License (LGPL).
+
+Key feature includes:
+\begin{enumerate}
+\item A range of modes supporting different bit rates, currently (Nov 2023): 3200, 2400, 1600, 1400, 1300, 1200, 700C.  The number is the bit rate, and the supplementary letter the version (700C replaced the earlier 700, 700A, 700B versions). These are referred to as ``Codec 2 3200", ``Codec 700C"" etc.
+\item Modest CPU (a few 10s of MIPs) and memory (a few 10s of kbytes of RAM) requirements such that it can run on stm32 class microcontrollers with hardware FPU.
+\item Codec 2 has been designed for digital voice over radio applications, and retains intelligible speech at a few percent bit error rate.
+\item An open source reference implementation in the C language for C99/gcc compilers, and a \emph{cmake} build and test framework that runs on Linux/MinGW.  Also included is a cross compiled stm32 reference implementation.
+\item Ports to non-C99 compilers (e.g. MSVC, some microcontrollers, native builds on Windows) are left to third party developers - we recommend the tests also be ported and pass before considering the port successful.
+\end{enumerate}
 
 The Codec 2 project was started in 2009 in response to the problem of closed source, patented, proprietary voice codecs in the sub-5 kbit/s range, in particular for use in the Amateur Radio service.
 
 This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level description aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description with math and signal processing theory.  Combined with the C source code, it is intended to give the reader enough information to understand the operation of Codec 2 in detail and embark on source code level projects, such as improvements, ports to other languages, student or academic research projects.  Issues with the current algorithms and topics for further work are also included.
 
 This production of this document was kindly supported by an ARDC grant \cite{ardc2023}.  As an open source project, many people have contributed to Codec 2 over the years - we deeply appreciate all of your support.
+
+
 
 \section{Codec 2 for the Radio Amateur}
 \label{sect:overview}
@@ -256,14 +267,8 @@ Bit rate & 3200 & 700 \\
 
 Codec 2 is based on sinusoidal \cite{mcaulay1986speech} and Multi-Band Excitation (MBE) \cite{griffin1988multiband} vocoders that were first developed in the late 1980s.  Descendants of the MBE vocoders (IMBE, AMBE etc) have enjoyed widespread use in many applications such as VHF/UHF hand held radios and satellite communications. In the 1990s the author studied sinusoidal speech coding \cite{rowe1997techniques}, which provided the skill set and a practical, patent free baseline for starting the Codec 2 project:
 
-Some features of Codec 2:
+Some features of the Codec 2 Design:
 \begin{enumerate}
-\item A range of modes supporting different bit rates, currently (Nov 2023): 3200, 2400, 1600, 1400, 1300, 1200, 700 bits/s.  These are referred to as ``Codec 2 3200", ``Codec 700C"" etc.
-\item Modest CPU (a few 10s of MIPs) and memory (a few 10s of kbytes of RAM) requirements such that it can run on stm32 class microcontrollers with hardware FPU.
-\item An open source reference implementation in the C language for C99/gcc compilers, and a \emph{cmake} build and test framework that runs on Linux.  Also included is a cross compiled stm32 reference implementation.
-\item Ports to non-C99 compilers (e.g. MSVC, some microcontrollers, native builds on Windows) are left to third party developers - we recommend the tests also be ported and pass before considering the port successful.
-\item Codec 2 has been designed for digital voice over radio applications, and retains intelligible speech at a few percent bit error rate.
-\item A suite of automated tests used to verify the implementation.
 \item A pitch estimator based on a 2nd order non-linearity developed by the author.
 \item A single voiced/unvoiced binary voicing model.
 \item A frequency domain IFFT/overlap-add synthesis model for voiced and unvoiced speech speech.
