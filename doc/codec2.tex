@@ -4,7 +4,6 @@
 \usepackage{tikz}
 \usetikzlibrary{calc,arrows,shapes,positioning}
 \usepackage{float}
-
 \usepackage{xstring}
 \usepackage{catchfile}
 
@@ -29,8 +28,7 @@
 \tikzset{
 block/.style = {draw, fill=white, rectangle, minimum height=3em, minimum width=3em},
 tmp/.style  = {coordinate}, 
-sum/.style= {draw, fill=white, circle, node distance=1cm, minimum size=0.75cm},
-mult/.style= {draw, fill=white, circle, node distance=1cm, minimum size=0.75cm},
+circ/.style= {draw, fill=white, circle, node distance=1cm, minimum size=0.6cm},
 input/.style = {coordinate},
 output/.style= {coordinate},
 pinstyle/.style = {pin edge={to-,thin,black}}
@@ -68,7 +66,7 @@ Codec 2 is an open source speech codec designed for communications quality speec
 
 The Codec 2 project was started in 2009 in response to the problem of closed source, patented, proprietary voice codecs in the sub-5 kbit/s range, in particular for use in the Amateur Radio service.
 
-This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level overview aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description with math and signal processing theory.  Combined with the C source code, it is intended to give the reader enough information to understand the operation of Codec 2 in detail and embark on source code level projects, such as improvements, ports to other languages, student or academic research projects.  Issues with the current algorithms and topics for further work are also included.
+This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level description aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description with math and signal processing theory.  Combined with the C source code, it is intended to give the reader enough information to understand the operation of Codec 2 in detail and embark on source code level projects, such as improvements, ports to other languages, student or academic research projects.  Issues with the current algorithms and topics for further work are also included.
 
 This production of this document was kindly supported by an ARDC grant \cite{ardc2023}.  As an open source project, many people have contributed to Codec 2 over the years - we deeply appreciate all of your support.
 
@@ -254,6 +252,8 @@ Bit rate & 3200 & 700 \\
 \section{Detailed Design}
 \label{sect:details}
 
+\subsection{Overview}
+
 Codec 2 is based on sinusoidal \cite{mcaulay1986speech} and Multi-Band Excitation (MBE) \cite{griffin1988multiband} vocoders that were first developed in the late 1980s.  Descendants of the MBE vocoders (IMBE, AMBE etc) have enjoyed widespread use in many applications such as VHF/UHF hand held radios and satellite communications. In the 1990s the author studied sinusoidal speech coding \cite{rowe1997techniques}, which provided the skill set and a practical, patent free baseline for starting the Codec 2 project:
 
 Some features of Codec 2:
@@ -275,28 +275,29 @@ Some features of Codec 2:
 
 \subsection{Non-Linear Pitch Estimation}
 
-The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}.  There is nothing particularly unique about this pitch estimator or it's performance. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.  This section presents an overview of the NLP algorithm extracted from \cite{rowe1997techniques}.
+The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}.  There is nothing particularly unique about this pitch estimator or it's performance. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.  
 
 \begin{figure}[h]
 \caption{The Non-Linear Pitch (NLP) algorithm}
 \label{fig:nlp}
 \begin{center}
-\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm]
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
 
 \node [input] (rinput) {};
 \node [tmp, right of=rinput,node distance=0.5cm] (z) {};
 \node [tmp, below of=z,node distance=1cm] (z1) {};
-\node [mult, right of=z,node distance=1.5cm] (mult1) {};
-\node [block, right of=mult1,node distance=2cm] (lpf) {Low Pass};
-\node [block, right of=lpf,node distance=3cm] (dec5) {5};
+\node [circ, right of=z,node distance=1cm] (mult) {$\times$};
+\node [block, right of=mult,node distance=2cm,text width=2cm] (notch) {DC Notch Filter};
+\node [block, right of=notch,node distance=3cm,text width=2cm] (lpf) {Low Pass Filter};
+\node [block, right of=lpf,node distance=2.5cm] (dec5) {$\downarrow 5$};
 \node [block, below of=dec5] (dft) {DFT};
 \node [block, below of=lpf] (peak) {Peak Pick};
 \node [output, left of=peak,node distance=2cm] (routput) {};
 
-\draw [->] node[align=left,text width=2cm] {Input Speech} (rinput) -- (mult1);
-%\draw (z) -- (z1)
-\draw [->] (z1) -| (mult1);
-\draw [->] (mult1) -- (lpf);
+\draw [->] node[align=left,text width=2cm] {Input Speech} (rinput) -- (mult);
+\draw [->] (z) -- (z1) -| (mult);
+\draw [->] (mult) -- (notch);
+\draw [->] (notch) -- (lpf);
 \draw [->] (lpf) -- (dec5);
 \draw [->] (dec5) -- (dft);
 \draw [->] (dft) -- (peak);
