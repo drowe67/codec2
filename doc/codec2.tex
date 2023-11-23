@@ -51,13 +51,6 @@ pinstyle/.style = {pin edge={to-,thin,black}}
 	\draw (#1,#2-0.25) -- (#1,#2+0.25);
 }
 
-% tikz: draw a multiplier
-\newcommand{\drawMultiplier}[2]{% x, y
-	\draw (#1,#2) circle (0.5);
-	\draw (#1-0.25,#2-0.25) -- (#1+0.25,#2+0.25);
-	\draw (#1-0.25,#2+0.25) -- (#1+0.25,#2-0.25);
-}
-
 \maketitle
 
 \section{Introduction}
@@ -340,6 +333,31 @@ where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental freque
 There is nothing particularly unique about this pitch estimator or it's performance. There are occasional artefacts in the synthesised speech that can be traced to ``gross" and ``fine" pitch estimator errors.  In the real world no pitch estimator is perfect, partially because the model assumptions around pitch break down (e.g. in transition regions or unvoiced speech).  The NLP algorithm could benefit from additional review, tuning and better pitch tracking.  However it appears sufficient for the use case of a communications quality speech codec, and is a minor source of artefacts in the synthesised speech. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.
 
 \subsection{Sinusoidal Analysis and Synthesis}
+
+\begin{figure}[h]
+\caption{Block Diagram of the Sinusoidal Encoder}
+\label{fig:encoder}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
+
+\node [input] (rinput) {};
+\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
+\node [block, right of=z,node distance=1.5cm] (window) {Window};
+\node [block, right of=window,node distance=2.5cm] (dft) {DFT};
+\node [block, right of=dft,node distance=3cm,text width=2cm] (est) {Est Amp and Phase};
+\node [block, below of=window] (nlp) {NLP};
+\node [output, right of=est,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
+\draw [->] (z) |- (nlp);
+\draw [->] (window) -- node[below] {$s_w(n)$} (dft);
+\draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
+\draw [->] (nlp) -| node[below] {$\omega_0$} (est) ;
+\draw [->] (est) -- (routput) node[right] {$\{A_m\}$ \\ $\{\theta_m\}$};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
 
 \subsection{LPC/LSP based modes}
 
