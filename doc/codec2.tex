@@ -59,10 +59,10 @@ Codec 2 is an open source speech codec designed for communications quality speec
 
 Key feature includes:
 \begin{enumerate}
-\item A range of modes supporting different bit rates, currently (Nov 2023): 3200, 2400, 1600, 1400, 1300, 1200, 700C.  The number is the bit rate, and the supplementary letter the version (700C replaced the earlier 700, 700A, 700B versions). These are referred to as ``Codec 2 3200", ``Codec 2 700C"" etc.
+\item A range of modes supporting different bit rates, currently (Nov 2023): 3200, 2400, 1600, 1400, 1300, 1200, 700C.  The number is the bit rate, and the supplementary letter the version (700C replaced the earlier 700, 700A, 700B versions). These are referred to as ``Codec 2 3200", ``Codec 2 700C" etc.
 \item Modest CPU (a few 10s of MIPs) and memory (a few 10s of kbytes of RAM) requirements such that it can run on stm32 class microcontrollers with hardware FPU.
 \item Codec 2 has been designed for digital voice over radio applications, and retains intelligible speech at a few percent bit error rate.
-\item An open source reference implementation in the C language for C99/gcc compilers, and a \emph{cmake} build and test framework that runs on Linux/MinGW.  Also included is a cross compiled stm32 reference implementation.
+\item An open source reference implementation in the C language for C99/gcc compilers, and a \emph{cmake} build and test framework that runs on Linux.  Also included is a cross compiled stm32 reference implementation.
 \item Ports to non-C99 compilers (e.g. MSVC, some microcontrollers, native builds on Windows) are left to third party developers - we recommend the tests also be ported and pass before considering the port successful.
 \end{enumerate}
 
@@ -93,7 +93,7 @@ Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} freq
 
 Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
 
-\begin{figure}[H]
+\begin{figure}
 \caption{ A 40ms segment from the word "these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the "pitch period" of this segment.}
 \label{fig:hts2a_time}
 \begin{center}
@@ -269,9 +269,68 @@ Some features of the Codec 2 Design:
 \item A post filter that enhances the speech quality of the baseline codec, especially for low pitched (male) speakers.
 \end{enumerate}
 
-\subsection{Naming Conventions}
+\subsection{Sinusoidal Analysis and Synthesis}
 
-In Codec 2, signals are frequently moved between the time and frequency domain. In the source code and this document, time domain signals generally have the subscript $n$, and frequency domain signals the subscript $\omega$, for example $S_n$ and $S_\omega$ represent the same speech expressed in the time and frequency domain.  Section \ref{sect:glossary} contains a glossary of symbols.
+Both voiced and unvoiced speech is represented using a harmonic sinusoidal model:
+\begin{equation}
+\hat{s}(n) = \sum_{m=1}^L A_m cos(\omega_0 m n + \theta_m)
+\end{equation}
+where the parameters $A_m, \theta_m, m=1...L$ represent the magnitude and phases of each sinusoid, $\omega_0$ is the fundamental frequency in radians/sample, and $L=\lfloor \pi/\omega_0 \rfloor$ is the number of harmonics.
+
+Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  
+
+\begin{figure}[h]
+\caption{Sinusoidal Analysis}
+\label{fig:analysis}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
+
+\node [input] (rinput) {};
+\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
+\node [block, right of=z,node distance=1.5cm] (window) {Window};
+\node [block, right of=window,node distance=2.5cm] (dft) {DFT};
+\node [block, right of=dft,node distance=3cm,text width=2cm] (est) {Est Amp and Phase};
+\node [block, below of=window] (nlp) {NLP};
+\node [output, right of=est,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
+\draw [->] (z) |- (nlp);
+\draw [->] (window) -- node[below] {$s_w(n)$} (dft);
+\draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
+\draw [->] (nlp) -| node[below] {$\omega_0$} (est) ;
+\draw [->] (est) -- (routput) node[right] {$\{A_m\}$ \\ $\{\theta_m\}$};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+For the purposes of speech analysis the time domain speech signal $s(n)$ is divided into overlapping analysis windows (frames) of $N_w=279$ samples. The centre of each analysis window is separated by $N=80$ samples, or an internal frame rate or 10ms. To analyse the $l$-th frame it is convenient to convert the fixed time reference to a sliding time reference centred on the current analysis window:
+\begin{equation}
+s_w(n) = s(lN + n) w(n), \quad n = - N_{w2} ... N_{w2}
+\end{equation}
+where $w(n)$ is a tapered even window of $N_w$ ($N_w$ odd) samples with:
+\begin{equation}
+N_{w2} = \left \lfloor \frac{N_w}{2} \right \rfloor
+\end{equation}
+A suitable window function is a shifted Hanning window:
+\begin{equation}
+w(n) = \frac{1}{2} - \frac{1}{2} cos \left(\frac{2 \pi (n- N_{w2})}{N_w-1} \right)
+\end{equation}
+To analyse $s(n)$ in the frequency domain the $N_{dft}$ point Discrete Fourier Transform (DFT) can be computed:
+\begin{equation}
+S_w(k) = \sum_{n=-N_{w2}}^{N_{w2}} s_w(n) e^{-j 2 \pi k n / N_{dft}}
+\end{equation}
+The magnitude and phase of each harmonic is given by:
+\begin{equation}
+\begin{split}
+A_m      &= \sqrt{\sum_{k=a_m}^{b_m-1} |S_w(k)|^2 } \\
+\theta_m &= arg \left( S_w(m \omega_0 N_{dft} / 2 \pi) \right) \\
+a_m      &= \left \lfloor \frac{(m - 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor \\
+b_m      &= \left \lfloor \frac{(m + 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
+\end{split}
+\end{equation}
+The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th sinusoid. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
+
 
 \subsection{Non-Linear Pitch Estimation}
 
@@ -326,38 +385,14 @@ The DFT power spectrum of the squared signal $F_\omega(k)$ generally contains se
 
 The accuracy of the pitch estimate in then refined by maximising the function:
 \begin{equation}
-E(\omega_0)=\sum_{m=1}^L|S_{\omega}(b m \omega_0)|^2
+E(\omega_0)=\sum_{m=1}^L|S_w(b m \omega_0)|^2
 \end{equation}
-where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental frequency in radians/sample, $b$ is a constant that maps a frequency in radians/sample to a DFT bin, and $S_\omega$ is the DFT of the speech spectrum for the current frame. This function will be maximised when $mF_0$ samples the peak of each harmonic, corresponding with an accurate pitch estimate.   It is evaluated in a small range about the coarse $F_0$ estimate.
+where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental frequency in radians/sample, $b$ is a constant that maps a frequency in radians/sample to a DFT bin, and $S_\omega$ is the DFT of the speech spectrum for the current frame. This function will be maximised when $mF_0$ aligns with the peak of each harmonic, corresponding with an accurate pitch estimate.   It is evaluated in a small range about the coarse $F_0$ estimate.
 
 There is nothing particularly unique about this pitch estimator or it's performance. There are occasional artefacts in the synthesised speech that can be traced to ``gross" and ``fine" pitch estimator errors.  In the real world no pitch estimator is perfect, partially because the model assumptions around pitch break down (e.g. in transition regions or unvoiced speech).  The NLP algorithm could benefit from additional review, tuning and better pitch tracking.  However it appears sufficient for the use case of a communications quality speech codec, and is a minor source of artefacts in the synthesised speech. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.
 
-\subsection{Sinusoidal Analysis and Synthesis}
 
-\begin{figure}[h]
-\caption{Block Diagram of the Sinusoidal Encoder}
-\label{fig:encoder}
-\begin{center}
-\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
-
-\node [input] (rinput) {};
-\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
-\node [block, right of=z,node distance=1.5cm] (window) {Window};
-\node [block, right of=window,node distance=2.5cm] (dft) {DFT};
-\node [block, right of=dft,node distance=3cm,text width=2cm] (est) {Est Amp and Phase};
-\node [block, below of=window] (nlp) {NLP};
-\node [output, right of=est,node distance=2cm] (routput) {};
-
-\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
-\draw [->] (z) |- (nlp);
-\draw [->] (window) -- node[below] {$s_w(n)$} (dft);
-\draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
-\draw [->] (nlp) -| node[below] {$\omega_0$} (est) ;
-\draw [->] (est) -- (routput) node[right] {$\{A_m\}$ \\ $\{\theta_m\}$};
-
-\end{tikzpicture}
-\end{center}
-\end{figure}
+\subsection{Voicing Estimation}
 
 \subsection{LPC/LSP based modes}
 
