@@ -269,7 +269,7 @@ Some features of the Codec 2 Design:
 \item A post filter that enhances the speech quality of the baseline codec, especially for low pitched (male) speakers.
 \end{enumerate}
 
-\subsection{Sinusoidal Analysis and Synthesis}
+\subsection{Sinusoidal Analysis}
 
 Both voiced and unvoiced speech is represented using a harmonic sinusoidal model:
 \begin{equation}
@@ -277,7 +277,7 @@ Both voiced and unvoiced speech is represented using a harmonic sinusoidal model
 \end{equation}
 where the parameters $A_m, \theta_m, m=1...L$ represent the magnitude and phases of each sinusoid, $\omega_0$ is the fundamental frequency in radians/sample, and $L=\lfloor \pi/\omega_0 \rfloor$ is the number of harmonics.
 
-Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  
+Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  This algorithms described in this section is based on the work in \cite{rowe1997techniques}, with some changes in notation.
 
 \begin{figure}[h]
 \caption{Sinusoidal Analysis}
@@ -312,9 +312,13 @@ where $w(n)$ is a tapered even window of $N_w$ ($N_w$ odd) samples with:
 \begin{equation}
 N_{w2} = \left \lfloor \frac{N_w}{2} \right \rfloor
 \end{equation}
-A suitable window function is a shifted Hanning window:
+A suitable window function is a shifted Hann window:
 \begin{equation}
 w(n) = \frac{1}{2} - \frac{1}{2} cos \left(\frac{2 \pi (n- N_{w2})}{N_w-1} \right)
+\end{equation}
+where the energy in the window is normalised such that:
+\begin{equation}
+\sum_{n=0}^{N_w-1}w^2(n) = \frac{1}{N_{dft}}
 \end{equation}
 To analyse $s(n)$ in the frequency domain the $N_{dft}$ point Discrete Fourier Transform (DFT) can be computed:
 \begin{equation}
@@ -329,8 +333,34 @@ a_m      &= \left \lfloor \frac{(m - 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \
 b_m      &= \left \lfloor \frac{(m + 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
 \end{split}
 \end{equation}
-The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th sinusoid. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
+The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
 
+\subsection{Sinusoidal Synthesis}
+
+Synthesis is achieved by constructing an estimate of the original speech spectrum using the sinusoidal model parameters for the current frame. This information is then transformed to the time domain using an Inverse DFT (IDFT). To produce a continuous time domain waveform the IDFTs from adjacent frames are smoothly interpolated using a weighted overlap add procedure \cite{mcaulay1986speech}.
+
+The synthetic speech spectrum is constructed using the sinusoidal model parameters by populating a DFT array $\hat{S}_w(k)$ with weighted impulses at the harmonic centres:
+\begin{equation}
+\begin{split}
+\hat{S}_w(k) &= \begin{cases}
+                A_m e^{\theta_m}, & m=1..L \\
+                0, & otherwise
+                \end{cases} \\
+k &= \left \lfloor \frac{m \omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
+\end{split}
+\end{equation}
+
+As we wish to synthesise a real time domain signal, $S_w(k)$ is defined to be conjugate symmetric:
+\begin{equation}
+%\hat{S}_w(N_{dft} − k) = \hat{S}_w^{*}(k), \quad k = 1,.. N_{dft}/2-1
+\hat{S}_w(N_{dft}-k) = \hat{S}_w^{*}(k), \quad k = 1,.. N_{dft}/2-1
+\end{equation}
+where $\hat{S}_w^*(k)$ is the complex conjugate of $\hat{S}_w(k)$. This signal is converted to the time domain
+using the IDFT:
+\begin{equation}
+s_w(k) = \frac{1}{N_{dft}}\sum_{k=0}^{N_{dft}-1} \hat{S}_w(k) e^{j 2 \pi k n / N_{dft}}
+\end{equation}
+We introduce the notation $s_w^l(n)$ to denote the synthesised speech for the $l$-th frame. To reconstruct a continuous synthesised speech waveform, we need to smoothly connect adjacent synthesised frames of speech. This is performed by windowing each frame, then shifting and superimposing adjacent frames using an overlap add algorithm.
 
 \subsection{Non-Linear Pitch Estimation}
 
@@ -379,9 +409,9 @@ H(z) = \frac{1-z^{-1}}{1-0.95z^{-1}}
 \end{center}
 \end{figure}
 
-Before transforming the squared signal to the frequency domain, the signal is low pass filtered and decimated by a factor of 5. This operation is performed to limit the bandwidth of the squared signal to the approximate range of the fundamental frequency. All energy in the squared signal above 400 Hz is superfluous and would lower the resolution of the frequency domain peak picking stage. The low pass filter used for decimation is an FIR type with 48 taps and a cut off frequency of 600 Hz. The decimated signal is then windowed and the $N_{dft} = 512$ point DFT power spectrum $F_\omega(k)$ is computed by zero padding the decimated signal, where $k$ is the DFT bin.
+Before transforming the squared signal to the frequency domain, the signal is low pass filtered and decimated by a factor of 5. This operation is performed to limit the bandwidth of the squared signal to the approximate range of the fundamental frequency. All energy in the squared signal above 400 Hz is superfluous and would lower the resolution of the frequency domain peak picking stage. The low pass filter used for decimation is an FIR type with 48 taps and a cut off frequency of 600 Hz. The decimated signal is then windowed and the $N_{dft} = 512$ point DFT power spectrum $F_w(k)$ is computed by zero padding the decimated signal, where $k$ is the DFT bin.
 
-The DFT power spectrum of the squared signal $F_\omega(k)$ generally contains several local maxima. In most cases, the global maxima will correspond to $F_0$, however occasionally the global maxima $|F_\omega(k_{max})|$ corresponds to a spurious peak or multiple of $F_0$ . Thus it is not appropriate to simply choose the global maxima as the fundamental estimate for this frame. Instead, we look at submultiples of the global maxima frequency $k_{max}/2, k_{max}/3,... k_{min}$ for local maxima.  If local maxima exists and is above an experimentally derived threshold we choose the submultiple as the $F_0$ estimate.  The threshold is biased down for $F_0$ candidates near the previous frames $F_0$ estimate, a form of backwards pitch tracking.
+The DFT power spectrum of the squared signal $F_w(k)$ generally contains several local maxima. In most cases, the global maxima will correspond to $F_0$, however occasionally the global maxima $|F_w(k_{max})|$ corresponds to a spurious peak or multiple of $F_0$. Thus it is not appropriate to simply choose the global maxima as the fundamental estimate for this frame. Instead, we look at submultiples of the global maxima frequency $k_{max}/2, k_{max}/3,... k_{min}$ for local maxima.  If local maxima exists and is above an experimentally derived threshold we choose the submultiple as the $F_0$ estimate.  The threshold is biased down for $F_0$ candidates near the previous frames $F_0$ estimate, a form of backwards pitch tracking.
 
 The accuracy of the pitch estimate in then refined by maximising the function:
 \begin{equation}
@@ -417,14 +447,20 @@ There is nothing particularly unique about this pitch estimator or it's performa
 \hline
 Symbol & Description & Units \\
 \hline
+$a_m$ & lower DFT index of current band \\
+$b_m$ & upper DFT index of current band \\
 $b$ & Constant that maps a frequency in radians to a DFT bin \\
-$\{A_m\}$ & Set of spectral amplitudes $m=1,...L$ & dB \\
+$\{A_m\}$ & Set of harmonic magnitudes $m=1,...L$ & dB \\
 $F_0$ & Fundamental frequency (pitch) & Hz \\
 $F_s$ & Sample rate (usually 8 kHz) & Hz \\
-$F_\omega(k)$ & DFT of squared speech signal in NLP pitch estimator \\
-$L$ & Number of harmonics & \\
+$F_w(k)$ & DFT of squared speech signal in NLP pitch estimator \\
+$L$ & Number of harmonics \\
 $P$ & Pitch period & ms or samples \\
+$\{\theta_m\}$ & Set of harmonic phases $m=1,...L$ & dB \\
 $\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
+$s(n)$ & Input speech \\
+$s_w(n)$ & Time domain windowed input speech \\
+$S_w(k)$ & Frequency domain windowed input speech \\
 \hline
 \end{tabular}
 \caption{Glossary of Symbols}
