@@ -87,14 +87,14 @@ Recently, machine learning has been applied to speech coding.  This technology p
 
 \subsection{Speech in Time and Frequency}
 
-To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the "pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
+To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the ``pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
 
 Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
 
 Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
 
 \begin{figure}
-\caption{ A 40ms segment from the word "these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the "pitch period" of this segment.}
+\caption{ A 40ms segment from the word ``these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the ``pitch period" of this segment.}
 \label{fig:hts2a_time}
 \begin{center}
 \input hts2a_37_sn.tex
@@ -186,7 +186,7 @@ Yet another algorithm is used to determine if the frame is voiced or unvoiced.  
 
 Up until this point the processing happens at a 10ms frame rate.  However in the next step we ``decimate`` the model parameters - this means we discard some of the model parameters to lower the frame rate, which helps us lower the bit rate.  Decimating to 20ms (throwing away every 2nd set of model parameters) doesn't have much effect, but beyond that the speech quality starts to degrade.  So there is a trade off between decimation rate and bit rate over the channel.
 
-Once we have the desired frame rate, we ``quantise"" each model parameter.  This means we use a fixed number of bits to represent it, so we can send the bits over the channel.  Parameters like pitch and voicing are fairly easy, but quite a bit of DSP goes into quantising the spectral amplitudes. For the higher bit rate Codec 2 modes, we design a filter that matches the spectral amplitudes, then send a quantised version of the filter over the channel. Using the example in Figure \ref{fig:hts2a_time} - the filter would have a band pass peaks at 500 and 2300 Hz.  It's frequency response would follow the red line. The filter is time varying - we redesign it for every frame.
+Once we have the desired frame rate, we ``quantise" each model parameter.  This means we use a fixed number of bits to represent it, so we can send the bits over the channel.  Parameters like pitch and voicing are fairly easy, but quite a bit of DSP goes into quantising the spectral amplitudes. For the higher bit rate Codec 2 modes, we design a filter that matches the spectral amplitudes, then send a quantised version of the filter over the channel. Using the example in Figure \ref{fig:hts2a_time} - the filter would have a band pass peaks at 500 and 2300 Hz.  It's frequency response would follow the red line. The filter is time varying - we redesign it for every frame.
 
 You'll notice the term ``estimate" being used a lot.  One of the problems with model based speech coding is the algorithms we use to extract the model parameters are not perfect.  Occasionally the algorithms get it wrong.  Look at the red crosses on the bottom plot of Figure \ref{fig:hts2a_time}.  These mark the amplitude estimate of each harmonic.  If you look carefully, you'll see that above 2000Hz, the crosses fall a little short of the exact centre of each harmonic.  This is an example of a ``fine" pitch estimator error, a little off the correct value.
 
@@ -339,11 +339,39 @@ The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th har
 
 Synthesis is achieved by constructing an estimate of the original speech spectrum using the sinusoidal model parameters for the current frame. This information is then transformed to the time domain using an Inverse DFT (IDFT). To produce a continuous time domain waveform the IDFTs from adjacent frames are smoothly interpolated using a weighted overlap add procedure \cite{mcaulay1986speech}.
 
+\begin{figure}[h]
+\caption{Sinusoidal Synthesis.  At frame $l$ we have $2N$ samples from the windowing function.  The first $N$ complete the current frame and are the synthesiser output. The second $N$ are stored for summing with the next frame.}
+\label{fig:synthesis}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
+
+\node [input] (rinput) {};
+\node [block, right of=rinput,node distance=1.5cm,text width=1.5cm] (construct) {Construct $S_w(k)$};
+\node [block, right of=construct,node distance=2cm] (idft) {IDFT};
+\node [block, right of=idft,node distance=2.5cm,text width=1.5cm] (window) {Window $t(n)$};
+\node [circ, right of=window,node distance=3cm] (sum) {$+$};
+\node [block, below of=sum,text width=1.5cm] (delay) {1 frame delay};
+\node [output, right of=sum,node distance=1cm] (routput) {};
+
+\draw [->] node[left of=rinput,node distance=0.5cm] {$\omega_0$\\$\{A_m\}$\\$\{\theta_m\}$} (rinput) -- (construct);
+\draw [->] (construct) --(idft);
+\draw [->] (idft) --  node[below] {$\hat{s}_l(n)$} (window);
+\draw [->] (window) -- node[above of=window, node distance=1cm] 
+  {$\begin{aligned} n =& 0,..,\\ & N-1 \end{aligned}$} (sum);
+\draw [->] (window) |-  (delay)  node[left of=delay,below, node distance=2cm] 
+  {$\begin{aligned} n =& N,...,\\ & 2N-1 \end{aligned}$};
+\draw [->] (delay) -- (sum);
+\draw [->] (sum) -- (routput) node[right] {$\hat{s}(n+lN)$};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
 The synthetic speech spectrum is constructed using the sinusoidal model parameters by populating a DFT array $\hat{S}_w(k)$ with weighted impulses at the harmonic centres:
 \begin{equation}
 \begin{split}
 \hat{S}_w(k) &= \begin{cases}
-                A_m e^{\theta_m}, & m=1..L \\
+                A_m e^{j\theta_m}, & m=1..L \\
                 0, & otherwise
                 \end{cases} \\
 k &= \left \lfloor \frac{m \omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
@@ -372,7 +400,7 @@ t(n) = \begin{cases}
 \end{equation}
 The frame size, $N=80$, is the same as the encoder. The shape and overlap of the synthesis window is not important, as long as sections separated by the frame size (frame to frame shift) sum to 1:
 \begin{equation}
-t(n) + t(N-1) = 1
+t(n) + t(N-n) = 1
 \end{equation}
 The continuous synthesised speech signal $\hat{s}(n)$ for the $l$-th frame is obtained using:
 \begin{equation}
