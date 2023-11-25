@@ -352,15 +352,37 @@ k &= \left \lfloor \frac{m \omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
 
 As we wish to synthesise a real time domain signal, $S_w(k)$ is defined to be conjugate symmetric:
 \begin{equation}
-%\hat{S}_w(N_{dft} − k) = \hat{S}_w^{*}(k), \quad k = 1,.. N_{dft}/2-1
 \hat{S}_w(N_{dft}-k) = \hat{S}_w^{*}(k), \quad k = 1,.. N_{dft}/2-1
 \end{equation}
 where $\hat{S}_w^*(k)$ is the complex conjugate of $\hat{S}_w(k)$. This signal is converted to the time domain
 using the IDFT:
 \begin{equation}
-s_w(k) = \frac{1}{N_{dft}}\sum_{k=0}^{N_{dft}-1} \hat{S}_w(k) e^{j 2 \pi k n / N_{dft}}
+\label{eq:synth_idft}
+\hat{s}_l(n) = \frac{1}{N_{dft}}\sum_{k=0}^{N_{dft}-1} \hat{S}_w(k) e^{j 2 \pi k n / N_{dft}}
 \end{equation}
-We introduce the notation $s_w^l(n)$ to denote the synthesised speech for the $l$-th frame. To reconstruct a continuous synthesised speech waveform, we need to smoothly connect adjacent synthesised frames of speech. This is performed by windowing each frame, then shifting and superimposing adjacent frames using an overlap add algorithm.
+Where $N_{dft} > 2N$, to support the overlap add procedure below.
+
+We introduce the notation $\hat{s}_l(n)$ to denote the synthesised speech for the $l$-th frame. To reconstruct a continuous synthesised speech waveform, we need to smoothly connect adjacent synthesised frames of speech. This is performed by windowing each frame of synthesised speech, then shifting and superimposing adjacent frames using an overlap add algorithm. A triangular window is defined by:
+\begin{equation}
+t(n) = \begin{cases}
+          n/N,         & 0 \le n < N  \\
+          1 - (n-N)/N, & N \le n < 2N \\ 
+          0,           & otherwise
+       \end{cases}
+\end{equation}
+The frame size, $N=80$, is the same as the encoder. The shape and overlap of the synthesis window is not important, as long as sections separated by the frame size (frame to frame shift) sum to 1:
+\begin{equation}
+t(n) + t(N-1) = 1
+\end{equation}
+The continuous synthesised speech signal $\hat{s}(n)$ for the $l$-th frame is obtained using:
+\begin{equation}
+\hat{s}(n+lN) = \begin{cases}
+                    \hat{s}(n+(l-1)N) + \hat{s}_l(N_{dft}-N+1+n)t(n), & n=0,1,...,N-2 \\ 
+		            \hat{s}_l(n - N - 1)t(n)                                    & n=N-1,..,2N-1
+                  \end{cases}
+\end{equation}
+
+From the $N_{dft}$ samples produced by the IDFT (\ref{eq:synth_idft}), after windowing we have $2N$ output samples. The first $N$ output samples $n=0,...N-1$ complete the current frame $l$ and are output from the synthesiser.  However we must also compute the contribution to the next frame $n = N,N+1,...,2N-1$.  These are stored, and added to samples from the next synthesised frame.
 
 \subsection{Non-Linear Pitch Estimation}
 
