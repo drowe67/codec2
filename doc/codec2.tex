@@ -263,8 +263,9 @@ Some features of the Codec 2 Design:
 \item A pitch estimator based on a 2nd order non-linearity developed by the author.
 \item A single voiced/unvoiced binary voicing model.
 \item A frequency domain IFFT/overlap-add synthesis model for voiced and unvoiced speech.
-\item For the higher bit rate modes, spectral amplitudes are represented using LPCs extracted from time domain analysis and scalar LSP quantisation.
-\item For Codec 2 700C, vector quantisation of resampled spectral amplitudes in the log domain.
+\item Phases are not transmitted, they are synthesised at the decoder from the magnitude spectrum and voicing decision.  
+\item For the higher bit rate modes (1200 to 3200 bits/s), spectral magnitudes are represented using LPCs extracted from time domain analysis and scalar LSP quantisation.
+\item For Codec 2 700C, vector quantisation of resampled spectral magnitudes in the log domain.
 \item Minimal interframe prediction in order to minimise error propagation and maximise robustness to channel errors.
 \item A post filter that enhances the speech quality of the baseline codec, especially for low pitched (male) speakers.
 \end{enumerate}
@@ -328,7 +329,7 @@ The magnitude and phase of each harmonic is given by:
 \begin{equation}
 \begin{split}
 A_m      &= \sqrt{\sum_{k=a_m}^{b_m-1} |S_w(k)|^2 } \\
-\theta_m &= arg \left( S_w(m \omega_0 N_{dft} / 2 \pi) \right) \\
+\theta_m &= arg \left[ S_w(m \omega_0 N_{dft} / 2 \pi) \right)] \\
 a_m      &= \left \lfloor \frac{(m - 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor \\
 b_m      &= \left \lfloor \frac{(m + 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
 \end{split}
@@ -340,7 +341,7 @@ The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th har
 Synthesis is achieved by constructing an estimate of the original speech spectrum using the sinusoidal model parameters for the current frame. This information is then transformed to the time domain using an Inverse DFT (IDFT). To produce a continuous time domain waveform the IDFTs from adjacent frames are smoothly interpolated using a weighted overlap add procedure \cite{mcaulay1986speech}.
 
 \begin{figure}[h]
-\caption{Sinusoidal Synthesis.  At frame $l$ we have $2N$ samples from the windowing function.  The first $N$ complete the current frame and are the synthesiser output. The second $N$ are stored for summing with the next frame.}
+\caption{Sinusoidal Synthesis.  At frame $l$ the windowing function generates $2N$ samples.  The first $N$ complete the current frame and are the synthesiser output. The second $N$ are stored for summing with the next frame.}
 \label{fig:synthesis}
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
@@ -356,10 +357,10 @@ Synthesis is achieved by constructing an estimate of the original speech spectru
 \draw [->] node[left of=rinput,node distance=0.5cm] {$\omega_0$\\$\{A_m\}$\\$\{\theta_m\}$} (rinput) -- (construct);
 \draw [->] (construct) --(idft);
 \draw [->] (idft) --  node[below] {$\hat{s}_l(n)$} (window);
-\draw [->] (window) -- node[above of=window, node distance=1cm] 
-  {$\begin{aligned} n =& 0,..,\\ & N-1 \end{aligned}$} (sum);
+\draw [->] (window) -- node[above of=window, node distance=0.75cm] 
+  {$\begin{aligned} n =& 0,..,\\[-0.5ex] & N-1 \end{aligned}$} (sum);
 \draw [->] (window) |-  (delay)  node[left of=delay,below, node distance=2cm] 
-  {$\begin{aligned} n =& N,...,\\ & 2N-1 \end{aligned}$};
+  {$\begin{aligned} n =& N,...,\\[-0.5ex] & 2N-1 \end{aligned}$};
 \draw [->] (delay) -- (sum);
 \draw [->] (sum) -- (routput) node[right] {$\hat{s}(n+lN)$};
 
@@ -471,10 +472,45 @@ where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental freque
 
 There is nothing particularly unique about this pitch estimator or it's performance. There are occasional artefacts in the synthesised speech that can be traced to ``gross" and ``fine" pitch estimator errors.  In the real world no pitch estimator is perfect, partially because the model assumptions around pitch break down (e.g. in transition regions or unvoiced speech).  The NLP algorithm could benefit from additional review, tuning and better pitch tracking.  However it appears sufficient for the use case of a communications quality speech codec, and is a minor source of artefacts in the synthesised speech. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.
 
+\subsection{Voicing Estimation and Phase Synthesis}
 
-\subsection{Voicing Estimation}
+TODO: Clean up. Introduce continuous time index, perhaps l-th frame.  Expressions for phase spectra as cascade of two systems. Hilbert transform, might need to study this.  Figures and simulation plots would be useful.  Voicing decision algorithm.  Figure of phase synthesis.
+
+In Codec 2 the harmonic phases $\theta_m$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters.  The phase of each harmonic is modelled as the phase of a synthesis filter excited by an impulse train. We create the excitation pulse train using $\omega_0$, a binary voicing decision $v$ and a rules based algorithm.
+
+Consider a pulse train with a pulse starting time $n=0$, with pulses repeated at a rate of $\omega_0$.  A pulse train in the time domain is equivalent to harmonics in the frequency domain.  We can construct an excitation pulse train using a sum of sinusoids:
+\begin{equation}
+e(n) = \sum_{m-1}^L cos(m \omega_0 n)
+\end{equation}
+The phase of each excitation harmonic is:
+\begin{equation}
+\phi_m = m \omega_0
+\end{equation}
+As we don't transmit the pulse position for this model, we need to synthesise it.  The excitation pulses occur at a rate of $\omega_0$ (one for each pitch period). The phase of the first harmonic advances by $N \phi_0$ radians over a synthesis frame of $N$ samples.  For example if $\omega_0 = \pi /20$ (200 Hz), then over a (10ms $N=80$) sample frame, the phase of the first harmonic would advance $(\pi/20)*80 = 4 \pi$ radians or two complete cycles.
+
+We generate the excitation phase of the fundamental (first harmonic):
+\begin{equation}
+\phi_1 = \omega_0 N
+\end{equation}
+We then relate the phase of the m-th excitation harmonic to the phase of the fundamental as:
+\begin{equation}
+\phi_m = m\phi_m
+\end{equation}
+This phase spectra then gets passed through the LPC synthesis filter to determine the final harmonic phase.
+
+Comparing to speech synthesised using original phases:
+\begin{enumerate}
+\item Through headphones speech synthesised with this model is not as good. Through a loudspeaker it is very close to original phases.
+\item If there are voicing errors, the speech can sound clicky or staticy.  If V speech is mistakenly declared UV, this model tends to synthesise impulses or clicks, as there is usually very little shift or dispersion through the LPC synthesis filter.
+\item When combined with LPC amplitude modelling there is an additional drop in quality.  I am not sure why, theory is interformant energy is raised making any phase errors more obvious.
+\item This synthesis model is effectively the same as a simple LPC-10 vocoders, and yet sounds much better.  Why? Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
+\item I am pretty sure the Lincoln Lab sinusoidal coding guys (like xMBE also from MIT) first described this zero phase model, I need to look up the paper.
+\item Note that this approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering  by the LPC spectra).
+\end{enumerate}
 
 \subsection{LPC/LSP based modes}
+
+Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation
 
 \subsection{Codec 2 700C}
 
