@@ -330,19 +330,20 @@ The magnitude and phase of each harmonic is given by:
 \label{eq:mag_est}
 \begin{split}
 A_m      &= \sqrt{\sum_{k=a_m}^{b_m-1} |S_w(k)|^2 } \\
-\theta_m &= arg \left[ S_w(m \omega_0 N_{dft} / 2 \pi) \right)] \\
-a_m      &= \left \lfloor \frac{(m - 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor \\
-b_m      &= \left \lfloor \frac{(m + 0.5)\omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
+\theta_m &= arg \left[ S_w(\lfloor m r \rceil \right] \\
+a_m      &= \lfloor (m - 0.5)r \rceil \\
+b_m      &= \lfloor (m + 0.5)r \rceil \\
+r        &= \frac{\omega_0 N_{dft}}{2 \pi} 
 \end{split}
 \end{equation}
-The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
+The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ is a constant that maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
 
 \subsection{Sinusoidal Synthesis}
 
 Synthesis is achieved by constructing an estimate of the original speech spectrum using the sinusoidal model parameters for the current frame. This information is then transformed to the time domain using an Inverse DFT (IDFT). To produce a continuous time domain waveform the IDFTs from adjacent frames are smoothly interpolated using a weighted overlap add procedure \cite{mcaulay1986speech}.
 
 \begin{figure}[h]
-\caption{Sinusoidal Synthesis.  At frame $l$ the windowing function generates $2N$ samples.  The first $N$ complete the current frame and are the synthesiser output. The second $N$ are stored for summing with the next frame.}
+\caption{Sinusoidal Synthesis.  At frame $l$ the windowing function generates $2N$ samples.  The first $N$ samples complete the current frame and are the synthesiser output. The second $N$ samples are stored for summing with the next frame.}
 \label{fig:synthesis}
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
@@ -371,13 +372,10 @@ Synthesis is achieved by constructing an estimate of the original speech spectru
 
 The synthetic speech spectrum is constructed using the sinusoidal model parameters by populating a DFT array $\hat{S}_w(k)$ with weighted impulses at the harmonic centres:
 \begin{equation}
-\begin{split}
-\hat{S}_w(k) &= \begin{cases}
-                A_m e^{j\theta_m}, & m=1..L \\
+\hat{S}_w(k) = \begin{cases}
+                A_m e^{j\theta_m}, & k = \lfloor m r \rceil, m=1..L \\
                 0, & otherwise
-                \end{cases} \\
-k &= \left \lfloor \frac{m \omega_0 N_{dft}}{2 \pi} + 0.5 \right \rfloor
-\end{split}
+                \end{cases}
 \end{equation}
 
 As we wish to synthesise a real time domain signal, $S_w(k)$ is defined to be conjugate symmetric:
@@ -467,17 +465,15 @@ The DFT power spectrum of the squared signal $F_w(k)$ generally contains several
 
 The accuracy of the pitch estimate in then refined by maximising the function:
 \begin{equation}
-E(\omega_0)=\sum_{m=1}^L|S_w(b m \omega_0)|^2
+E(\omega_0)=\sum_{m=1}^L|S_w(\lfloor r m \rceil)|^2
 \end{equation}
-where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental frequency in radians/sample, $b$ is a constant that maps a frequency in radians/sample to a DFT bin, and $S_\omega$ is the DFT of the speech spectrum for the current frame. This function will be maximised when $mF_0$ aligns with the peak of each harmonic, corresponding with an accurate pitch estimate.   It is evaluated in a small range about the coarse $F_0$ estimate.
+where $r=\omega_0 N_{dft}/2 \pi$ maps the harmonic number $m$ to a DFT bin. This function will be maximised when $m \omega_0$ aligns with the peak of each harmonic, corresponding with an accurate pitch estimate.   It is evaluated in a small range about the coarse $F_0$ estimate.
 
 There is nothing particularly unique about this pitch estimator or it's performance. There are occasional artefacts in the synthesised speech that can be traced to ``gross" and ``fine" pitch estimator errors.  In the real world no pitch estimator is perfect, partially because the model assumptions around pitch break down (e.g. in transition regions or unvoiced speech).  The NLP algorithm could benefit from additional review, tuning and better pitch tracking.  However it appears sufficient for the use case of a communications quality speech codec, and is a minor source of artefacts in the synthesised speech. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.
 
 \subsection{Voicing Estimation}
 
-In Codec 2 the harmonic phases $\theta_m$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters, $\{A_m\}$, $\omega_0$, and $v$, the voicing decision for the current frame.
-
-Voicing is determined using a variation of the MBE voicing algorithm \cite{griffin1988multiband}.  Voiced speech consists of a harmonic series of frequency domain impulses, separated by $\omega_0$.  When we multiply a segment of the inout speech samples by the window function $w(n)$, we convolve the frequency domain impulses with $W(k)$, the DFT of the $(w)$.  Thus for the $m$-th voiced harmonic, we expect to see the shape of the window function $W(k)$ in the band $Sw(k), k=a_m,...,b_m$.  The MBE voicing algorithm starts with the assumption that the band is voiced, and measures the error between $S_w(k)$ and the ideal voiced harmonic $\hat{S}_w(k)$.
+Voicing is determined using a variation of the MBE voicing algorithm \cite{griffin1988multiband}.  Voiced speech consists of a harmonic series of frequency domain impulses, separated by $\omega_0$.  When we multiply a segment of the input speech samples by the window function $w(n)$, we convolve the frequency domain impulses with $W(k)$, the DFT of the $(w)$.  Thus for the $m$-th voiced harmonic, we expect to see a cop yof the window function $W(k)$ in the band $Sw(k), k=a_m,...,b_m$.  The MBE voicing algorithm starts with the assumption that the band is voiced, and measures the error between $S_w(k)$ and the ideal voiced harmonic $\hat{S}_w(k)$.
 
 For each band we first estimate the complex harmonic amplitude (magnitude and phase) using \cite{griffin1988multiband}:
 \begin{equation}
@@ -488,11 +484,11 @@ where $r= \omega_0 N_{dft}/2 \pi$ is a constant that maps the $m$-th harmonic to
 \label{eq:est_amp_mbe}
 B_m = \frac{\sum_{k=a_m}^{b_m} S_w(k) W (k + \lfloor mr \rceil)}{\sum_{k=a_m}^{b_m} |W (k + \lfloor mr \rceil)|^2}
 \end{equation}
-Note this procedure is different to the $A_m$ magnitude estimation procedure in (\ref{eq:mag_est}), and is only used locally for the MBE voicing estimation procedure.  The MBE amplitude estimation (\ref{eq:est_amp_mbe}) assumes the energy in the band of $S_w(k)$ is from the DFT of a sine wave in that band, and unlike (\ref{eq:mag_est}) is complex valued.
+Note this procedure is different to the $A_m$ magnitude estimation procedure in (\ref{eq:mag_est}), and is only used locally for the MBE voicing estimation procedure.  Unlike (\ref{eq:mag_est}), the MBE amplitude estimation (\ref{eq:est_amp_mbe}) assumes the energy in the band of $S_w(k)$ is from the DFT of a sine wave, and $B_m$ is complex valued.
 
 The synthesised frequency domain speech for this band is defined as:
 \begin{equation}
-\hat{S}_w(k) = B_m W(k - \lfloor mr \rceil), \quad k=a_m,...,b_m-1
+\hat{S}_w(k) = B_m W(k + \lfloor mr \rceil), \quad k=a_m,...,b_m-1
 \end{equation}
 The error between the input and synthesised speech in this band is then:
 \begin{equation}
@@ -505,16 +501,18 @@ A Signal to Noise Ratio (SNR) ratio is defined as:
 \begin{equation}
 SNR = \sum_{m=1}^{m_{1000}} \frac{A^2_m}{E_m}
 \end{equation}
-where $m_{1000}= \lfloor L/4 \rceil$ is the band at approximately 1000 Hz. If the energy in the bands up to 1000 Hz is a good match to a harmonic series of sinusoids then $\hat{S}_w(k) \approx S_w(k)$ and $E_m$ will be small compared to the energy in the band leading to a high SNR.  Voicing is declared using the following rule:
+where $m_{1000}= \lfloor L/4 \rceil$ is the band closest to 1000 Hz. If the energy in the bands up to 1000 Hz is a good match to a harmonic series of sinusoids then $\hat{S}_w(k) \approx S_w(k)$ and $E_m$ will be small compared to the energy in the band resulting in a high SNR.  Voicing is declared using the following rule:
 \begin{equation}
 v = \begin{cases}
     1, & SNR > 6 dB \\
     0, & otherwise
     \end{cases}
 \end{equation}
-The voicing decision is post processed by several experimentally defined rules applied to $v$ to prevent some of the common voicing errors, see the C source code in \emph{sine.c} for details.
+The voicing decision is post processed by several experimentally derived rules to prevent common voicing errors, see the C source code in \emph{sine.c} for details.
 
 \subsection{Phase Synthesis}
+
+In Codec 2 the harmonic phases $\theta_m$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters, $\{A_m\}$, $\omega_0$, and $v$, the voicing decision for the current frame.
 
 The phase of each harmonic is modelled as the phase of a synthesis filter excited by an impulse train. We create the excitation pulse train using $\omega_0$, a binary voicing decision $v$ and a rules based algorithm.
 
@@ -566,7 +564,22 @@ Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation.  Dec
 \end{enumerate}
 
 \section{Glossary}
+
 \label{sect:glossary}
+\begin{table}[H]
+\label{tab:acronyms}
+\centering
+\begin{tabular}{l l l }
+\hline
+Acronym & Description \\
+\hline
+DFT & Discrete Fourier Transform \\
+IDFT & Inverse Discrete Fourier Transform \\
+NLP & Non Linear Pitch (algorithm) \\
+\hline
+\end{tabular}
+\caption{Glossary of Acronyms}
+\end{table}
 
 \begin{table}[H]
 \label{tab:symbol_glossary}
@@ -577,7 +590,6 @@ Symbol & Description & Units \\
 \hline
 $a_m$ & lower DFT index of current band \\
 $b_m$ & upper DFT index of current band \\
-$b$ & Constant that maps a frequency in radians to a DFT bin \\
 $\{A_m\}$ & Set of harmonic magnitudes $m=1,...L$ & dB \\
 $F_0$ & Fundamental frequency (pitch) & Hz \\
 $F_s$ & Sample rate (usually 8 kHz) & Hz \\
@@ -585,10 +597,11 @@ $F_w(k)$ & DFT of squared speech signal in NLP pitch estimator \\
 $L$ & Number of harmonics \\
 $P$ & Pitch period & ms or samples \\
 $\{\theta_m\}$ & Set of harmonic phases $m=1,...L$ & dB \\
-$\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
+$r$ & Constant that maps a frequency in radians to a DFT index \\
 $s(n)$ & Input speech \\
 $s_w(n)$ & Time domain windowed input speech \\
 $S_w(k)$ & Frequency domain windowed input speech \\
+$\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
 $v$ & Voicing decision for the current frame \\
 \hline
 \end{tabular}
