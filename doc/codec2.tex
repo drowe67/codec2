@@ -327,6 +327,7 @@ S_w(k) = \sum_{n=-N_{w2}}^{N_{w2}} s_w(n) e^{-j 2 \pi k n / N_{dft}}
 \end{equation}
 The magnitude and phase of each harmonic is given by:
 \begin{equation}
+\label{eq:mag_est}
 \begin{split}
 A_m      &= \sqrt{\sum_{k=a_m}^{b_m-1} |S_w(k)|^2 } \\
 \theta_m &= arg \left[ S_w(m \omega_0 N_{dft} / 2 \pi) \right)] \\
@@ -472,11 +473,50 @@ where the $\omega_0=2 \pi F_0 /F_s$ is the normalised angular fundamental freque
 
 There is nothing particularly unique about this pitch estimator or it's performance. There are occasional artefacts in the synthesised speech that can be traced to ``gross" and ``fine" pitch estimator errors.  In the real world no pitch estimator is perfect, partially because the model assumptions around pitch break down (e.g. in transition regions or unvoiced speech).  The NLP algorithm could benefit from additional review, tuning and better pitch tracking.  However it appears sufficient for the use case of a communications quality speech codec, and is a minor source of artefacts in the synthesised speech. Other pitch estimators could also be used, provided they have practical, real world implementations that offer comparable performance and CPU/memory requirements.
 
-\subsection{Voicing Estimation and Phase Synthesis}
+\subsection{Voicing Estimation}
 
-TODO: Clean up. Introduce continuous time index, perhaps l-th frame.  Expressions for phase spectra as cascade of two systems. Hilbert transform, might need to study this.  Figures and simulation plots would be useful.  Voicing decision algorithm.  Figure of phase synthesis.
+In Codec 2 the harmonic phases $\theta_m$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters, $\{A_m\}$, $\omega_0$, and $v$, the voicing decision for the current frame.
 
-In Codec 2 the harmonic phases $\theta_m$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters.  The phase of each harmonic is modelled as the phase of a synthesis filter excited by an impulse train. We create the excitation pulse train using $\omega_0$, a binary voicing decision $v$ and a rules based algorithm.
+Voicing is determined using a variation of the MBE voicing algorithm \cite{griffin1988multiband}.  Voiced speech consists of a harmonic series of frequency domain impulses, separated by $\omega_0$.  When we multiply a segment of the inout speech samples by the window function $w(n)$, we convolve the frequency domain impulses with $W(k)$, the DFT of the $(w)$.  Thus for the $m$-th voiced harmonic, we expect to see the shape of the window function $W(k)$ in the band $Sw(k), k=a_m,...,b_m$.  The MBE voicing algorithm starts with the assumption that the band is voiced, and measures the error between $S_w(k)$ and the ideal voiced harmonic $\hat{S}_w(k)$.
+
+For each band we first estimate the complex harmonic amplitude (magnitude and phase) using \cite{griffin1988multiband}:
+\begin{equation}
+B_m = \frac{\sum_{k=a_m}^{b_m} S_w(k) W^* (k - \lfloor mr \rceil)}{|\sum_{k=a_m}^{b_m} W (k - \lfloor mr \rceil)|^2}
+\end{equation}
+where $r= \omega_0 N_{dft}/2 \pi$ is a constant that maps the $m$-th harmonic to a DFT bin, and $ \lfloor x \rceil$ is the rounding operator.  As $w(n)$ is a real and even, $W(k)$ is real and even so we can write:
+\begin{equation}
+\label{eq:est_amp_mbe}
+B_m = \frac{\sum_{k=a_m}^{b_m} S_w(k) W (k + \lfloor mr \rceil)}{\sum_{k=a_m}^{b_m} |W (k + \lfloor mr \rceil)|^2}
+\end{equation}
+Note this procedure is different to the $A_m$ magnitude estimation procedure in (\ref{eq:mag_est}), and is only used locally for the MBE voicing estimation procedure.  The MBE amplitude estimation (\ref{eq:est_amp_mbe}) assumes the energy in the band of $S_w(k)$ is from the DFT of a sine wave in that band, and unlike (\ref{eq:mag_est}) is complex valued.
+
+The synthesised frequency domain speech for this band is defined as:
+\begin{equation}
+\hat{S}_w(k) = B_m W(k - \lfloor mr \rceil), \quad k=a_m,...,b_m-1
+\end{equation}
+The error between the input and synthesised speech in this band is then:
+\begin{equation}
+\begin{split}
+E_m &= \sum_{k=a_m}^{b_m-1} |S_w(k) - \hat{S}_w(k)|^2 \\
+    &=\sum_{k=a_m}^{b_m-1} |S_w(k) - B_m W(k + \lfloor mr \rceil)|^2
+\end{split}
+\end{equation}
+A Signal to Noise Ratio (SNR) ratio is defined as:
+\begin{equation}
+SNR = \sum_{m=1}^{m_{1000}} \frac{A^2_m}{E_m}
+\end{equation}
+where $m_{1000}= \lfloor L/4 \rceil$ is the band at approximately 1000 Hz. If the energy in the bands up to 1000 Hz is a good match to a harmonic series of sinusoids then $\hat{S}_w(k) \approx S_w(k)$ and $E_m$ will be small compared to the energy in the band leading to a high SNR.  Voicing is declared using the following rule:
+\begin{equation}
+v = \begin{cases}
+    1, & SNR > 6 dB \\
+    0, & otherwise
+    \end{cases}
+\end{equation}
+The voicing decision is post processed by several experimentally defined rules applied to $v$ to prevent some of the common voicing errors, see the C source code in \emph{sine.c} for details.
+
+\subsection{Phase Synthesis}
+
+The phase of each harmonic is modelled as the phase of a synthesis filter excited by an impulse train. We create the excitation pulse train using $\omega_0$, a binary voicing decision $v$ and a rules based algorithm.
 
 Consider a pulse train with a pulse starting time $n=0$, with pulses repeated at a rate of $\omega_0$.  A pulse train in the time domain is equivalent to harmonics in the frequency domain.  We can construct an excitation pulse train using a sum of sinusoids:
 \begin{equation}
@@ -508,9 +548,11 @@ Comparing to speech synthesised using original phases:
 \item Note that this approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering  by the LPC spectra).
 \end{enumerate}
 
+TODO: Clean up. Introduce continuous time index, perhaps l-th frame.  Expressions for phase spectra as cascade of two systems. Hilbert transform, might need to study this.  Figures and simulation plots would be useful.  Voicing decision algorithm.  Figure of phase synthesis.
+
 \subsection{LPC/LSP based modes}
 
-Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation
+Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation.  Decimation and interpolation.
 
 \subsection{Codec 2 700C}
 
@@ -547,6 +589,7 @@ $\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
 $s(n)$ & Input speech \\
 $s_w(n)$ & Time domain windowed input speech \\
 $S_w(k)$ & Frequency domain windowed input speech \\
+$v$ & Voicing decision for the current frame \\
 \hline
 \end{tabular}
 \caption{Glossary of Symbols}
