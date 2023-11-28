@@ -336,7 +336,7 @@ b_m      &= \lfloor (m + 0.5)r \rceil \\
 r        &= \frac{\omega_0 N_{dft}}{2 \pi} 
 \end{split}
 \end{equation}
-The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ is a constant that maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
+The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
 
 \subsection{Sinusoidal Synthesis}
 
@@ -512,47 +512,68 @@ The voicing decision is post processed by several experimentally derived rules t
 
 \subsection{Phase Synthesis}
 
-In Codec 2 the harmonic phases $\theta_m$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters, $\{A_m\}$, $\omega_0$, and $v$, the voicing decision for the current frame.
-
-The phase of each harmonic is modelled as the phase of a synthesis filter excited by an impulse train. We create the excitation pulse train using $\omega_0$, a binary voicing decision $v$ and a rules based algorithm.
-
-Consider a pulse train with a pulse starting time $n=0$, with pulses repeated at a rate of $\omega_0$.  A pulse train in the time domain is equivalent to harmonics in the frequency domain.  We can construct an excitation pulse train using a sum of sinusoids:
+In Codec 2 the harmonic phases $\{\theta_m\}$ are not transmitted to the decoder, instead they are synthesised at the decoder using a rules based algorithm and information from the remaining model parameters, $\{A_m\}$, $\omega_0$, and $v$.  Consider the source-filter model of speech production:
 \begin{equation}
-e(n) = \sum_{m-1}^L cos(m \omega_0 n)
+\hat{S}(z)=E(z)H(z)
 \end{equation}
-The phase of each excitation harmonic is:
+where $E(z)$ is an excitation signal with a relatively flat spectrum, and $H(z)$ is a synthesis filter that shapes the magnitude spectrum.  The phase of each harmonic is the sum of the excitation and synthesis filter phase:
 \begin{equation}
-\phi_m = m \omega_0
+\begin{split}
+arg \left[ \hat{S}(e^{j \omega_0 m}) \right] &= arg \left[ E(e^{j \omega_0 m}) H(e^{j \omega_0 m}) \right] \\
+\hat{theta}_m &= arg \left[ E(e^{j \omega_0 m}) \right] + arg \left[ H(e^{j \omega_0 m}) \right] \\
+&= \phi_m +  arg \left[ H(e^{j \omega_0 m}) \right]
+\end{split}
 \end{equation}
-As we don't transmit the pulse position for this model, we need to synthesise it.  The excitation pulses occur at a rate of $\omega_0$ (one for each pitch period). The phase of the first harmonic advances by $N \phi_0$ radians over a synthesis frame of $N$ samples.  For example if $\omega_0 = \pi /20$ (200 Hz), then over a (10ms $N=80$) sample frame, the phase of the first harmonic would advance $(\pi/20)*80 = 4 \pi$ radians or two complete cycles.
 
-We generate the excitation phase of the fundamental (first harmonic):
+For voiced speech $E(z)$ is an impulse train (period $P$ in the time domain and $\omega_0$ in the frequency domain).  We can construct a time domain excitation pulse train using a sum of sinusoids:
 \begin{equation}
-\phi_1 = \omega_0 N
+e(n) = \sum_{m-1}^L e^{j m \omega_0 (n - n_0)}
 \end{equation}
-We then relate the phase of the m-th excitation harmonic to the phase of the fundamental as:
+Where $n_0$ is a time shift that represents the pulse position relative to the centre of the synthesis frame $n=0$. By finding the DTCF transform of $e(n)$ we can determine the phase of each excitation harmonic:
 \begin{equation}
-\phi_m = m\phi_m
+\phi_m = - m \omega_0 n_0
 \end{equation}
-This phase spectra then gets passed through the LPC synthesis filter to determine the final harmonic phase.
+As we don't transmit any phase information the pulse position $n_0$ is unknown.  Fortunately the ears is insensitive to the absolute position of pitch pulses in voiced speech, as long as they evolve smoothly over time (discontinuities in phase are a characteristic of unvoiced speech).
 
-Comparing to speech synthesised using original phases:
+The excitation pulses occur at a rate of $\omega_0$ (one for each pitch period). The phase of the first harmonic advances by $N \phi_0$ radians over a synthesis frame of $N$ samples.  For example if $\omega_0 = \pi /20$ (200 Hz), then over a (10ms $N=80$) sample frame, the phase of the first harmonic would advance $(\pi/20)*80 = 4 \pi$ radians or two complete cycles.
+
+We therefore derive $n_0$ from the excitation phase of the fundamental, which we treat as a timing reference.  Each frame we advance the phase of the fundamental:
+\begin{equation}
+\phi_1^l = \phi_1^{l-1} + N\omega_0
+\end{equation}
+Given $\phi_1$ we can compute $n_0$ and the excitation phase of the other harmonics:
+\begin{equation}
+\begin{split}
+n_0    &= -\phi_1 / \omega_0 \\
+\phi_m &= - m \omega_0 n_0 \\
+       &= m \phi_1, \quad m=2,...,L
+\end{split}
+\end{equation}
+
+For unvoiced speech $E(z)$ is a white noise signal.  At each frame we sample a random number generator on the interval $-/pi ... /pi$ to obtain the excitation phase of each harmonic.  We set $\omega_0 = F0_min$ to use a large number of harmonics to synthesise to approximate a noise signal.
+
+An additional phase component is provided by sampling $H(z)$ at the harmonic centres.  The phase spectra of $H(z)$ is derived from the filter magnitude response described by $\{A_m\}$ available at the decoder using minimum phase techniques.  The method for deriving the phase differs between Codec 2 modes and is described below in Sections \ref{sect:mode_lpc_lsp} and \ref{sect:mode_newamp1}.  This component of the phase tends to disperse the pitch pulse energy in time, especially around spectral peaks (formants) where ``ringing" occurs.
+
+TODO: phase postfilter
+
+Comparing to speech synthesised using original phases $\{\theta_m\}$ the following observations have been made:
 \begin{enumerate}
-\item Through headphones speech synthesised with this model is not as good. Through a loudspeaker it is very close to original phases.
-\item If there are voicing errors, the speech can sound clicky or staticy.  If V speech is mistakenly declared UV, this model tends to synthesise impulses or clicks, as there is usually very little shift or dispersion through the LPC synthesis filter.
-\item When combined with LPC amplitude modelling there is an additional drop in quality.  I am not sure why, theory is interformant energy is raised making any phase errors more obvious.
-\item This synthesis model is effectively the same as a simple LPC-10 vocoders, and yet sounds much better.  Why? Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
-\item I am pretty sure the Lincoln Lab sinusoidal coding guys (like xMBE also from MIT) first described this zero phase model, I need to look up the paper.
-\item Note that this approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering  by the LPC spectra).
+\item Through headphones speech synthesised with this model drops in quality. Through a small loudspeaker it is very close to original phases.
+\item If there are voicing errors, the speech can sound clicky or staticy.  If voiced speech is mistakenly declared unvoiced, this model tends to synthesise annoying impulses or clicks, as for voiced speech $H(z)$ is relatively flat (broad, high frequency formants), so there is very little dispersion of the excitation impulses through $H(z)$.
+\item When combined with amplitude modelling or quantisation, such that $H(z)$ is derived from $\{\hat{A}_m\}$ there is an additional drop in quality.
+\item This synthesis model is effectively the same as a simple LPC-10 vocoders, and yet (especially when $H(z)$ is derived from $\{A_m\}$) sounds much better.  Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
+\item If $H(z)$ is changing rapidly between frames, it's phase contribution may also change rapidly. This approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering by $H(z)$).
 \end{enumerate}
 
-TODO: Clean up. Introduce continuous time index, perhaps l-th frame.  Expressions for phase spectra as cascade of two systems. Hilbert transform, might need to study this.  Figures and simulation plots would be useful.  Voicing decision algorithm.  Figure of phase synthesis.
+TODO: Energy distribution theory.  Need to V model, neural vocoders, non-linear function. Figures and simulation plots would be useful. Figure of phase synthesis.
 
 \subsection{LPC/LSP based modes}
+\label{sect:mode_lpc_lsp}
 
 Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation.  Decimation and interpolation.
 
 \subsection{Codec 2 700C}
+\label{sect:mode_newamp1}
 
 \section{Further Work}
 
@@ -575,6 +596,7 @@ Acronym & Description \\
 \hline
 DFT & Discrete Fourier Transform \\
 IDFT & Inverse Discrete Fourier Transform \\
+MBE & Multi-Band Excitation \\
 NLP & Non Linear Pitch (algorithm) \\
 \hline
 \end{tabular}
@@ -597,7 +619,7 @@ $F_w(k)$ & DFT of squared speech signal in NLP pitch estimator \\
 $L$ & Number of harmonics \\
 $P$ & Pitch period & ms or samples \\
 $\{\theta_m\}$ & Set of harmonic phases $m=1,...L$ & dB \\
-$r$ & Constant that maps a frequency in radians to a DFT index \\
+$r$ & Maps a harmonic number $m$ to a DFT index \\
 $s(n)$ & Input speech \\
 $s_w(n)$ & Time domain windowed input speech \\
 $S_w(k)$ & Frequency domain windowed input speech \\
