@@ -6,6 +6,7 @@
 \usepackage{float}
 \usepackage{xstring}
 \usepackage{catchfile}
+\usepackage{siunitx}
 
 \CatchFileDef{\headfull}{../.git/HEAD}{}
 \StrGobbleRight{\headfull}{1}[\head]
@@ -151,7 +152,7 @@ The parameters of the sinusoidal model are:
 This section explains how the Codec 2 encoder and decoder works using block diagrams.
 
 \begin{figure}[h]
-\caption{Codec 2 Encoder}
+\caption{Codec 2 Encoder.}
 \label{fig:codec2_encoder}
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm,align=center,text width=2cm]
@@ -328,15 +329,22 @@ S_w(k) = \sum_{n=-N_{w2}}^{N_{w2}} s_w(n) e^{-j 2 \pi k n / N_{dft}}
 The magnitude and phase of each harmonic is given by:
 \begin{equation}
 \label{eq:mag_est}
+A_m = \sqrt{\sum_{k=a_m}^{b_m-1} |S_w(k)|^2 }
+\end{equation}
+\begin{equation}
+\theta_m = arg \left[ S_w(\lfloor m r \rceil \right]
+\end{equation}
+where:
+\begin{equation}
 \begin{split}
-A_m      &= \sqrt{\sum_{k=a_m}^{b_m-1} |S_w(k)|^2 } \\
-\theta_m &= arg \left[ S_w(\lfloor m r \rceil \right] \\
 a_m      &= \lfloor (m - 0.5)r \rceil \\
 b_m      &= \lfloor (m + 0.5)r \rceil \\
 r        &= \frac{\omega_0 N_{dft}}{2 \pi} 
 \end{split}
 \end{equation}
-The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. The magnitude $A_m$ is the RMS level of the energy in the band containing the harmonic.  This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech. The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
+The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech.
+
+The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
 
 \subsection{Sinusoidal Synthesis}
 
@@ -413,6 +421,7 @@ The continuous synthesised speech signal $\hat{s}(n)$ for the $l$-th frame is ob
 From the $N_{dft}$ samples produced by the IDFT (\ref{eq:synth_idft}), after windowing we have $2N$ output samples. The first $N$ output samples $n=0,...N-1$ complete the current frame $l$ and are output from the synthesiser.  However we must also compute the contribution to the next frame $n = N,N+1,...,2N-1$.  These are stored, and added to samples from the next synthesised frame.
 
 \subsection{Non-Linear Pitch Estimation}
+\label{sect:nlp}
 
 The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}, and portions of this description are reproduced here.  The post processing algorithm used for pitch estimation in Codec 2 is different from \cite{rowe1997techniques} and is described here.  The C code \emph{nlp.c} is a useful reference for the fine details of the implementation, and the Octave script \emph{plnlp.m} can by used to plot the internal states and single step through speech, illustrating the operation of the algorithm.
 
@@ -501,10 +510,10 @@ A Signal to Noise Ratio (SNR) ratio is defined as:
 \begin{equation}
 SNR = \sum_{m=1}^{m_{1000}} \frac{A^2_m}{E_m}
 \end{equation}
-where $m_{1000}= \lfloor L/4 \rceil$ is the band closest to 1000 Hz. If the energy in the bands up to 1000 Hz is a good match to a harmonic series of sinusoids then $\hat{S}_w(k) \approx S_w(k)$ and $E_m$ will be small compared to the energy in the band resulting in a high SNR.  Voicing is declared using the following rule:
+where $m_{1000}= \lfloor L/4 \rceil$ is the band closest to 1000 Hz, and $\{A_m\}$ are computed from (\ref{eq:mag_est}). If the energy in the bands up to 1000 Hz is a good match to a harmonic series of sinusoids then $\hat{S}_w(k) \approx S_w(k)$ and $E_m$ will be small compared to the energy in the band resulting in a high SNR.  Voicing is declared using the following rule:
 \begin{equation}
 v = \begin{cases}
-    1, & SNR > 6 dB \\
+    1, & SNR > 6 \si{dB} \\
     0, & otherwise
     \end{cases}
 \end{equation}
@@ -556,7 +565,7 @@ An additional phase component is provided by sampling $H(z)$ at the harmonic cen
 
 The zero phase model tends to make speech with background noise sound "clicky".  With high levels of background noise the low level inter-formant parts of the spectrum will contain noise rather than speech harmonics, so modelling them as voiced (i.e. a continuous, non-random phase track) is inaccurate. Some codecs (like MBE) have a mixed voicing model that breaks the spectrum into voiced and unvoiced regions.  However (5-12) bits/frame (5-12) are required to transmit the frequency selective voicing information.  Mixed excitation also requires accurate voicing estimation (parameter estimators always break occasionally under exceptional conditions).
 
-In our case we use a post processing approach which requires no additional bits to be transmitted.  The decoder measures the average level of the background noise during unvoiced frames.  If a harmonic is less than this level it is made unvoiced by randomising it's phases.
+In our case we use a post processing approach which requires no additional bits to be transmitted.  The decoder measures the average level of the background noise during unvoiced frames.  If a harmonic is less than this level it is made unvoiced by randomising it's phases.  See the C source code for implementation details.
 
 Comparing to speech synthesised using original phases $\{\theta_m\}$ the following observations have been made:
 \begin{enumerate}
@@ -565,10 +574,46 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \item When combined with amplitude modelling or quantisation, such that $H(z)$ is derived from $\{\hat{A}_m\}$ there is an additional drop in quality.
 \item This synthesis model (e.g. a pulse train exciting a LPC filter) is effectively the same as a simple LPC-10 vocoders, and yet (especially when $H(z)$ is derived from unquantised $\{A_m\}$) sounds much better.  Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
 \item If $H(z)$ is changing rapidly between frames, it's phase contribution may also change rapidly. This approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering by $H(z)$).
+\item The recent crop of neural vocoders produce high quality speech using a similar parameters set, and notably without transmitting phase information.  Although many of these vocoders operate in the time domain, this approach can be interpreted as implementing a function $\{ \hat{\theta}_m\} = F(\omega_0, \{Am\},v)$.  This validates the general approach used here, and as future work Codec 2 may benefit from being augmented by machine learning.
 \end{enumerate}
 
 \subsection{LPC/LSP based modes}
 \label{sect:mode_lpc_lsp}
+
+\begin{figure}[h]
+\caption{LPC/LSP Modes Encoder}
+\label{fig:encoder_lpc_lsp}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
+
+\node [input] (rinput) {};
+\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
+\node [block, right of=z,node distance=1.5cm] (window) {Window};
+\node [tmp, right of=window,node distance=1cm] (z1) {};
+\node [block, right of=z1,node distance=1.5cm] (dft) {DFT};
+\node [block, above of=dft,text width=2cm] (lpc) {LPC Analysis};
+\node [block, right of=lpc,node distance=3cm,text width=2cm] (lsp) {LSP Quantisation};
+\node [block, below of=dft,text width=2cm] (est) {Est Amp};
+\node [block, right of=est,node distance=3cm,text width=2cm] (voicing) {Est Voicing};
+\node [block, below of=window] (nlp) {NLP};
+\node [block, below of=lsp,text width=2cm] (pack) {Bit Packing};
+\node [output, right of=pack,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
+\draw [->] (z) |- (nlp);
+\draw [->] (window) -- (dft);
+\draw [->] (z1) |- (lpc);
+\draw [->] (lpc) -- (lsp);
+\draw [->] (lsp) -- (pack);
+\draw [->] (dft) -- (est);
+\draw [->] (nlp) -- (est);
+\draw [->] (est) -- (voicing);
+\draw [->] (voicing) -- (pack);
+\draw [->] (pack) -- (routput) node[right,align=left,text width=1.5cm] {Bit Stream};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
 
 Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation.  Decimation and interpolation.
 
