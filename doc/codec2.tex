@@ -474,6 +474,7 @@ The DFT power spectrum of the squared signal $F_w(k)$ generally contains several
 
 The accuracy of the pitch estimate in then refined by maximising the function:
 \begin{equation}
+\label{eq:pitch_refinement}
 E(\omega_0)=\sum_{m=1}^L|S_w(\lfloor r m \rceil)|^2
 \end{equation}
 where $r=\omega_0 N_{dft}/2 \pi$ maps the harmonic number $m$ to a DFT bin. This function will be maximised when $m \omega_0$ aligns with the peak of each harmonic, corresponding with an accurate pitch estimate.   It is evaluated in a small range about the coarse $F_0$ estimate.
@@ -508,6 +509,7 @@ E_m &= \sum_{k=a_m}^{b_m-1} |S_w(k) - \hat{S}_w(k)|^2 \\
 \end{equation}
 A Signal to Noise Ratio (SNR) ratio is defined as:
 \begin{equation}
+\label{eq:voicing_snr}
 SNR = \sum_{m=1}^{m_{1000}} \frac{A^2_m}{E_m}
 \end{equation}
 where $m_{1000}= \lfloor L/4 \rceil$ is the band closest to 1000 Hz, and $\{A_m\}$ are computed from (\ref{eq:mag_est}). If the energy in the bands up to 1000 Hz is a good match to a harmonic series of sinusoids then $\hat{S}_w(k) \approx S_w(k)$ and $E_m$ will be small compared to the energy in the band resulting in a high SNR.  Voicing is declared using the following rule:
@@ -580,6 +582,12 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \subsection{LPC/LSP based modes}
 \label{sect:mode_lpc_lsp}
 
+In this and the next section we explain how the codec building blocks above are assembled to create a fully quantised Codec 2 mode.  This section discusses the higher bit rate (3200 - 1200) modes that use a Linear Predictive Coding (LPC) and Line Spectrum Pair (LSP) model to quantise and transmit the spectral magnitude information over the channel.  There is a great deal of material on the topics of linear prediction and LSPs, so they will not be explained here.  An excellent reference for LPCs is \cite{makhoul1975linear}.
+
+Figure \ref{fig:encoder_lpc_lsp} presents the encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  The LPC analysis extracts $p=10$ LPC coefficients $\{a_k\}, k=1..10$ and the LPC energy $E$.  The LPC coefficients are transformed to $p=10$ LSP frequencies $\{f_k\}, k=1..10$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.
+
+Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still required for voicing estimation (\ref{eq:voicing_snr}).
+
 \begin{figure}[h]
 \caption{LPC/LSP Modes Encoder}
 \label{fig:encoder_lpc_lsp}
@@ -593,10 +601,12 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \node [block, right of=z1,node distance=1.5cm] (dft) {DFT};
 \node [block, above of=dft,text width=2cm] (lpc) {LPC Analysis};
 \node [block, right of=lpc,node distance=3cm,text width=2cm] (lsp) {LSP Quantisation};
+\node [tmp, right of=nlp,node distance=1cm] (z2) {};
+\node [tmp, above of=z2,node distance=1cm] (z3) {};
 \node [block, below of=dft,text width=2cm] (est) {Est Amp};
 \node [block, right of=est,node distance=3cm,text width=2cm] (voicing) {Est Voicing};
 \node [block, below of=window] (nlp) {NLP};
-\node [block, below of=lsp,text width=2cm] (pack) {Bit Packing};
+\node [block, below of=lsp,text width=2.5cm] (pack) {Decimation \&\\Bit Packing};
 \node [output, right of=pack,node distance=2cm] (routput) {};
 
 \draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
@@ -607,6 +617,7 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \draw [->] (lsp) -- (pack);
 \draw [->] (dft) -- (est);
 \draw [->] (nlp) -- (est);
+\draw [->] (z2) -- (z3) -| (pack);
 \draw [->] (est) -- (voicing);
 \draw [->] (voicing) -- (pack);
 \draw [->] (pack) -- (routput) node[right,align=left,text width=1.5cm] {Bit Stream};
@@ -615,12 +626,58 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \end{center}
 \end{figure}
 
-Block diagram of LPC/LSP mode encoder and decoder.  Walk through operation.  Decimation and interpolation.
+One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.  Some disadvantages \cite{makhoul1975linear} are that the energy minimisation property means the LPC residual spectrum is rarely flat, i.e. it doesn't follow the spectral magnitudes $A_m$ exactly.  The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well.   For high pitched speakers, LPC tends to place poles around single pitch harmonics, rather than tracking the spectral envelope.
+
+In CELP codecs these problems can be accommodated by the (high bit rate) excitation, and some low rate codecs such as MELP supply supplementary low frequency information to ``correct" the LPC model.
+
+Before bit packing, the Codec 2 parameters are decimated in time.  An update rate of 20ms is used for the highest rate modes, which drops to 40ms for Codec 2 1300, with a corresponding drop in speech quality.  The number of bits used to quantise the LPC model via LSPs is also reduced in the lower bit rate modes.  This has the effect of making the speech less intelligible, and can introduce annoying buzzy or clicky artefacts into the synthesised speech.  Lower fidelity spectral magnitude quantisation also results in more noticeable artefacts from phase synthesis.  Neverthless at 1300 bits/s the speech quality is quite usable for HF digital voice, and at 3200 bits/s comparable to closed source codecs at the same bit rate.
+
+TODO: table of LPC/LSP modes, frame rate.  Perhaps make this a table covering all modes.
+
+\begin{figure}[h]
+\caption{LPC/LSP Modes Decoder}
+\label{fig:decoder_lpc_lsp}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=3cm,>=triangle 45,x=1.0cm,y=1.0cm,align=center]
+
+\node [input] (rinput) {};
+\node [block, right of=rinput,node distance=1.5cm] (unpack) {Unpack};
+\node [block, right of=unpack,node distance=2.5cm] (interp) {Interpolate};
+\node [block, right of=interp,text width=2cm] (lpc) {LSP to LPC};
+\node [block, right of=lpc,text width=2cm] (sample) {Sample $A_m$};
+\node [block, below of=sample,text width=2cm,node distance=2cm] (post) {Post Filter};
+\node [block, left of=post,text width=2.5cm] (synth) {Sinusoidal\\Synthesis};
+\node [output, left of=synth,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {Bit\\Stream} (rinput) -- (unpack);
+\draw [->] (unpack) -- (interp);
+\draw [->] (interp) -- (lpc);
+\draw [->] (lpc) -- (sample);
+\draw [->] (sample) -- (post);
+\draw [->] (post) -- (synth);
+\draw [->] (synth) -- (routput) node[align=left,text width=1.5cm] {$\hat{s}(n)$};
+%\draw [->] (dft) -- (est);
+%\draw [->] (nlp) -- (est);
+%\draw [->] (z2) -- (z3) -| (pack);
+%\draw [->] (est) -- (voicing);
+%\draw [->] (voicing) -- (pack);
+%\draw [->] (pack) -- (routput) node[right,align=left,text width=1.5cm] {Bit Stream};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+TODO expression for linear interpolation.  Interpolation in LSP domain.  Ear protection.
 
 \subsection{Codec 2 700C}
 \label{sect:mode_newamp1}
 
+Microphone equaliser
+ratek study
+
 \section{Further Work}
+
+Summary of mysteries/interesting points drawn out above.
 
 \begin{enumerate}
 \item Some worked examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters.  Listen to various phases of quantisation.
