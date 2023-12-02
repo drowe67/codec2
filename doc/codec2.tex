@@ -527,6 +527,7 @@ In Codec 2 the harmonic phases $\{\theta_m\}$ are not transmitted, instead they 
 
 Consider the source-filter model of speech production:
 \begin{equation}
+\label{eq:source_filter}
 \hat{S}(z)=E(z)H(z)
 \end{equation}
 where $E(z)$ is an excitation signal with a relatively flat spectrum, and $H(z)$ is a synthesis filter that shapes the magnitude spectrum.  The phase of each harmonic is the sum of the excitation and synthesis filter phase:
@@ -582,11 +583,28 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \subsection{LPC/LSP based modes}
 \label{sect:mode_lpc_lsp}
 
-In this and the next section we explain how the codec building blocks above are assembled to create a fully quantised Codec 2 mode.  This section discusses the higher bit rate (3200 - 1200) modes that use a Linear Predictive Coding (LPC) and Line Spectrum Pair (LSP) model to quantise and transmit the spectral magnitude information over the channel.  There is a great deal of material on the topics of linear prediction and LSPs, so they will not be explained here.  An excellent reference for LPCs is \cite{makhoul1975linear}.
+In this and the next section we explain how the codec building blocks above are assembled to create a fully quantised Codec 2 mode.  This section discusses the higher bit rate (3200 - 1200) modes that use a Linear Predictive Coding (LPC) and Line Spectrum Pairs (LSPs) to quantise and transmit the spectral magnitude information.  There is a great deal of information available on these techniques so they are only briefly described here.
 
-Figure \ref{fig:encoder_lpc_lsp} presents the encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  The LPC analysis extracts $p=10$ LPC coefficients $\{a_k\}, k=1..10$ and the LPC energy $E$.  The LPC coefficients are transformed to $p=10$ LSP frequencies $\{f_k\}, k=1..10$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.
+The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A relatively flat excitation source $E(z)$ excites a filter $(H(z)$ which models the magnitude spectrum.  Linear Predictive Coding (LPC) defines $H(z)$ as an all pole filter:
+\begin{equation}
+H(z) = \frac{G}{1-\sum_{k=1}^p a_k z^{-k}} = \frac{G}{A(z)}
+\end{equation}
+where  $\{a_k\}, k=1..10$ is a set of p linear prediction coefficients that characterise the filter's frequency response and G is a scalar gain factor. An excellent reference for LPC is \cite{makhoul1975linear}.
 
-Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still required for voicing estimation (\ref{eq:voicing_snr}).
+To be useful in low bit rate speech coding it is necessary to quantise and transmit the LPC coefficients using a small number of bits. Direct quantisation of these LPC coefficients is inappropriate due to their large dynamic range (8-10 bits/coefficient). Thus for transmission purposes, especially at low bit rates, other forms such as the Line Spectral Pair (LSP) \cite{itakura1975line} frequencies are used to represent the LPC parameters. The LSP frequencies can be derived by decomposing the $p$-th order polynomial $A(z)$, into symmetric and anti-symmetric polynomials $P(z)$ and $Q(z)$, shown here in factored form:
+\begin{equation}
+\begin{split}
+P(z) &= (1+z^{-1}) \prod_{i=1}^{p/2} (1 - 2cos(\omega_{2i-1} z^{-1} + z^{-2} ) \\
+Q(z) &= (1-z^{-1}) \prod_{i=1}^{p/2} (1 - 2cos(\omega_{2i} z^{-1} + z^{-2} )
+\end{split}
+\end{equation}
+where $\omega_{2i-1}$ and $\omega_{2i}$ are the LSP frequencies, found by evaluating the polynomials on the unit circle. The LSP frequencies are interlaced with each other, where $0<\omega_1 < \omega_2 <,..., < \omega_p < \pi$. The separation of adjacent LSP frequencies is related to the bandwidth of spectral peaks in $H(z)=G/A(z)$. A small separation indicates a narrow bandwidth. $A(z)$ may be reconstructed from $P(z)$ and $Q(z)$ using:
+\begin{equation}
+A(z) = \frac{P(z)+Q(z)}{2}
+\end{equation}
+Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $(A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
+
+Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe a filter the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still required for voicing estimation (\ref{eq:voicing_snr}).
 
 \begin{figure}[h]
 \caption{LPC/LSP Modes Encoder}
@@ -632,7 +650,15 @@ In CELP codecs these problems can be accommodated by the (high bit rate) excitat
 
 Before bit packing, the Codec 2 parameters are decimated in time.  An update rate of 20ms is used for the highest rate modes, which drops to 40ms for Codec 2 1300, with a corresponding drop in speech quality.  The number of bits used to quantise the LPC model via LSPs is also reduced in the lower bit rate modes.  This has the effect of making the speech less intelligible, and can introduce annoying buzzy or clicky artefacts into the synthesised speech.  Lower fidelity spectral magnitude quantisation also results in more noticeable artefacts from phase synthesis.  Neverthless at 1300 bits/s the speech quality is quite usable for HF digital voice, and at 3200 bits/s comparable to closed source codecs at the same bit rate.
 
-TODO: table of LPC/LSP modes, frame rate.  Perhaps make this a table covering all modes.
+Figure \ref{fig:decoder_lpc_lsp} shows the LPC/LSP mode decoder.  Frames of bits received at the frame rate are unpacked and resampled to the 10ms internal frame rate using linear interpolation.  The spectral magnitude information is resampled by linear interpolation of the LSP frequencies, and converted back to a quantised LPC model $\hat{H}(z)$.  The harmonic magnitudes are recovered by averaging the energy of the LPC
+spectrum over the region of each harmonic:
+\begin{equation}
+\hat{A}_m = \sqrt{ \sum_{k=a_m}^{b_m-1} | \hat{H}(k) |^2 }
+\end{equation}
+where $H(k)$ is the $N_{dft}$ point DFT of the received LPC model for this frame.  For phase synthesis, the phase of $H(z)$ is determined by sampling $\hat{H}(k)$ in the centre of each harmonic:
+\begin{equation}
+arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) \right]
+\end{equation}
 
 \begin{figure}[h]
 \caption{LPC/LSP Modes Decoder}
@@ -644,9 +670,11 @@ TODO: table of LPC/LSP modes, frame rate.  Perhaps make this a table covering al
 \node [block, right of=rinput,node distance=1.5cm] (unpack) {Unpack};
 \node [block, right of=unpack,node distance=2.5cm] (interp) {Interpolate};
 \node [block, right of=interp,text width=2cm] (lpc) {LSP to LPC};
+\node [tmp, right of=interp,node distance=1.25cm] (z1) {};
 \node [block, right of=lpc,text width=2cm] (sample) {Sample $A_m$};
-\node [block, below of=sample,text width=2cm,node distance=2cm] (post) {Post Filter};
-\node [block, left of=post,text width=2.5cm] (synth) {Sinusoidal\\Synthesis};
+\node [block, below of=lpc,text width=2cm,node distance=2cm] (phase) {Phase Synthesis};
+\node [block, below of=phase,text width=2.5cm,node distance=2cm] (synth) {Sinusoidal\\Synthesis};
+\node [block, right of=synth,text width=2cm] (post) {Post Filter};
 \node [output, left of=synth,node distance=2cm] (routput) {};
 
 \draw [->] node[align=left,text width=2cm] {Bit\\Stream} (rinput) -- (unpack);
@@ -655,19 +683,14 @@ TODO: table of LPC/LSP modes, frame rate.  Perhaps make this a table covering al
 \draw [->] (lpc) -- (sample);
 \draw [->] (sample) -- (post);
 \draw [->] (post) -- (synth);
+\draw [->] (z1) |- (phase);
+\draw [->] (phase) -- (synth);
+\draw [->] (sample) |- (phase);
 \draw [->] (synth) -- (routput) node[align=left,text width=1.5cm] {$\hat{s}(n)$};
-%\draw [->] (dft) -- (est);
-%\draw [->] (nlp) -- (est);
-%\draw [->] (z2) -- (z3) -| (pack);
-%\draw [->] (est) -- (voicing);
-%\draw [->] (voicing) -- (pack);
-%\draw [->] (pack) -- (routput) node[right,align=left,text width=1.5cm] {Bit Stream};
 
 \end{tikzpicture}
 \end{center}
 \end{figure}
-
-TODO expression for linear interpolation.  Interpolation in LSP domain.  Ear protection.
 
 \subsection{Codec 2 700C}
 \label{sect:mode_newamp1}
@@ -687,9 +710,32 @@ Summary of mysteries/interesting points drawn out above.
 \item Energy distribution theory.  Need for V model, neural vocoders, non-linear function. Figures and simulation plots would be useful. Figure of phase synthesis.
 \end{enumerate}
 
-\section{Glossary}
 
+\section{Codec 2 Modes}
 \label{sect:glossary}
+
+\begin{table}[H]
+\label{tab:codec2_modes}
+\centering
+\begin{tabular}{p{0.75cm}|p{0.75cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{5cm}}
+\hline
+Mode & Frm (ms) & Bits & $A_m$ & $E$ & $\omega_0$ & $v$ & Comment \\
+\hline
+3200 & 20 & 64 & 50 & 5  & 7  & 2 & LSP differences \\
+2400 & 20 & 50 & 36 & 8  & -  & 2 & Joint $\omega_0$/E VQ, 2 spare bits \\
+1600 & 40 & 64 & 36 & 10 & 14 & 4 \\
+1400 & 40 & 56 & 36 & 16 & -  & 4 \\
+1300 & 40 & 52 & 36 & 5  & 7  & 4 & Joint $\omega_0$/E VQ \\
+1200 & 48 & 40 & 27 & 16 & -  & 4 & LSP VQ, Joint  $\omega_0$/E VQ, 1 spare \\
+700C & 40 & 28 & 18 & 4  & 6  & - & VQ of log magnitudes \\
+\hline
+\end{tabular}
+\caption{Codec 2 Modes}
+\end{table}
+
+\section{Glossary}
+\label{sect:glossary}
+
 \begin{table}[H]
 \label{tab:acronyms}
 \centering
@@ -700,6 +746,8 @@ Acronym & Description \\
 DFT & Discrete Fourier Transform \\
 DTCF & Discrete Time Continuous Frequency Fourier Transform \\
 IDFT & Inverse Discrete Fourier Transform \\
+LPC & Linear Predictive Coding \\
+LSP & Line Spectrum Pair \\
 MBE & Multi-Band Excitation \\
 NLP & Non Linear Pitch (algorithm) \\
 \hline
@@ -714,6 +762,7 @@ NLP & Non Linear Pitch (algorithm) \\
 \hline
 Symbol & Description & Units \\
 \hline
+$A(z)$ & LPC (analysis) filter \\
 $a_m$ & lower DFT index of current band \\
 $b_m$ & upper DFT index of current band \\
 $\{A_m\}$ & Set of harmonic magnitudes $m=1,...L$ & dB \\
@@ -729,6 +778,7 @@ $s_w(n)$ & Time domain windowed input speech \\
 $S_w(k)$ & Frequency domain windowed input speech \\
 $\phi_m$ & Phase of excitation harmonic \\
 $\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
+$\{\omega_i\}$ & set of LSP frequencies \\
 $v$ & Voicing decision for the current frame \\
 \hline
 \end{tabular}
