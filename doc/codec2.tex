@@ -3,6 +3,7 @@
 \usepackage{hyperref}
 \usepackage{tikz}
 \usetikzlibrary{calc,arrows,shapes,positioning}
+\usepackage{tkz-euclide}
 \usepackage{float}
 \usepackage{xstring}
 \usepackage{catchfile}
@@ -583,9 +584,9 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \subsection{LPC/LSP based modes}
 \label{sect:mode_lpc_lsp}
 
-In this and the next section we explain how the codec building blocks above are assembled to create a fully quantised Codec 2 mode.  This section discusses the higher bit rate (3200 - 1200) modes that use a Linear Predictive Coding (LPC) and Line Spectrum Pairs (LSPs) to quantise and transmit the spectral magnitude information.  There is a great deal of information available on these techniques so they are only briefly described here.
+In this and the next section we explain how the codec building blocks above are assembled to create a fully quantised Codec 2 mode.  This section discusses the higher bit rate (3200 - 1200) modes that use a Linear Predictive Coding (LPC) and Line Spectrum Pairs (LSPs) to quantise and transmit the spectral magnitude information.  There is a great deal of information available on these topics so they are only briefly described here.
 
-The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A relatively flat excitation source $E(z)$ excites a filter $(H(z)$ which models the magnitude spectrum.  Linear Predictive Coding (LPC) defines $H(z)$ as an all pole filter:
+The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A relatively flat excitation source $E(z)$ excites a filter $H(z)$ which models the magnitude spectrum of the speech.  Linear Predictive Coding (LPC) defines $H(z)$ as an all pole filter:
 \begin{equation}
 H(z) = \frac{G}{1-\sum_{k=1}^p a_k z^{-k}} = \frac{G}{A(z)}
 \end{equation}
@@ -602,7 +603,7 @@ where $\omega_{2i-1}$ and $\omega_{2i}$ are the LSP frequencies, found by evalua
 \begin{equation}
 A(z) = \frac{P(z)+Q(z)}{2}
 \end{equation}
-Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $(A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
+Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
 
 Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe a filter the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still required for voicing estimation (\ref{eq:voicing_snr}).
 
@@ -695,8 +696,149 @@ arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) 
 \subsection{Codec 2 700C}
 \label{sect:mode_newamp1}
 
-Microphone equaliser
-ratek study
+To efficiently transmit spectral amplitude information Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation.
+
+Consider a vector $\mathbf{a}$ of $L$ harmonic spectral magnitudes in dB: 
+\begin{equation}
+\mathbf{a} = \begin{bmatrix} 20log_{10}A_1, 20log_{10}A_2, \ldots 20log_{10}A_L \end{bmatrix} 
+\end{equation}
+\begin{equation}
+L=\left \lfloor \frac{F_s}{2F_0} \right \rfloor = \left \lfloor \frac{\pi}{\omega_0} \right \rfloor
+\end{equation}
+$F_0$ and $L$ are time varying as the pitch track evolves over time. For speech sampled at $F_s=8$ kHz $F_0$ is typically in the range of 50 to 400 Hz, giving $L$ in the range of 10 $\ldots$ 80. \\
+
+To quantise and transmit $\mathbf{a}$, it is convenient to resample $\mathbf{a}$ to a fixed length $K$ element vector $\mathbf{b}$ using a resampling function:
+\begin{equation}
+\begin{split}
+\mathbf{y} &= \begin{bmatrix} Y_1, Y_2, \ldots Y_L \end{bmatrix} = H(\mathbf{a}) \\
+\mathbf{b} &= \begin{bmatrix} B_1, B_2, \ldots B_K \end{bmatrix} = R(\mathbf{y})
+\end{split}
+\end{equation}
+Where $H$ is a filter function chosen to smooth the spectral amplitude samples $A_m$ while not significantly altering the perceptual quality of the speech; and $R$ is a resampling function. To model the response of the human ear $B_k$  are sampled on $K$ non-linearly spaced points on the frequency axis:
+\begin{equation}
+\begin{split}
+f_k &= warp(k,K) \ \textrm{Hz} \quad k=1 \ldots K \\
+warp(1,K) &= 200 \ \textrm{Hz} \\
+warp(K,K) &= 3700 \ \textrm{Hz}
+\end{split}
+\end{equation}
+where $warp()$ is a frequency warping function. Codec 2 700C uses $K=20$, $H=1$, and $warp()$ is defined using the Mel function \cite[p 150]{o1997human} (Figure \ref{fig:mel_fhz}) which samples the spectrum more densely at low frequencies, and less densely at high frequencies:
+\begin{equation} \label{eq:mel_f}
+mel(f) = 2595log_{10}(1+f/700)
+\end{equation}
+The inverse mapping of $f$ in Hz from $mel(f)$ is given by:
+\begin{equation} \label{eq:f_mel}
+f = mel^{-1}(x) = 700(10^{x/2595} - 1);
+\end{equation}
+
+\begin{figure}[h]
+\caption{Mel function}
+\label{fig:mel_fhz}
+\begin{center}
+\includegraphics[width=8cm]{ratek_mel_fhz}
+\end{center}
+\end{figure}
+
+We wish to use $mel(f)$ to construct $warp(k,K)$, such that there are $K$ evenly spaced points on the $mel(f)$ axis (Figure \ref{fig:mel_k}).  Solving for the equation of a straight line we can obtain $mel(f)$ as a function of $k$, and hence $warp(k,K)$ (Figure \ref{fig:warp_fhz_k}):
+\begin{equation} \label{eq:mel_k}
+\begin{split}
+g &= \frac{mel(3700)-mel(200)}{K-1} \\
+mel(f) &= g(k-1) + mel(200)
+\end{split}
+\end{equation}
+Substituting (\ref{eq:f_mel}) into the LHS:
+\begin{equation} \label{eq:warp}
+\begin{split}
+2595log_{10}(1+f/700) &= g(k-1) + mel(200) \\
+f = warp(k,K) &= mel^{-1} ( g(k-1) + mel(200) ) \\
+\end{split}
+\end{equation}
+and the inverse warp function:
+\begin{equation} \label{warp_inv}
+k = warp^{-1}(f,K) = \frac{mel(f)-mel(200)}{g} + 1
+\end{equation}
+
+\begin{figure}[h]
+\caption{Linear mapping of $mel(f)$ to Rate $K$ sample index $k$}
+\vspace{5mm}
+\label{fig:mel_k}
+\centering
+\begin{tikzpicture}
+\tkzDefPoint(1,1){A}
+\tkzDefPoint(5,5){B}
+\draw[thick] (1,1) node [right]{(1,mel(200))} -- (5,5) node [right]{(K,mel(3700))};
+\draw[thick,->] (0,0) -- (6,0) node [below]{k};
+\draw[thick,->] (0,0) -- (0,6) node [left]{mel(f)};
+\foreach \n in {A,B}
+  \node at (\n)[circle,fill,inner sep=1.5pt]{};
+\end{tikzpicture}
+\end{figure}
+
+\begin{figure}[h]
+\caption{$warp(k,K)$ function for $K=20$}
+\label{fig:warp_fhz_k}
+\begin{center}
+\includegraphics[width=8cm]{warp_fhz_k}
+\end{center}
+\end{figure}
+
+The rate $K$ vector $\mathbf{b}$ is vector quantised for transmission over the channel:
+\begin{equation}
+\hat{\mathbf{b}} = Q(\mathbf{b})
+\end{equation}
+Codec 2 700C uses a two stage VQ with 9 bits (512 entries) per stage. The rate filtered rate $L$ vector can then be recovered by resampling $\mathbf{\hat{b}}$ using another resampling function:
+\begin{equation}
+\hat{\mathbf{y}} = S(\hat{\mathbf{b}})
+\end{equation}
+	
+Figure \ref{fig:newamp1_encoder} is the Codec 2 700C encoder.  Some notes on this algorithm:
+\begin{enumerate}
+\item The amplitudes and Vector Quantiser (VQ) entries are in dB, which is very nice to work in and matches the ears logarithmic amplitude response. 
+\item The mode is capable of communications quality speech and is in common use with FreeDV, but is close to the lower limits of intelligibility, and doesn't do well in some languages (problems have been reported with German and Japanese).
+\item The VQ was trained on just 120 seconds of data - way too short.
+\item The parameter set (pitch, voicing, log spectral magnitudes) is very similar to that used for the latest neural vocoders.
+\item The input speech may be subject to arbitrary filtering, for example due to the microphone frequency response, room acoustics, and anti-aliasing filter.  This filtering is fixed or slowly time varying.  The filtering biases the target vectors away from the VQ training material, resulting in significant additional mean square error.  The filtering does not greatly affect the input speech quality, however the VQ performance distortion increases and the output speech quality is reduced.  This is exacerbated by operating in the log domain, the VQ will try to match very low level, perceptually insignificant energy near 0 and 4000 Hz. A microphone equaliser algorithm has been developed to help adjust to arbitrary microphone filtering.
+\end{enumerate}
+
+\begin{figure}[h]
+\caption{Codec 2 700C (newamp1) encoder}
+
+\label{fig:newamp1_encoder}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
+
+\node [input] (rinput) {};
+\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
+\node [block, right of=z,node distance=1.5cm] (window) {Window};
+\node [block, right of=window,node distance=2.5cm] (dft) {DFT};
+\node [block, right of=dft,node distance=3cm,text width=1.5cm] (est) {Est Amp};
+\node [block, below of=window] (nlp) {NLP};
+\node [block, below of=nlp] (log) {log $\omega_0$};
+\node [block, below of=est,node distance=2cm,text width=2cm] (resample) {Resample Rate $K$};
+\node [block, right of=est,node distance=2.5cm,text width=1.5cm] (voicing) {Est Voicing};
+\node [tmp, below of=resample,node distance=1cm] (z1) {};
+\node [block, below of=dft,node distance=2cm,text width=2cm] (vq) {Decimate \& VQ};
+\node [block, below of=vq,node distance=2cm,text width=2cm] (pack) {Bit Packing};
+\node [output, right of=pack,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
+\draw [->] (z) |- (nlp);
+\draw [->] (window) -- node[below] {$s_w(n)$} (dft);
+\draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
+\draw [->] (est) -- node[right] {$\mathbf{a}$} (resample);
+\draw [->] (est) -- (voicing);
+\draw [->] (resample) -- node[below] {$\mathbf{b}$} (vq);
+\draw [->] (vq) -- (pack);
+\draw [->] (nlp) -- (log);
+\draw [->] (log) -- (pack);
+\draw [->] (voicing) |- (z1) -| (pack);
+\draw [->] (pack) -- (routput) node[right] {Bit Stream};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+TODO: Microphone equaliser. ratek study
 
 \section{Further Work}
 
