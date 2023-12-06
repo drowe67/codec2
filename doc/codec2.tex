@@ -696,25 +696,63 @@ arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) 
 \subsection{Codec 2 700C}
 \label{sect:mode_newamp1}
 
-To efficiently transmit spectral amplitude information Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation.
+To efficiently transmit spectral amplitude information Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation. Figure \ref{fig:newamp1_encoder} presents the Codec 2 700C encoder.  
 
-Consider a vector $\mathbf{a}$ of $L$ harmonic spectral magnitudes in dB: 
+\begin{figure}[h]
+\caption{Codec 2 700C (newamp1) encoder}
+
+\label{fig:newamp1_encoder}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
+
+\node [input] (rinput) {};
+\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
+\node [block, right of=z,node distance=1.5cm] (window) {Window};
+\node [block, right of=window,node distance=2.5cm] (dft) {DFT};
+\node [block, right of=dft,node distance=3cm,text width=1.5cm] (est) {Est Amp};
+\node [block, below of=est,node distance=2cm,text width=2cm] (resample) {Resample Rate $K$};
+\node [block, below of=dft,node distance=2cm,text width=2cm] (eq) {Microphone EQ};
+\node [block, below of=eq,node distance=2cm,text width=2cm] (vq) {Decimate \& VQ};
+\node [block, below of=window] (nlp) {NLP};
+\node [block, below of=nlp] (log) {log $\omega_0$};
+\node [block, below of=resample,node distance=2cm,text width=1.5cm] (voicing) {Est Voicing};
+\node [block, below of=vq,node distance=2cm,text width=2cm] (pack) {Bit Packing};
+\node [tmp, right of=resample,node distance=2cm] (z1) {};
+\node [tmp, below of=vq,node distance=1cm] (z2) {};
+\node [output, right of=pack,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
+\draw [->] (z) |- (nlp);
+\draw [->] (window) -- node[below] {$s_w(n)$} (dft);
+\draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
+\draw [->] (est) -- node[right] {$\mathbf{a}$} (resample);
+\draw [->] (resample) -- node[below] {$\mathbf{b}$} (eq);
+\draw [->] (eq) -- (vq);
+\draw [->] (vq) -- (pack);
+\draw [->] (est) -| (z1) |- (voicing);
+\draw [->] (nlp) -- (log);
+\draw [->] (log) |- (pack);
+\draw [->] (voicing) |- (z2) -| (pack);
+\draw [->] (pack) -- (routput) node[right] {Bit Stream};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+Consider a vector $\mathbf{a}$ of $L$ harmonic spectral magnitudes expressed in dB: 
 \begin{equation}
 \mathbf{a} = \begin{bmatrix} 20log_{10}A_1, 20log_{10}A_2, \ldots 20log_{10}A_L \end{bmatrix} 
 \end{equation}
 \begin{equation}
 L=\left \lfloor \frac{F_s}{2F_0} \right \rfloor = \left \lfloor \frac{\pi}{\omega_0} \right \rfloor
 \end{equation}
-$F_0$ and $L$ are time varying as the pitch track evolves over time. For speech sampled at $F_s=8$ kHz $F_0$ is typically in the range of 50 to 400 Hz, giving $L$ in the range of 10 $\ldots$ 80. \\
+$F_0$ and $L$ are time varying as the pitch track evolves over time. For speech sampled at $F_s=8$ kHz $F_0$ is typically in the range of 50 to 400 Hz, giving $L$ in the range of 10 $\ldots$ 80.
 
 To quantise and transmit $\mathbf{a}$, it is convenient to resample $\mathbf{a}$ to a fixed length $K$ element vector $\mathbf{b}$ using a resampling function:
 \begin{equation}
-\begin{split}
-\mathbf{y} &= \begin{bmatrix} Y_1, Y_2, \ldots Y_L \end{bmatrix} = H(\mathbf{a}) \\
-\mathbf{b} &= \begin{bmatrix} B_1, B_2, \ldots B_K \end{bmatrix} = R(\mathbf{y})
-\end{split}
+\mathbf{b} = \begin{bmatrix} B_1, B_2, \ldots B_K \end{bmatrix} = R(\mathbf{a})
 \end{equation}
-Where $H$ is a filter function chosen to smooth the spectral amplitude samples $A_m$ while not significantly altering the perceptual quality of the speech; and $R$ is a resampling function. To model the response of the human ear $B_k$  are sampled on $K$ non-linearly spaced points on the frequency axis:
+Where $R$ is a resampling function. To model the response of the human ear $B_k$  are sampled on $K$ non-linearly spaced points on the frequency axis:
 \begin{equation}
 \begin{split}
 f_k &= warp(k,K) \ \textrm{Hz} \quad k=1 \ldots K \\
@@ -722,7 +760,7 @@ warp(1,K) &= 200 \ \textrm{Hz} \\
 warp(K,K) &= 3700 \ \textrm{Hz}
 \end{split}
 \end{equation}
-where $warp()$ is a frequency warping function. Codec 2 700C uses $K=20$, $H=1$, and $warp()$ is defined using the Mel function \cite[p 150]{o1997human} (Figure \ref{fig:mel_fhz}) which samples the spectrum more densely at low frequencies, and less densely at high frequencies:
+where $warp()$ is a frequency warping function. Codec 2 700C uses $K=20$, and $warp()$ is defined using the Mel function \cite[p 150]{o1997human} (Figure \ref{fig:mel_fhz}) which samples the spectrum more densely at low frequencies, and less densely at high frequencies:
 \begin{equation} \label{eq:mel_f}
 mel(f) = 2595log_{10}(1+f/700)
 \end{equation}
@@ -782,63 +820,37 @@ k = warp^{-1}(f,K) = \frac{mel(f)-mel(200)}{g} + 1
 \end{center}
 \end{figure}
 
-The rate $K$ vector $\mathbf{b}$ is vector quantised for transmission over the channel:
+The input speech may be subject to arbitrary filtering, for example due to the microphone frequency response, room acoustics, and anti-aliasing filter.  This filtering is fixed or slowly time varying.  The filtering biases the target vectors away from the VQ training material, resulting in significant additional mean square error.  The filtering does not greatly affect the input speech quality, however the VQ performance distortion increases and the output speech quality is reduced.  This is exacerbated by operating in the log domain, the VQ will try to match very low level, perceptually insignificant energy near 0 and 4000 Hz. A microphone equaliser algorithm has been developed to help adjust to arbitrary microphone filtering.
+
+For every input frame $l$, the equaliser (EQ) updates the dimension $K$ equaliser vector $\mathbf{e}$:
 \begin{equation}
-\hat{\mathbf{b}} = Q(\mathbf{b})
+\mathbf{e}^{l+1} = \mathbf{e}^l + \beta(\mathbf{b} - \mathbf{t})
 \end{equation}
-Codec 2 700C uses a two stage VQ with 9 bits (512 entries) per stage. The rate filtered rate $L$ vector can then be recovered by resampling $\mathbf{\hat{b}}$ using another resampling function:
+where $\mathbf{t}$ is a fixed target vector set to the mean of the VQ quantiser, and $\beta$ is a small adaption constant.
+
+The equalised, mean removed rate $K$ vector $\mathbf{d}$ is vector quantised for transmission over the channel:
 \begin{equation}
-\hat{\mathbf{y}} = S(\hat{\mathbf{b}})
+\begin{split}
+\mathbf{c} &= \mathbf{b} - \mathbf{e} \\
+\mathbf{d} &= \mathbf{c} - \bar{\mathbf{c}} \\
+\hat{\mathbf{c}} &= VQ(\mathbf{d}) + Q(\bar{\mathbf{c}})
+\end{split}
 \end{equation}
-	
-Figure \ref{fig:newamp1_encoder} is the Codec 2 700C encoder.  Some notes on this algorithm:
+Codec 2 700C uses a two stage VQ with 9 bits (512 entries) per stage. Note that VQ is performed in the $log$ amplitude (dB) domain. The mean of $\mathbf{c}$ is removed prior to VQ and scalar quantised and transmitted separately as the frame energy. The rate $L$ vector $\hat{\mathbf{y}}$ can then be recovered by resampling $\mathbf{\hat{c}}$:
+\begin{equation}
+\hat{\mathbf{y}} = S(\hat{\mathbf{c}})
+\end{equation}
+
+Some notes on the Codec 2 700C \emph{newamp1} algorithms:
 \begin{enumerate}
-\item The amplitudes and Vector Quantiser (VQ) entries are in dB, which is very nice to work in and matches the ears logarithmic amplitude response. 
+\item The amplitudes and Vector Quantiser (VQ) entries are in dB, which matches the ears logarithmic amplitude response. 
 \item The mode is capable of communications quality speech and is in common use with FreeDV, but is close to the lower limits of intelligibility, and doesn't do well in some languages (problems have been reported with German and Japanese).
 \item The VQ was trained on just 120 seconds of data - way too short.
 \item The parameter set (pitch, voicing, log spectral magnitudes) is very similar to that used for the latest neural vocoders.
-\item The input speech may be subject to arbitrary filtering, for example due to the microphone frequency response, room acoustics, and anti-aliasing filter.  This filtering is fixed or slowly time varying.  The filtering biases the target vectors away from the VQ training material, resulting in significant additional mean square error.  The filtering does not greatly affect the input speech quality, however the VQ performance distortion increases and the output speech quality is reduced.  This is exacerbated by operating in the log domain, the VQ will try to match very low level, perceptually insignificant energy near 0 and 4000 Hz. A microphone equaliser algorithm has been developed to help adjust to arbitrary microphone filtering.
-\end{enumerate}
+\item The Rate K algorithms were recently revisited, several improvements proposed and prototyped \cite{rowe2023ratek}.
+\end{enumerate}.
 
-\begin{figure}[h]
-\caption{Codec 2 700C (newamp1) encoder}
-
-\label{fig:newamp1_encoder}
-\begin{center}
-\begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
-
-\node [input] (rinput) {};
-\node [tmp, right of=rinput,node distance=0.5cm] (z) {};
-\node [block, right of=z,node distance=1.5cm] (window) {Window};
-\node [block, right of=window,node distance=2.5cm] (dft) {DFT};
-\node [block, right of=dft,node distance=3cm,text width=1.5cm] (est) {Est Amp};
-\node [block, below of=window] (nlp) {NLP};
-\node [block, below of=nlp] (log) {log $\omega_0$};
-\node [block, below of=est,node distance=2cm,text width=2cm] (resample) {Resample Rate $K$};
-\node [block, right of=est,node distance=2.5cm,text width=1.5cm] (voicing) {Est Voicing};
-\node [tmp, below of=resample,node distance=1cm] (z1) {};
-\node [block, below of=dft,node distance=2cm,text width=2cm] (vq) {Decimate \& VQ};
-\node [block, below of=vq,node distance=2cm,text width=2cm] (pack) {Bit Packing};
-\node [output, right of=pack,node distance=2cm] (routput) {};
-
-\draw [->] node[align=left,text width=2cm] {$s(n)$} (rinput) -- (window);
-\draw [->] (z) |- (nlp);
-\draw [->] (window) -- node[below] {$s_w(n)$} (dft);
-\draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
-\draw [->] (est) -- node[right] {$\mathbf{a}$} (resample);
-\draw [->] (est) -- (voicing);
-\draw [->] (resample) -- node[below] {$\mathbf{b}$} (vq);
-\draw [->] (vq) -- (pack);
-\draw [->] (nlp) -- (log);
-\draw [->] (log) -- (pack);
-\draw [->] (voicing) |- (z1) -| (pack);
-\draw [->] (pack) -- (routput) node[right] {Bit Stream};
-
-\end{tikzpicture}
-\end{center}
-\end{figure}
-
-TODO: Microphone equaliser. ratek study
+TODO: Post filters for LPC/LSP and 700C.
 
 \section{Further Work}
 
@@ -853,7 +865,7 @@ Summary of mysteries/interesting points drawn out above.
 \end{enumerate}
 
 
-\section{Codec 2 Modes}
+\section{Summary of Codec 2 Modes}
 \label{sect:glossary}
 
 \begin{table}[H]
@@ -868,7 +880,7 @@ Mode & Frm (ms) & Bits & $A_m$ & $E$ & $\omega_0$ & $v$ & Comment \\
 1600 & 40 & 64 & 36 & 10 & 14 & 4 \\
 1400 & 40 & 56 & 36 & 16 & -  & 4 \\
 1300 & 40 & 52 & 36 & 5  & 7  & 4 & Joint $\omega_0$/E VQ \\
-1200 & 48 & 40 & 27 & 16 & -  & 4 & LSP VQ, Joint  $\omega_0$/E VQ, 1 spare \\
+1200 & 40 & 48 & 27 & 16 & -  & 4 & LSP VQ, Joint  $\omega_0$/E VQ, 1 spare \\
 700C & 40 & 28 & 18 & 4  & 6  & - & VQ of log magnitudes \\
 \hline
 \end{tabular}
@@ -887,11 +899,14 @@ Acronym & Description \\
 \hline
 DFT & Discrete Fourier Transform \\
 DTCF & Discrete Time Continuous Frequency Fourier Transform \\
+EQ & (microphone) Equaliser \\
 IDFT & Inverse Discrete Fourier Transform \\
 LPC & Linear Predictive Coding \\
 LSP & Line Spectrum Pair \\
 MBE & Multi-Band Excitation \\
+MSE & Mean Square Error \\
 NLP & Non Linear Pitch (algorithm) \\
+VQ & Vector Quantiser \\
 \hline
 \end{tabular}
 \caption{Glossary of Acronyms}
