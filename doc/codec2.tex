@@ -307,7 +307,7 @@ Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal ana
 \end{center}
 \end{figure}
 
-For the purposes of speech analysis the time domain speech signal $s(n)$ is divided into overlapping analysis windows (frames) of $N_w=279$ samples. The centre of each analysis window is separated by $N=80$ samples, or an internal frame rate or 10ms. To analyse the $l$-th frame it is convenient to convert the fixed time reference to a sliding time reference centred on the current analysis window:
+The time domain speech signal $s(n)$ is divided into overlapping analysis windows (frames) of $N_w=279$ samples. The centre of each analysis window is separated by $N=80$ or 10ms. Codec 2 operates at an internal frame rate of 100 Hz. To analyse the $l$-th frame it is convenient to convert the fixed time reference to a sliding time reference centred on the current analysis window:
 \begin{equation}
 s_w(n) = s(lN + n) w(n), \quad n = - N_{w2} ... N_{w2}
 \end{equation}
@@ -352,7 +352,7 @@ The phase is sampled at the centre of the band.  For all practical Codec 2 modes
 Synthesis is achieved by constructing an estimate of the original speech spectrum using the sinusoidal model parameters for the current frame. This information is then transformed to the time domain using an Inverse DFT (IDFT). To produce a continuous time domain waveform the IDFTs from adjacent frames are smoothly interpolated using a weighted overlap add procedure \cite{mcaulay1986speech}.
 
 \begin{figure}[h]
-\caption{Sinusoidal Synthesis.  At frame $l$ the windowing function generates $2N$ samples.  The first $N$ samples complete the current frame and are the synthesiser output. The second $N$ samples are stored for summing with the next frame.}
+\caption{Sinusoidal Synthesis.  At frame $l$ the windowing function generates $2N$ samples.  The first $N$ samples complete the current frame. The second $N$ samples are stored for summing with the next frame.}
 \label{fig:synthesis}
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
@@ -565,7 +565,7 @@ n_0    &= -\phi_1 / \omega_0 \\
 
 For unvoiced speech $E(z)$ is a white noise signal.  At each frame we sample a random number generator on the interval $-\pi ... \pi$ to obtain the excitation phase of each harmonic.  We set $F_0 = 50$ Hz to use a large number of harmonics $L=4000/50=80$ for synthesis to best approximate a noise signal.
 
-An additional phase component is provided by sampling $H(z)$ at the harmonic centres.  The phase spectra of $H(z)$ is derived from the filter magnitude response using minimum phase techniques.  The method for deriving the phase spectra of $H(z)$ differs between Codec 2 modes and is described below in Sections \ref{sect:mode_lpc_lsp} and \ref{sect:mode_newamp1}.  This component of the phase tends to disperse the pitch pulse energy in time, especially around spectral peaks (formants).
+The second phase component is provided by sampling the phase of $H(z)$ at the harmonic centres.  The phase spectra of $H(z)$ is derived from the magnitude response using minimum phase techniques.  The method for deriving the phase spectra of $H(z)$ differs between Codec 2 modes and is described below in Sections \ref{sect:mode_lpc_lsp} and \ref{sect:mode_newamp1}.  This component of the phase tends to disperse the pitch pulse energy in time, especially around spectral peaks (formants).
 
 The zero phase model tends to make speech with background noise sound "clicky".  With high levels of background noise the low level inter-formant parts of the spectrum will contain noise rather than speech harmonics, so modelling them as voiced (i.e. a continuous, non-random phase track) is inaccurate. Some codecs (like MBE) have a mixed voicing model that breaks the spectrum into voiced and unvoiced regions.  However (5-12) bits/frame (5-12) are required to transmit the frequency selective voicing information.  Mixed excitation also requires accurate voicing estimation (parameter estimators always break occasionally under exceptional conditions).
 
@@ -645,23 +645,15 @@ Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping 
 \end{center}
 \end{figure}
 
-One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.  Some disadvantages \cite{makhoul1975linear} are that the energy minimisation property means the LPC residual spectrum is rarely flat, i.e. it doesn't follow the spectral magnitudes $A_m$ exactly.  The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well.   For high pitched speakers, LPC tends to place poles around single pitch harmonics, rather than tracking the spectral envelope.
+One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.   Another feature of LPC modelling combined with scalar LSP quantisation is a tolerance to variations in the input frequency response (see section \ref{sect:mode_newamp1} for more information on this issue).
+
+Some disadvantages \cite{makhoul1975linear} are that the energy minimisation property means the LPC residual spectrum is rarely flat, i.e. it doesn't follow the spectral magnitudes $A_m$ exactly.  The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well.   For high pitched speakers, LPC tends to place poles around single pitch harmonics, rather than tracking the spectral envelope. 
 
 In CELP codecs these problems can be accommodated by the (high bit rate) excitation, and some low rate codecs such as MELP supply supplementary low frequency information to ``correct" the LPC model.
 
-Before bit packing, the Codec 2 parameters are decimated in time.  An update rate of 20ms is used for the highest rate modes, which drops to 40ms for Codec 2 1300, with a corresponding drop in speech quality.  The number of bits used to quantise the LPC model via LSPs is also reduced in the lower bit rate modes.  This has the effect of making the speech less intelligible, and can introduce annoying buzzy or clicky artefacts into the synthesised speech.  Lower fidelity spectral magnitude quantisation also results in more noticeable artefacts from phase synthesis.  Neverthless at 1300 bits/s the speech quality is quite usable for HF digital voice, and at 3200 bits/s comparable to closed source codecs at the same bit rate.
+Before bit packing, the Codec 2 parameters are decimated in time.  An update rate of 20ms is used for the highest rate modes, which drops to 40ms for Codec 2 1300, with a corresponding drop in speech quality.  The number of bits used to quantise the LPC model via LSPs is also reduced in the lower bit rate modes.  This has the effect of making the speech less intelligible, and can introduce annoying buzzy or clicky artefacts into the synthesised speech.  Lower fidelity spectral magnitude quantisation also results in more noticeable artefacts from phase synthesis.  Nevertheless at 1300 bits/s the speech quality is quite usable for HF digital voice, and at 3200 bits/s comparable to closed source codecs at the same bit rate.
 
-Figure \ref{fig:decoder_lpc_lsp} shows the LPC/LSP mode decoder.  Frames of bits received at the frame rate are unpacked and resampled to the 10ms internal frame rate using linear interpolation.  The spectral magnitude information is resampled by linear interpolation of the LSP frequencies, and converted back to a quantised LPC model $\hat{H}(z)$.  The harmonic magnitudes are recovered by averaging the energy of the LPC
-spectrum over the region of each harmonic:
-\begin{equation}
-\hat{A}_m = \sqrt{ \sum_{k=a_m}^{b_m-1} | \hat{H}(k) |^2 }
-\end{equation}
-where $H(k)$ is the $N_{dft}$ point DFT of the received LPC model for this frame.  For phase synthesis, the phase of $H(z)$ is determined by sampling $\hat{H}(k)$ in the centre of each harmonic:
-\begin{equation}
-arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) \right]
-\end{equation}
-
-\begin{figure}[h]
+\begin{figure}[H]
 \caption{LPC/LSP Modes Decoder}
 \label{fig:decoder_lpc_lsp}
 \begin{center}
@@ -675,7 +667,7 @@ arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) 
 \node [block, right of=lpc,text width=2cm] (sample) {Sample $A_m$};
 \node [block, below of=lpc,text width=2cm,node distance=2cm] (phase) {Phase Synthesis};
 \node [block, below of=phase,text width=2.5cm,node distance=2cm] (synth) {Sinusoidal\\Synthesis};
-\node [block, right of=synth,text width=2cm] (post) {Post Filter};
+\node [block, right of=phase,text width=2cm] (post) {Post Filter};
 \node [output, left of=synth,node distance=2cm] (routput) {};
 
 \draw [->] node[align=left,text width=2cm] {Bit\\Stream} (rinput) -- (unpack);
@@ -683,25 +675,45 @@ arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) 
 \draw [->] (interp) -- (lpc);
 \draw [->] (lpc) -- (sample);
 \draw [->] (sample) -- (post);
-\draw [->] (post) -- (synth);
+\draw [->] (post) |- (synth);
 \draw [->] (z1) |- (phase);
 \draw [->] (phase) -- (synth);
-\draw [->] (sample) |- (phase);
+\draw [->] (post) -- (phase);
 \draw [->] (synth) -- (routput) node[align=left,text width=1.5cm] {$\hat{s}(n)$};
 
 \end{tikzpicture}
 \end{center}
 \end{figure}
 
+Figure \ref{fig:decoder_lpc_lsp} shows the LPC/LSP mode decoder.  Frames of bits received at the frame rate are unpacked and resampled to the 10ms internal frame rate using linear interpolation.  The spectral magnitude information is resampled by linear interpolation of the LSP frequencies, and converted back to a quantised LPC model $\hat{H}(z)$.  The harmonic magnitudes are recovered by averaging the energy of the LPC spectrum over the region of each harmonic:
+\begin{equation}
+\hat{A}_m = \sqrt{ \sum_{k=a_m}^{b_m-1} | \hat{H}(k) |^2 }
+\end{equation}
+where $H(k)$ is the $N_{dft}$ point DFT of the received LPC model for this frame.  For phase synthesis, the phase of $H(z)$ is determined by sampling $\hat{H}(k)$ in the centre of each harmonic:
+\begin{equation}
+arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) \right]
+\end{equation}
+Prior to sampling the amplitude and phase, a frequency domain post filter is applied to the LPC power spectrum. The algorithm is based on the MBE frequency domain post filter \cite[Section 8.6, p 267]{kondoz1994digital}, which is turn based on the frequency domain post filter from McAulay and Quatieri \cite[Section 4.3, p 148]{kleijn1995speech}.  The authors report a significant improvement in speech quality from the post filter, which has also been our experience when applied to Codec 2. The post filter is given by:
+\begin{equation}
+\label{eq:lpc_lsp_pf}
+\begin{split}
+P_f(e^{j\omega}) &= g \left( R_w(e^{j \omega} \right))^\beta \\
+R_w(^{j\omega}) &= A(e^{j \omega/ \gamma})/A(e^{j \omega})
+\end{split}
+\end{equation}
+where $g$ is a gain chosen to such that the energy of at the output of the post filter is the same as the input, $\beta=0.2$, and $\gamma=0.5$.  The post filter raises the spectral peaks (formants), and pushes down the energy between formants.  The $\beta$ term compensates for spectral tilt, such that $R_w$ is similar to the LPC synthesis filter $1/A(z)$ however with equal emphasis at low and high frequencies.  The authors suggest the post filter reduces the noise level between formants, an explanation commonly given to post filters used for CELP codecs where significant inter-formant noise exists from the noisy excitation source.  However in harmonic sinusoidal codecs there is no excitation noise between formants in $E(z)$.  Our theory is the post filter also acts to reduce the bandwidth of spectral peaks, modifying the energy distribution across the time domain pitch cycle in a way that improves intelligibility, especially for low pitched speakers.
+
+A disadvantage of the post filter is the need for experimentally derived constants.  It performs a non-linear operation on the speech spectrum, and if mis-applied can worsen speech quality.  As it's operation is not completely understood, it represents a source of future quality improvement.
+
 \subsection{Codec 2 700C}
 \label{sect:mode_newamp1}
 
-To efficiently transmit spectral amplitude information Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation. Figure \ref{fig:newamp1_encoder} presents the Codec 2 700C encoder.  
+To efficiently transmit spectral amplitude information Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation. Figure \ref{fig:encoder_newamp1} presents the Codec 2 700C encoder.  
 
-\begin{figure}[h]
-\caption{Codec 2 700C (newamp1) encoder}
+\begin{figure}[H]
+\caption{Codec 2 700C (newamp1) Encoder}
 
-\label{fig:newamp1_encoder}
+\label{fig:encoder_newamp1}
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm, align=center]
 
@@ -727,7 +739,7 @@ To efficiently transmit spectral amplitude information Codec 2 700C uses a set o
 \draw [->] (dft) -- node[below] {$S_\omega(k)$} (est);
 \draw [->] (est) -- node[right] {$\mathbf{a}$} (resample);
 \draw [->] (resample) -- node[below] {$\mathbf{b}$} (eq);
-\draw [->] (eq) -- (vq);
+\draw [->] (eq) -- node[left] {$\mathbf{c}$} (vq);
 \draw [->] (vq) -- (pack);
 \draw [->] (est) -| (z1) |- (voicing);
 \draw [->] (nlp) -- (log);
@@ -778,17 +790,19 @@ f = mel^{-1}(x) = 700(10^{x/2595} - 1);
 \end{figure}
 
 We wish to use $mel(f)$ to construct $warp(k,K)$, such that there are $K$ evenly spaced points on the $mel(f)$ axis (Figure \ref{fig:mel_k}).  Solving for the equation of a straight line we can obtain $mel(f)$ as a function of $k$, and hence $warp(k,K)$ (Figure \ref{fig:warp_fhz_k}):
-\begin{equation} \label{eq:mel_k}
+\begin{equation}
+\label{eq:mel_k}
 \begin{split}
 g &= \frac{mel(3700)-mel(200)}{K-1} \\
 mel(f) &= g(k-1) + mel(200)
 \end{split}
 \end{equation}
 Substituting (\ref{eq:f_mel}) into the LHS:
-\begin{equation} \label{eq:warp}
+\begin{equation}
+\label{eq:warp}
 \begin{split}
 2595log_{10}(1+f/700) &= g(k-1) + mel(200) \\
-f = warp(k,K) &= mel^{-1} ( g(k-1) + mel(200) ) \\
+f_k = warp(k,K) &= mel^{-1} ( g(k-1) + mel(200) ) \\
 \end{split}
 \end{equation}
 and the inverse warp function:
@@ -833,13 +847,54 @@ The equalised, mean removed rate $K$ vector $\mathbf{d}$ is vector quantised for
 \begin{split}
 \mathbf{c} &= \mathbf{b} - \mathbf{e} \\
 \mathbf{d} &= \mathbf{c} - \bar{\mathbf{c}} \\
-\hat{\mathbf{c}} &= VQ(\mathbf{d}) + Q(\bar{\mathbf{c}})
+\hat{\mathbf{c}} &= VQ(\mathbf{d}) + Q(\bar{\mathbf{c}}) \\
+                 &= \hat{\mathbf{d}} + \hat{\bar{\mathbf{c}}}
 \end{split}
 \end{equation}
-Codec 2 700C uses a two stage VQ with 9 bits (512 entries) per stage. Note that VQ is performed in the $log$ amplitude (dB) domain. The mean of $\mathbf{c}$ is removed prior to VQ and scalar quantised and transmitted separately as the frame energy. The rate $L$ vector $\hat{\mathbf{y}}$ can then be recovered by resampling $\mathbf{\hat{c}}$:
+Codec 2 700C uses a two stage VQ with 9 bits (512 entries) per stage. The \emph{mbest} multi-stage search algorithm is used to jointly search the two stages (using 5 survivors from the first stage).  Note that VQ is performed in the $log$ amplitude (dB) domain. The mean of $\mathbf{c}$ is removed prior to VQ and scalar quantised and transmitted separately as the frame energy. At the decoder, the rate $L$ vector $\hat{\mathbf{a}}$ can then be recovered by resampling $\mathbf{\hat{a}}$:
 \begin{equation}
-\hat{\mathbf{y}} = S(\hat{\mathbf{c}})
+\hat{\mathbf{a}} = S(\hat{\mathbf{c}} + \mathbf{p})
 \end{equation}
+where $\mathbf{p}$ is a post filter vector. The post filter vector is generated from the mean-removed rate $K$ vector $\hat{\mathbf{d}}$ in the $log$ frequency domain:
+\begin{equation}
+\begin{split}
+\mathbf{p} &= G + P_{gain} \left( \hat{\mathbf{d}} + \mathbf{r} \right) - \mathbf{r} \\
+\mathbf{r} &= \begin{bmatrix} R_1, R_2, \ldots R_K \end{bmatrix} \\
+       R_k &= 20log_{10}(f_k/300) \quad k=1,...,K 
+\end{split}
+\end{equation}
+where $G$ is an energy normalisation term, and $1.2 < P_{gain} < 1.5$ describes the amount if post filtering applied.  $G$ and $P_{gain}$ are similar to $g$ and $\beta$ in the LPC/LSP post filter (\ref{eq:lpc_lsp_pf}).  The $\mathbf{r}$ term is a high pass (pre-emphasis) filter with +20 dB/decade gain after 300 Hz ($f_k$ is given in (\ref{eq:warp})).  The post filtering is applied on the pre-emphasised vector, then the pre-emphasis is removed from the final result.  Multiplying by $P_{gain}$ in the $log$ domain is similar to the $\alpha$ power function in (\ref{eq:lpc_lsp_pf}); spectral peaks are moved up, and troughs pushed down.  This filter enhances the speech quality but also introduces some artefacts.
+
+Figure \ref{fig:decoder_newamp1} is the block diagram of the decoder signal processing.  Cepstral techniques are used to synthesise a  phase spectra $arg[H(e^{j \omega}])$ from $\hat{\mathbf{a}}$ using a minimum phase model.  
+
+\begin{figure}[h]
+\caption{Codec 2 700C (newamp1) Decoder}
+\label{fig:decoder_newamp1}
+\begin{center}
+\begin{tikzpicture}[auto, node distance=3cm,>=triangle 45,x=1.0cm,y=1.0cm,align=center]
+
+\node [input] (rinput) {};
+\node [block, right of=rinput,node distance=1.5cm] (unpack) {Unpack};
+\node [block, right of=unpack,node distance=2.5cm] (interp) {Interpolate};
+\node [block, right of=interp,node distance=3cm,text width=2cm] (post) {Post Filter};
+\node [block, below of=post,text width=2cm,node distance=2cm] (resample) {Resample to Rate $L$};
+\node [block, below of=resample,text width=2cm,node distance=2cm] (synth) {Sinusoidal\\Synthesis};
+\node [tmp, below of=resample,node distance=1cm] (z1) {};
+\node [block, right of=synth,text width=2cm] (phase) {Phase Synthesis};
+\node [output,left of=synth,node distance=2cm] (routput) {};
+
+\draw [->] node[align=left,text width=2cm] {Bit\\Stream} (rinput) -- (unpack);
+\draw [->] (unpack) -- (interp);
+\draw [->] (interp) --  (post);
+\draw [->] (post) -- node[left] {$\hat{\mathbf{c}}$} (resample);
+\draw [->] (resample) -- node[left] {$\hat{\mathbf{a}}$}  (synth);
+\draw [->] (resample) -- (z1) -| (phase);
+\draw [->] (phase) -- (synth);
+\draw [->] (synth) -- (routput) node[align=left,text width=1.5cm] {$\hat{s}(n)$};
+
+\end{tikzpicture}
+\end{center}
+\end{figure}
 
 Some notes on the Codec 2 700C \emph{newamp1} algorithms:
 \begin{enumerate}
@@ -847,10 +902,8 @@ Some notes on the Codec 2 700C \emph{newamp1} algorithms:
 \item The mode is capable of communications quality speech and is in common use with FreeDV, but is close to the lower limits of intelligibility, and doesn't do well in some languages (problems have been reported with German and Japanese).
 \item The VQ was trained on just 120 seconds of data - way too short.
 \item The parameter set (pitch, voicing, log spectral magnitudes) is very similar to that used for the latest neural vocoders.
-\item The Rate K algorithms were recently revisited, several improvements proposed and prototyped \cite{rowe2023ratek}.
-\end{enumerate}.
-
-TODO: Post filters for LPC/LSP and 700C.
+\item The Rate K algorithms were recently revisited, several improvements were proposed and prototyped \cite{rowe2023ratek}.
+\end{enumerate}
 
 \section{Further Work}
 
@@ -861,7 +914,8 @@ Summary of mysteries/interesting points drawn out above.
 \item How to use Octave tools to single step through codec operation
 \item Table summarising source files with one line description
 \item Add doc license (Creative Commons?)
-\item Energy distribution theory.  Need for V model, neural vocoders, non-linear function. Figures and simulation plots would be useful. Figure of phase synthesis.
+\item Energy distribution theory.  Need for V model, neural vocoders, non-linear function.
+\item Figures and simulation plots would be useful to better explain algorithms.
 \end{enumerate}
 
 
@@ -880,7 +934,7 @@ Mode & Frm (ms) & Bits & $A_m$ & $E$ & $\omega_0$ & $v$ & Comment \\
 1600 & 40 & 64 & 36 & 10 & 14 & 4 \\
 1400 & 40 & 56 & 36 & 16 & -  & 4 \\
 1300 & 40 & 52 & 36 & 5  & 7  & 4 & Joint $\omega_0$/E VQ \\
-1200 & 40 & 48 & 27 & 16 & -  & 4 & LSP VQ, Joint  $\omega_0$/E VQ, 1 spare \\
+1200 & 40 & 48 & 27 & 16 & -  & 4 & LSP VQ, joint  $\omega_0$/E VQ, 1 spare \\
 700C & 40 & 28 & 18 & 4  & 6  & - & VQ of log magnitudes \\
 \hline
 \end{tabular}
