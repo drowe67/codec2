@@ -21,6 +21,11 @@ function plamp(samname, f, epslatex=0)
     Ew = load(ew_name);
   endif
 
+  E_name = strcat(samname,"_E.txt");
+  if (file_in_path(".",E_name))
+    E = load(E_name);
+  endif
+
   rk_name = strcat(samname,"_rk.txt");
   if (file_in_path(".",rk_name))
     Rk = load(rk_name);
@@ -37,6 +42,10 @@ function plamp(samname, f, epslatex=0)
   pw_name = strcat(samname,"_pw.txt");
   if (file_in_path(".",pw_name))
     Pw = load(pw_name);
+  endif
+  pwb_name = strcat(samname,"_pwb.txt");
+  if (file_in_path(".",pwb_name))
+    Pwb = load(pwb_name);
   endif
 
   lsp_name = strcat(samname,"_lsp.txt");
@@ -63,14 +72,14 @@ function plamp(samname, f, epslatex=0)
 
   k = ' ';
   do
-    figure(1);
+    figure(1); clf;
     clf;
     s = [ Sn(2*f-1,:) Sn(2*f,:) ];
     plot(s,'b');
     axis([1 length(s) -30000 30000]);
     xlabel('Time (samples)'); ylabel('Amplitude');
     
-    figure(2);
+    figure(2); clf;
     Wo = model(f,1);
     L = model(f,2);
     Am = model(f,3:(L+2));
@@ -80,9 +89,26 @@ function plamp(samname, f, epslatex=0)
     if plot_sw
       plot((0:255)*4000/256, Sw(f,:),"b");
     end
-    legend('boxoff'); ylabel ('Amplitude (dB)'); xlabel('Frequency (Hz)');
-
     hold off; grid minor;
+    ylabel ('Amplitude (dB)'); xlabel('Frequency (Hz)');
+    
+    figure(3); clf;
+    hold on;
+    plot((0:255)*4000/256, Sw(f,:),"b");
+    plot((1:L)*Wo*4000/pi, 20*log10(Am),"+-r");
+    plot((0:255)*4000/256, E(f)+10*log10(Pwb(f,:)),"g");
+    plot(lsp(f,:)*4000/pi, 75,"g+");
+    hold off; grid minor;
+    axis([1 4000 -10 80]);
+    ylabel ('Amplitude (dB)'); xlabel('Frequency (Hz)');
+
+    figure(4); clf;
+    hold on;
+    plot((0:255)*4000/256, E(f)+10*log10(Pwb(f,:)),"g");
+    plot((0:255)*4000/256, 10*log10(Pw(f,:)),"r");
+    hold off; grid minor;
+    axis([1 4000 -10 80]);
+    ylabel ('Amplitude (dB)'); xlabel('Frequency (Hz)');
 
     % print EPS file
 
@@ -103,7 +129,15 @@ function plamp(samname, f, epslatex=0)
       fn = sprintf("%s_%d_sw.tex",samname,f);
       print(fn,"-depslatex",sz); printf("printing... %s\n", fn);
    
-      restore_fonts(textfontsize,linewidth);
+      figure(3);
+      fn = sprintf("%s_%d_lpc_lsp.tex",samname,f);
+      print(fn,"-depslatex",sz); printf("printing... %s\n", fn);
+   
+      figure(4);
+      fn = sprintf("%s_%d_lpc_pf.tex",samname,f);
+      print(fn,"-depslatex",sz); printf("printing... %s\n", fn);
+   
+     restore_fonts(textfontsize,linewidth);
     endif
 
     % interactive menu

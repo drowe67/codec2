@@ -91,12 +91,8 @@ Recently, machine learning has been applied to speech coding.  This technology p
 
 To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the ``pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
 
-Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
-
-Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
-
-\begin{figure}
-\caption{ A 40ms segment from the word ``these" from a female speaker, sampled at 8kHz. Top is a plot again time, bottom (blue) is a plot against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the ``pitch period" of this segment.}
+\begin{figure} [H]
+\caption{ A 40ms segment from the word ``these" from a female speaker, sampled at 8kHz. Top is a plot against time, bottom (blue) is a plot of the same speech against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the ``pitch period" of this segment.  The red crosses are the sine wave amplitudes, explained in the text.}
 \label{fig:hts2a_time}
 \begin{center}
 \input hts2a_37_sn.tex
@@ -104,6 +100,10 @@ Note that each harmonic has it's own amplitude, that varies across frequency.  T
 \input hts2a_37_sw.tex
 \end{center}
 \end{figure}
+
+Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
+
+Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
 
 \subsection{Sinusoidal Speech Coding}
 
@@ -343,7 +343,7 @@ b_m      &= \lfloor (m + 0.5)r \rceil \\
 r        &= \frac{\omega_0 N_{dft}}{2 \pi} 
 \end{split}
 \end{equation}
-The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech.
+The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech.  Figure $\ref{fig:hts2a_time}$ plots $S_w$ (blue) and $\{A_m\}$ (red) for a sample frame of female speech.
 
 The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
 
@@ -586,11 +586,19 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 
 In this and the next section we explain how the codec building blocks above are assembled to create a fully quantised Codec 2 mode.  This section discusses the higher bit rate (3200 - 1200) modes that use a Linear Predictive Coding (LPC) and Line Spectrum Pairs (LSPs) to quantise and transmit the spectral magnitude information.  There is a great deal of information available on these topics so they are only briefly described here.
 
-The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A relatively flat excitation source $E(z)$ excites a filter $H(z)$ which models the magnitude spectrum of the speech.  Linear Predictive Coding (LPC) defines $H(z)$ as an all pole filter:
+\begin{figure} [h]
+\caption{LPC spectrum $|H(e^{j \omega})|$ (green line) and LSP frequencies $\{\omega_i\}$ (green crosses) for the speech frame in Figure \ref{fig:hts2a_time}. The original speech spectrum (blue) and $A_m$ estimates (red) are provided as references.}
+\label{fig:hts2a_lpc_lsp}
+\begin{center}
+\input hts2a_37_lpc_lsp.tex
+\end{center}
+\end{figure}
+
+The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A spectrally flat excitation source $E(z)$ excites a filter $H(z)$ which models the magnitude spectrum of the speech.  In Linear Predictive Coding (LPC), we define $H(z)$ as an all pole filter:
 \begin{equation}
 H(z) = \frac{G}{1-\sum_{k=1}^p a_k z^{-k}} = \frac{G}{A(z)}
 \end{equation}
-where  $\{a_k\}, k=1..10$ is a set of p linear prediction coefficients that characterise the filter's frequency response and G is a scalar gain factor. An excellent reference for LPC is \cite{makhoul1975linear}.
+where  $\{a_k\}, k=1..10$ is a set of p linear prediction coefficients that characterise the filters frequency response and G is a scalar gain factor.  The coefficients are time varying and are extracted from the input speech signal, typically using a least squares approach.  An excellent reference for LPC is \cite{makhoul1975linear}.
 
 To be useful in low bit rate speech coding it is necessary to quantise and transmit the LPC coefficients using a small number of bits. Direct quantisation of these LPC coefficients is inappropriate due to their large dynamic range (8-10 bits/coefficient). Thus for transmission purposes, especially at low bit rates, other forms such as the Line Spectral Pair (LSP) \cite{itakura1975line} frequencies are used to represent the LPC parameters. The LSP frequencies can be derived by decomposing the $p$-th order polynomial $A(z)$, into symmetric and anti-symmetric polynomials $P(z)$ and $Q(z)$, shown here in factored form:
 \begin{equation}
@@ -603,9 +611,9 @@ where $\omega_{2i-1}$ and $\omega_{2i}$ are the LSP frequencies, found by evalua
 \begin{equation}
 A(z) = \frac{P(z)+Q(z)}{2}
 \end{equation}
-Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
+Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$ to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
 
-Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe a filter the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still required for voicing estimation (\ref{eq:voicing_snr}).
+Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe a filter the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still computed for use in voicing estimation (\ref{eq:voicing_snr}).
 
 \begin{figure}[h]
 \caption{LPC/LSP Modes Encoder}
@@ -647,9 +655,9 @@ Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping 
 
 One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.   Another feature of LPC modelling combined with scalar LSP quantisation is a tolerance to variations in the input frequency response (see section \ref{sect:mode_newamp1} for more information on this issue).
 
-Some disadvantages \cite{makhoul1975linear} are that the energy minimisation property means the LPC residual spectrum is rarely flat, i.e. it doesn't follow the spectral magnitudes $A_m$ exactly.  The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well.   For high pitched speakers, LPC tends to place poles around single pitch harmonics, rather than tracking the spectral envelope. 
+Some disadvantages \cite{makhoul1975linear} are that the energy minimisation property means the LPC residual spectrum is rarely flat, i.e. it doesn't follow the spectral magnitudes $A_m$ exactly.  The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well. For high pitched speakers, LPC tends to place poles around single pitch harmonics, rather than tracking the spectral envelope described by $\{Am\}$. All of these problems can be observed in Figure \ref{fig:hts2a_lpc_lsp}. Thus exciting the LPC model by a simple, spectrally flat $E(z)$ will result in some errors in the reconstructed magnitude speech spectrum.
 
-In CELP codecs these problems can be accommodated by the (high bit rate) excitation, and some low rate codecs such as MELP supply supplementary low frequency information to ``correct" the LPC model.
+In CELP codecs these problems can be accommodated by the (high bit rate) excitation used to construct a non-flat $E(z)$, and some low rate codecs such as MELP supply supplementary low frequency information to ``correct" the LPC model.
 
 Before bit packing, the Codec 2 parameters are decimated in time.  An update rate of 20ms is used for the highest rate modes, which drops to 40ms for Codec 2 1300, with a corresponding drop in speech quality.  The number of bits used to quantise the LPC model via LSPs is also reduced in the lower bit rate modes.  This has the effect of making the speech less intelligible, and can introduce annoying buzzy or clicky artefacts into the synthesised speech.  Lower fidelity spectral magnitude quantisation also results in more noticeable artefacts from phase synthesis.  Nevertheless at 1300 bits/s the speech quality is quite usable for HF digital voice, and at 3200 bits/s comparable to closed source codecs at the same bit rate.
 
@@ -693,6 +701,15 @@ where $H(k)$ is the $N_{dft}$ point DFT of the received LPC model for this frame
 \begin{equation}
 arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) \right]
 \end{equation}
+
+\begin{figure} [h]
+\caption{LPC post filter.  LPC spectrum before $|H(e^{j \omega})|$ (green line) and after (red) post filtering. The distance between the spectral peaks and troughs has been increased.  The step change at 1000 Hz is +3dB low frequency boost (see source code).}
+\label{fig:hts2a_lpc_pf}
+\begin{center}
+\input hts2a_37_lpc_pf.tex
+\end{center}
+\end{figure}
+
 Prior to sampling the amplitude and phase, a frequency domain post filter is applied to the LPC power spectrum. The algorithm is based on the MBE frequency domain post filter \cite[Section 8.6, p 267]{kondoz1994digital}, which is turn based on the frequency domain post filter from McAulay and Quatieri \cite[Section 4.3, p 148]{kleijn1995speech}.  The authors report a significant improvement in speech quality from the post filter, which has also been our experience when applied to Codec 2. The post filter is given by:
 \begin{equation}
 \label{eq:lpc_lsp_pf}
@@ -701,7 +718,7 @@ P_f(e^{j\omega}) &= g \left( R_w(e^{j \omega} \right))^\beta \\
 R_w(^{j\omega}) &= A(e^{j \omega/ \gamma})/A(e^{j \omega})
 \end{split}
 \end{equation}
-where $g$ is a gain chosen to such that the energy of at the output of the post filter is the same as the input, $\beta=0.2$, and $\gamma=0.5$.  The post filter raises the spectral peaks (formants), and pushes down the energy between formants.  The $\beta$ term compensates for spectral tilt, such that $R_w$ is similar to the LPC synthesis filter $1/A(z)$ however with equal emphasis at low and high frequencies.  The authors suggest the post filter reduces the noise level between formants, an explanation commonly given to post filters used for CELP codecs where significant inter-formant noise exists from the noisy excitation source.  However in harmonic sinusoidal codecs there is no excitation noise between formants in $E(z)$.  Our theory is the post filter also acts to reduce the bandwidth of spectral peaks, modifying the energy distribution across the time domain pitch cycle in a way that improves intelligibility, especially for low pitched speakers.
+where $g$ is chosen to normalise the gain of the post filter, and $\beta=0.2$, $\gamma=0.5$ are experimentally derived constants.  The post filter raises the spectral peaks (formants), and lowers the inter-formant energy.  The $\gamma$ term compensates for spectral tilt, providing equal emphasis at low and high frequencies.  The authors suggest the post filter reduces the noise level between formants, an explanation commonly given to post filters used for CELP codecs where significant inter-formant noise exists from the noisy excitation source.  However in harmonic sinusoidal codecs there is no excitation noise between formants in $E(z)$.  Our theory is the post filter also acts to reduce the bandwidth of spectral peaks, modifying the energy distribution across the time domain pitch cycle which improves speech quality, especially for low pitched speakers.
 
 A disadvantage of the post filter is the need for experimentally derived constants.  It performs a non-linear operation on the speech spectrum, and if mis-applied can worsen speech quality.  As it's operation is not completely understood, it represents a source of future quality improvement.
 
@@ -817,10 +834,10 @@ k = warp^{-1}(f,K) = \frac{mel(f)-mel(200)}{g} + 1
 \centering
 \begin{tikzpicture}
 \tkzDefPoint(1,1){A}
-\tkzDefPoint(5,5){B}
-\draw[thick] (1,1) node [right]{(1,mel(200))} -- (5,5) node [right]{(K,mel(3700))};
-\draw[thick,->] (0,0) -- (6,0) node [below]{k};
-\draw[thick,->] (0,0) -- (0,6) node [left]{mel(f)};
+\tkzDefPoint(3,3){B}
+\draw[thick] (1,1) node [right]{(1,mel(200))} -- (3,3) node [right]{(K,mel(3700))};
+\draw[thick,->] (0,0) -- (4,0) node [below]{k};
+\draw[thick,->] (0,0) -- (0,4) node [left]{mel(f)};
 \foreach \n in {A,B}
   \node at (\n)[circle,fill,inner sep=1.5pt]{};
 \end{tikzpicture}
