@@ -70,7 +70,7 @@ Key feature includes:
 
 The Codec 2 project was started in 2009 in response to the problem of closed source, patented, proprietary voice codecs in the sub-5 kbit/s range, in particular for use in the Amateur Radio service.
 
-This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level description aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description with math and signal processing theory.  Combined with the C source code, it is intended to give the reader enough information to understand the operation of Codec 2 in detail and embark on source code level projects, such as improvements, ports to other languages, student or academic research projects.  Issues with the current algorithms and topics for further work are also included.
+This document describes Codec 2 at two levels.  Section \ref{sect:overview} is a high level description aimed at the Radio Amateur, while Section \ref{sect:details} contains a more detailed description using math and signal processing theory.  Combined with the C source code, it is intended to give the reader enough information to understand the operation of Codec 2 in detail and embark on source code level projects, such as improvements, ports to other languages, student or academic research projects.  Issues with the current algorithms and topics for further work are also included.  Section {\ref{sect:codec2_modes} provides a summary of the Codec 2 modes, and Section \ref{sect:source_files} a guide to the C source files.  A glossary of terms and symbols is provided in Section \ref{sect:glossary}, and Section \ref{sect:further_work} has suggestions for further documentation work.
 
 This production of this document was kindly supported by an ARDC grant \cite{ardc2023}.  As an open source project, many people have contributed to Codec 2 over the years - we deeply appreciate all of your support.
 
@@ -424,7 +424,7 @@ From the $N_{dft}$ samples produced by the IDFT (\ref{eq:synth_idft}), after win
 \subsection{Non-Linear Pitch Estimation}
 \label{sect:nlp}
 
-The Non-Linear Pitch (NLP) pitch estimator was developed by the author, and is described in detail in chapter 4 of \cite{rowe1997techniques}, and portions of this description are reproduced here.  The post processing algorithm used for pitch estimation in Codec 2 is different from \cite{rowe1997techniques} and is described here.  The C code \emph{nlp.c} is a useful reference for the fine details of the implementation, and the Octave script \emph{plnlp.m} can by used to plot the internal states and single step through speech, illustrating the operation of the algorithm.
+The Non-Linear Pitch (NLP) pitch estimator was developed by the author, described in detail in chapter 4 of \cite{rowe1997techniques}, and portions of this description are reproduced here.  The post processing algorithm used for pitch estimation in Codec 2 is different from \cite{rowe1997techniques} and is described here.  The C code \emph{nlp.c} is a useful reference for the fine details of the implementation, and the Octave script \emph{plnlp.m} can by used to plot the internal states and single step through speech, illustrating the operation of the algorithm.
 
 The core pitch detector is based on a square law non-linearity, that is applied directly to the input speech signal. Given speech is composed of harmonics separated by $F_0$ the non-linearity generates intermodulation products at $F_0$, even if the fundamental is absent from the input signal due to high pass filtering.
 
@@ -432,7 +432,7 @@ Figure \ref{fig:nlp} illustrates the algorithm. The fundamental frequency $F_0$ 
 
 The speech signal is first squared then notch filtered to remove the DC component from the squared time domain signal. This prevents the large amplitude DC term from interfering with the somewhat smaller amplitude term at the fundamental. This is particularly important for male speakers, who may have low frequency fundamentals close to DC. The notch filter is applied in the time domain and has the experimentally derived transfer function:
 \begin{equation}
-H(z) = \frac{1-z^{-1}}{1-0.95z^{-1}}
+H_{notch}(z) = \frac{1-z^{-1}}{1-0.95z^{-1}}
 \end{equation}
 
 \begin{figure}[h]
@@ -484,7 +484,7 @@ There is nothing particularly unique about this pitch estimator or it's performa
 
 \subsection{Voicing Estimation}
 
-Voicing is determined using a variation of the MBE voicing algorithm \cite{griffin1988multiband}.  Voiced speech consists of a harmonic series of frequency domain impulses, separated by $\omega_0$.  When we multiply a segment of the input speech samples by the window function $w(n)$, we convolve the frequency domain impulses with $W(k)$, the DFT of the $(w)$.  Thus for the $m$-th voiced harmonic, we expect to see a cop yof the window function $W(k)$ in the band $Sw(k), k=a_m,...,b_m$.  The MBE voicing algorithm starts with the assumption that the band is voiced, and measures the error between $S_w(k)$ and the ideal voiced harmonic $\hat{S}_w(k)$.
+Voicing is determined using a variation of the MBE voicing algorithm \cite{griffin1988multiband}.  Voiced speech consists of a harmonic series of frequency domain impulses, separated by $\omega_0$.  When we multiply a segment of the input speech samples by the window function $w(n)$, we convolve the frequency domain impulses with $W(k)$, the DFT of the $w(n)$.  Thus for the $m$-th voiced harmonic, we expect to see a copy of the window function $W(k)$ in each band $Sw(k), k=a_m,...,b_m$.  The MBE voicing algorithm starts with the assumption that the band is voiced, and measures the error between $S_w(k)$ and the ideal voiced harmonic $\hat{S}_w(k)$.
 
 For each band we first estimate the complex harmonic amplitude (magnitude and phase) using \cite{griffin1988multiband}:
 \begin{equation}
@@ -576,7 +576,7 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \item Through headphones speech synthesised with this model drops in quality. Through a small loudspeaker it is very close to original phases.
 \item If there are voicing errors, the speech can sound clicky or staticy.  If voiced speech is mistakenly declared unvoiced, this model tends to synthesise annoying impulses or clicks, as for voiced speech $H(z)$ is relatively flat (broad, high frequency formants), so there is very little dispersion of the excitation impulses through $H(z)$.
 \item When combined with amplitude modelling or quantisation, such that $H(z)$ is derived from $\{\hat{A}_m\}$ there is an additional drop in quality.
-\item This synthesis model (e.g. a pulse train exciting a LPC filter) is effectively the same as a simple LPC-10 vocoders, and yet (especially when $H(z)$ is derived from unquantised $\{A_m\}$) sounds much better.  Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
+\item This synthesis model (e.g. a pulse train exciting a LPC filter) is effectively the same as a simple LPC-10 vocoders, and yet (especially when $arg[H(z)]$ is derived from unquantised $\{A_m\}$) sounds much better.  Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
 \item If $H(z)$ is changing rapidly between frames, it's phase contribution may also change rapidly. This approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering by $H(z)$).
 \item The recent crop of neural vocoders produce high quality speech using a similar parameters set, and notably without transmitting phase information.  Although many of these vocoders operate in the time domain, this approach can be interpreted as implementing a function $\{ \hat{\theta}_m\} = F(\omega_0, \{Am\},v)$.  This validates the general approach used here, and as future work Codec 2 may benefit from being augmented by machine learning.
 \end{enumerate}
@@ -607,13 +607,13 @@ P(z) &= (1+z^{-1}) \prod_{i=1}^{p/2} (1 - 2cos(\omega_{2i-1} z^{-1} + z^{-2} ) \
 Q(z) &= (1-z^{-1}) \prod_{i=1}^{p/2} (1 - 2cos(\omega_{2i} z^{-1} + z^{-2} )
 \end{split}
 \end{equation}
-where $\omega_{2i-1}$ and $\omega_{2i}$ are the LSP frequencies, found by evaluating the polynomials on the unit circle. The LSP frequencies are interlaced with each other, where $0<\omega_1 < \omega_2 <,..., < \omega_p < \pi$. The separation of adjacent LSP frequencies is related to the bandwidth of spectral peaks in $H(z)=G/A(z)$. A small separation indicates a narrow bandwidth. $A(z)$ may be reconstructed from $P(z)$ and $Q(z)$ using:
+where $\omega_{2i-1}$ and $\omega_{2i}$ are the LSP frequencies, found by evaluating the polynomials on the unit circle. The LSP frequencies are interlaced with each other, where $0<\omega_1 < \omega_2 <,..., < \omega_p < \pi$. The separation of adjacent LSP frequencies is related to the bandwidth of spectral peaks in $H(z)=G/A(z)$. A small separation indicates a narrow bandwidth, as shown in Figure \ref{fig:hts2a_lpc_lsp}. $A(z)$ may be reconstructed from $P(z)$ and $Q(z)$ using:
 \begin{equation}
 A(z) = \frac{P(z)+Q(z)}{2}
 \end{equation}
 Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$ to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
 
-Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe a filter the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still computed for use in voicing estimation (\ref{eq:voicing_snr}).
+Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still computed for use in voicing estimation (\ref{eq:voicing_snr}).
 
 \begin{figure}[h]
 \caption{LPC/LSP Modes Encoder}
@@ -653,9 +653,9 @@ Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping 
 \end{center}
 \end{figure}
 
-One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.   Another feature of LPC modelling combined with scalar LSP quantisation is a tolerance to variations in the input frequency response (see section \ref{sect:mode_newamp1} for more information on this issue).
+One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.   Another feature of LPC modelling combined with scalar LSP quantisation is some tolerance to variations in the input frequency response, e.g. due to microphone or anti-alias filter shape factors (see section \ref{sect:mode_newamp1} for more information on this issue).
 
-Some disadvantages \cite{makhoul1975linear} are that the energy minimisation property means the LPC residual spectrum is rarely flat, i.e. it doesn't follow the spectral magnitudes $A_m$ exactly.  The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well. For high pitched speakers, LPC tends to place poles around single pitch harmonics, rather than tracking the spectral envelope described by $\{Am\}$. All of these problems can be observed in Figure \ref{fig:hts2a_lpc_lsp}. Thus exciting the LPC model by a simple, spectrally flat $E(z)$ will result in some errors in the reconstructed magnitude speech spectrum.
+Some disadvantages \cite{makhoul1975linear} are the LPC spectrum $|H(e^{j \omega})|$ doesn't follow the spectral magnitudes $A_m$ exactly, in other words is requires a non-flat excitation spectrum to accurately model the amplitude spectrum. The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well. For high pitched speakers, LPC tends to place poles around single harmonics, rather than tracking the spectral envelope described by $\{Am\}$. All of these problems can be observed in Figure \ref{fig:hts2a_lpc_lsp}. Thus exciting the LPC model by a simple, spectrally flat $E(z)$ will result in some errors in the reconstructed magnitude speech spectrum.
 
 In CELP codecs these problems can be accommodated by the (high bit rate) excitation used to construct a non-flat $E(z)$, and some low rate codecs such as MELP supply supplementary low frequency information to ``correct" the LPC model.
 
@@ -697,7 +697,7 @@ Figure \ref{fig:decoder_lpc_lsp} shows the LPC/LSP mode decoder.  Frames of bits
 \begin{equation}
 \hat{A}_m = \sqrt{ \sum_{k=a_m}^{b_m-1} | \hat{H}(k) |^2 }
 \end{equation}
-where $H(k)$ is the $N_{dft}$ point DFT of the received LPC model for this frame.  For phase synthesis, the phase of $H(z)$ is determined by sampling $\hat{H}(k)$ in the centre of each harmonic:
+where $\hat{H}(k)$ is the $N_{dft}$ point DFT of the received LPC model for this frame.  For phase synthesis, the $arg[H(z)]$ component is determined by sampling $\hat{H}(k)$ in the centre of each harmonic:
 \begin{equation}
 arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) \right]
 \end{equation}
@@ -814,7 +814,7 @@ g &= \frac{mel(3700)-mel(200)}{K-1} \\
 mel(f) &= g(k-1) + mel(200)
 \end{split}
 \end{equation}
-Substituting (\ref{eq:f_mel}) into the LHS:
+where $g$ is the gradient of the line. Substituting (\ref{eq:f_mel}) into the LHS:
 \begin{equation}
 \label{eq:warp}
 \begin{split}
@@ -855,7 +855,7 @@ The input speech may be subject to arbitrary filtering, for example due to the m
 
 For every input frame $l$, the equaliser (EQ) updates the dimension $K$ equaliser vector $\mathbf{e}$:
 \begin{equation}
-\mathbf{e}^{l+1} = \mathbf{e}^l + \beta(\mathbf{b} - \mathbf{t})
+\mathbf{e}^{l} = \mathbf{e}^{l-1} + \beta(\mathbf{b} - \mathbf{t})
 \end{equation}
 where $\mathbf{t}$ is a fixed target vector set to the mean of the VQ quantiser, and $\beta$ is a small adaption constant.
 
@@ -897,17 +897,18 @@ Figure \ref{fig:decoder_newamp1} is the block diagram of the decoder signal proc
 \node [block, below of=post,text width=2cm,node distance=2cm] (resample) {Resample to Rate $L$};
 \node [block, below of=resample,text width=2cm,node distance=2cm] (synth) {Sinusoidal\\Synthesis};
 \node [tmp, below of=resample,node distance=1cm] (z1) {};
-\node [block, right of=synth,text width=2cm] (phase) {Phase Synthesis};
-\node [output,left of=synth,node distance=2cm] (routput) {};
+\node [block, left of=synth,text width=2cm] (phase) {Phase Synthesis};
+\node [output,right of=synth,node distance=2cm] (routput) {};
 
 \draw [->] node[align=left,text width=2cm] {Bit\\Stream} (rinput) -- (unpack);
 \draw [->] (unpack) -- (interp);
-\draw [->] (interp) --  (post);
-\draw [->] (post) -- node[left] {$\hat{\mathbf{c}}$} (resample);
-\draw [->] (resample) -- node[left] {$\hat{\mathbf{a}}$}  (synth);
+\draw [->] (interp) -- node[above] {$\hat{\mathbf{c}}$} (post);
+\draw [->] (post) -- node[left] {$\hat{\mathbf{c}} + \mathbf{p}$} (resample);
+\draw [->] (interp) |- node[left] {$\hat{\omega_0}, v$} (resample);
+\draw [->] (resample) -- node[right] {$\hat{\mathbf{a}}$}  (synth);
 \draw [->] (resample) -- (z1) -| (phase);
 \draw [->] (phase) -- (synth);
-\draw [->] (synth) -- (routput) node[align=left,text width=1.5cm] {$\hat{s}(n)$};
+\draw [->] (synth) -- (routput) node[align=right,text width=1.5cm] {$\hat{s}(n)$};
 
 \end{tikzpicture}
 \end{center}
@@ -923,7 +924,7 @@ Some notes on the Codec 2 700C \emph{newamp1} algorithms:
 \end{enumerate}
 
 \section{Summary of Codec 2 Modes}
-\label{sect:glossary}
+\label{sect:codec2_modes}
 
 \begin{table}[H]
 \label{tab:codec2_modes}
@@ -1012,22 +1013,39 @@ VQ & Vector Quantiser \\
 Symbol & Description & Units \\
 \hline
 $A(z)$ & LPC (analysis) filter \\
-$a_m$ & lower DFT index of current band \\
-$b_m$ & upper DFT index of current band \\
+$a_m$ & Lower DFT index of current band \\
+$b_m$ & Upper DFT index of current band \\
 $\{A_m\}$ & Set of harmonic magnitudes $m=1,...L$ & dB \\
+$\mathbf{a}$ & $\{A_m\}$ in vector form \\
+$B_m$ & Complex spectral amplitudes used for voicing estimation \\
+$E$ & Frame energy \\
+$E(z)$ & Excitation in source-filter model \\
 $F_0$ & Fundamental frequency (pitch) & Hz \\
 $F_s$ & Sample rate (usually 8 kHz) & Hz \\
 $F_w(k)$ & DFT of squared speech signal in NLP pitch estimator \\
+$G$ & LPC gain \\
+$H(z)$ & Synthesis filter in source-filter model \\
+$\hat{H}(z)$ & Synthesis filter approximation after quantisation \\
+$l$ & Frame index \\
 $L$ & Number of harmonics \\
+$N$ & Processing frame size in samples \\
+$n_0$ & Excitation pulse position \\
 $P$ & Pitch period & ms or samples \\
+$P(z), Q(z)$ & LSP polynomials \\
+$P_f(e^{j \omega})$ & LPC post filter \\
 $\{\theta_m\}$ & Set of harmonic phases $m=1,...L$ & dB \\
 $r$ & Maps a harmonic number $m$ to a DFT index \\
-$s(n)$ & Input speech \\
+$s(n)$ & Input time domain speech \\
+$\hat{s}(n)$ & Output (synthesised) time domain speech \\
 $s_w(n)$ & Time domain windowed input speech \\
 $S_w(k)$ & Frequency domain windowed input speech \\
+$\hat{S}_w(k)$ & Frequency domain output (synthesised)speech \\
+$t(n)$ & Triangular synthesis window \\
 $\phi_m$ & Phase of excitation harmonic \\
 $\omega_0$ & Fundamental frequency (pitch) & radians/sample \\
-$\{\omega_i\}$ & set of LSP frequencies \\
+$\{\omega_i\}$ & Set of LSP frequencies \\
+$w(n)$ & Window function \\
+$W(k)$ & DFT of window function \\
 $v$ & Voicing decision for the current frame \\
 \hline
 \end{tabular}
@@ -1035,14 +1053,16 @@ $v$ & Voicing decision for the current frame \\
 \end{table}
 
 \section{Further Documentation Work}
+\label{sect:further_work}
 
-This section contains ideas for expanding the documentation of Codec 2.  Please contact the authors if you are interested in this material or would like to help develop and test it.
+This section contains ideas for expanding the documentation of Codec 2.  Please contact the authors if you are interested in this material or would like to help develop it.
 
 \begin{enumerate}
-\item The \emph{c2sim} utility is presently undocumented. We could add some worked examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters.  Demonstrate how to listen to various phases of quantisation.
-\item Several Octave scripts exist that were used to develop Codec 2. We could add information describing how to use the Octave tools to single step through the codec operation.
+\item The \emph{c2sim} utility is presently undocumented. We could add some worked examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters.  Demonstrate how to listen to various stages of quantisation.
+\item Several GNU Octave scripts exist that were used to develop Codec 2. We could add information describing how to use the Octave tools to single step through the codec operation.
 \end{enumerate}
 
+\addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plain}
 \bibliography{codec2_refs}
 \end{document}
