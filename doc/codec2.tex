@@ -101,7 +101,7 @@ To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_ti
 \end{center}
 \end{figure}
 
-Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  Turns out of the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
+Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  If the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
 
 Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
 
@@ -222,13 +222,13 @@ Figure \ref{fig:codec2_decoder} shows the operation of the Codec 2 decoder.  We 
 
 The phases of each harmonic are generated using the other model parameters and some DSP.  It turns out that if you know the amplitude spectrum, you can determine a ``reasonable" phase spectrum using some DSP operations, which in practice is implemented with a couple of FFTs.  We also use the voicing information - for unvoiced speech we use random phases (a good way to synthesise noise-like signals) - and for voiced speech we make sure the phases are chosen so the synthesised speech transitions smoothly from one frame to the next.
 
-Frames of speech are synthesised using an inverse FFT.  We take a blank array of FFT samples, and at intervals of $F_0$ insert samples with the amplitude and phase for each harmonic.  We then inverse FFT to create a frame of time domain samples.  These frames of synthesised speech samples are carefully aligned with the previous frame to ensure smooth frame-frame transitions, and output to the listener.
+Frames of speech are synthesised using an inverse FFT.  We take a blank array of FFT samples, and at intervals of $F_0$ insert samples with the amplitude and phase of each harmonic.  We then inverse FFT to create a frame of time domain samples.  These frames of synthesised speech samples are carefully aligned with the previous frame to ensure smooth frame-frame transitions, and output to the listener.
 
 \subsection{Bit Allocation}
 
 Table \ref{tab:bit_allocation} presents the bit allocation for two popular Codec 2 modes.  One additional parameter is the frame energy, this is the average level of the spectral amplitudes, or ``AF gain" of the speech frame.
 
-At very low bit rates such as 700 bits/s, we use Vector Quantisation (VQ) to represent the spectral amplitudes.  We construct a table such that each row of the table has a set of spectral amplitude samples.  In Codec 2 700C the table has 512 rows.  During the quantisation process, we choose the table row that best matches the spectral amplitudes for this frame, then send the \emph{index} of the table row.  The decoder has a similar table, so can use the index to look up the output values.  If the table is 512 rows, we can use a 9 bit number to quantise the spectral amplitudes.  In Codec 2 700C, we use two tables of 512 entries each (18 bits total), the second one helps fine tune the quantisation from the first table.
+At very low bit rates such as 700 bits/s, we use Vector Quantisation (VQ) to represent the spectral amplitudes.  We construct a table such that each row of the table has a set of spectral amplitude samples.  In Codec 2 700C the table has 512 rows.  During the quantisation process, we choose the table row that best matches the spectral amplitudes for this frame, then send the \emph{index} of the table row.  The decoder has a similar table, so can use the index to look up the spectral amplitude values.  If the table is 512 rows, we can use a 9 bit number to quantise the spectral amplitudes.  In Codec 2 700C, we use two tables of 512 entries each (18 bits total), the second one helps fine tune the quantisation from the first table.
 
 Vector Quantisation can only represent what is present in the tables, so if it sees anything unusual (for example a different microphone frequency response or background noise), the quantisation can become very rough and speech quality poor.  We train the tables at design time using a database of speech samples and a training algorithm - an early form of machine learning.
 
@@ -280,7 +280,7 @@ Both voiced and unvoiced speech is represented using a harmonic sinusoidal model
 \end{equation}
 where the parameters $A_m, \theta_m, m=1...L$ represent the magnitude and phases of each sinusoid, $\omega_0$ is the fundamental frequency in radians/sample, and $L=\lfloor \pi/\omega_0 \rfloor$ is the number of harmonics.
 
-Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  This algorithms described in this section is based on the work in \cite{rowe1997techniques}, with some changes in notation.
+Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  This algorithms described in this section are based on the work in \cite{rowe1997techniques}, with some changes in notation.
 
 \begin{figure}[h]
 \caption{Sinusoidal Analysis}
