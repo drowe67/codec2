@@ -32,7 +32,6 @@
 
 #include "codec2_fft.h"
 #include "newamp1.h"
-#include "newamp2.h"
 
 struct CODEC2 {
   int mode;
@@ -86,13 +85,6 @@ struct CODEC2 {
   bool post_filter_en;
   float eq[NEWAMP1_K]; /* optional equaliser */
   bool eq_en;
-
-  /*newamp2 states (also uses newamp1 states )*/
-  float energy_prev;
-  float n2_rate_K_sample_freqs_kHz[NEWAMP2_K];
-  float n2_prev_rate_K_vec_[NEWAMP2_K];
-  float n2_pwb_rate_K_sample_freqs_kHz[NEWAMP2_16K_K];
-  float n2_pwb_prev_rate_K_vec_[NEWAMP2_16K_K];
 
   /* used to dump features for deep learning experiments */
   FILE *fmlfeat, *fmlmodel;
