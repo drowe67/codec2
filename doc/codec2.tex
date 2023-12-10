@@ -922,40 +922,61 @@ Some notes on the Codec 2 700C \emph{newamp1} algorithms:
 \item The Rate K algorithms were recently revisited, several improvements were proposed and prototyped \cite{rowe2023ratek}.
 \end{enumerate}
 
-\section{Further Work}
-
-Summary of mysteries/interesting points drawn out above.
-
-\begin{enumerate}
-\item Some worked examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters.  Listen to various phases of quantisation.
-\item How to use Octave tools to single step through codec operation
-\item Table summarising source files with one line description
-\item Add doc license (Creative Commons?)
-\item Energy distribution theory.  Need for V model, neural vocoders, non-linear function.
-\item Figures and simulation plots would be useful to better explain algorithms.
-\end{enumerate}
-
-
 \section{Summary of Codec 2 Modes}
 \label{sect:glossary}
 
 \begin{table}[H]
 \label{tab:codec2_modes}
 \centering
-\begin{tabular}{p{0.75cm}|p{0.75cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{5cm}}
+\begin{tabular}{p{0.75cm}|p{0.75cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{3cm}}
 \hline
-Mode & Frm (ms) & Bits & $A_m$ & $E$ & $\omega_0$ & $v$ & Comment \\
+Mode & Frm (ms) & Bits & $A_m$ & $E$ & $\omega_0$ & $v$ & Use Cases \\
 \hline
-3200 & 20 & 64 & 50 & 5  & 7  & 2 & LSP differences \\
-2400 & 20 & 50 & 36 & 8  & -  & 2 & Joint $\omega_0$/E VQ, 2 spare bits \\
-1600 & 40 & 64 & 36 & 10 & 14 & 4 \\
+3200 & 20 & 64 & 50 & 5  & 7  & 2 & M17 \\
+2400 & 20 & 50 & 36 & 8  & -  & 2 \\
+1600 & 40 & 64 & 36 & 10 & 14 & 4 & M17 \\
 1400 & 40 & 56 & 36 & 16 & -  & 4 \\
-1300 & 40 & 52 & 36 & 5  & 7  & 4 & Joint $\omega_0$/E VQ \\
-1200 & 40 & 48 & 27 & 16 & -  & 4 & LSP VQ, joint  $\omega_0$/E VQ, 1 spare \\
-700C & 40 & 28 & 18 & 4  & 6  & - & VQ of log magnitudes \\
+1300 & 40 & 52 & 36 & 5  & 7  & 4 & FreeDV 1600 \\
+1200 & 40 & 48 & 27 & 16 & -  & 4 & \\
+700C & 40 & 28 & 18 & 4  & 6  & - & FreeDV 700C/D/E \\
 \hline
 \end{tabular}
 \caption{Codec 2 Modes}
+\end{table}
+
+The 3200 mode quantises the LSP differences $\omega_{i+1}-\omega_i$, which provides low distortion at the expense of robustness to bit errors, as an error in a low order LSP difference will propagate through the frame.  The 2400 and 1200 bit/s modes use a joint delta $\omega_0$ and energy VQ, which is efficient but also also suffers from error propagation so is not suitable for high BER use cases.
+
+There is an unfortunate overlap in the naming conventions of Codec 2 and FreeDV.  The Codec 2 700C mode is used in the FreeDV 700C, 700D, and 700E modes.
+
+\section{Summary of Codec 2 Source Files}
+\label{sect:source_files}
+
+Codec 2 is part of the \emph{codec2} repository, which also includes various modems and FreeDV API code.  This sections lists the files specific to the speech codec. The \emph{cmake} system builds the \emph{libcodec2} library, which is called by user applications via the Codec 2 API in \emph{codec2.h}.  See the repository \emph{README} for information on building, demo applications, and an introduction to other features of the \emph{codec2} repository.
+ 
+\begin{table}[H]
+\label{tab:codec2_file}
+\centering
+\begin{tabular}{l l}
+\hline
+File & Description \\
+\hline
+c2dec & Sample decoder application \\
+c2enc & Sample encoder application \\
+c2sim & Simulation and development application \\
+codebook & Directory containing quantiser tables \\
+codec2.c & Quantised encoder and decoder functions that implement each mode \\
+codec2\_fft.c & Wrapper for FFT (usually kiss FFT) \\
+defines.h & Constants \\
+lpc.c & LPC functions \\
+mbest.c & Multistage VQ search \\
+newamp1.c & Codec 2 700C \emph{newamp1} mode \\
+nlp.c & Non-linear Pitch (NLP) \\
+sine.c & Sinusoidal analysis, synthesis, voicing estimation \\
+phase.c & Phase synthesis \\
+quantise.c & Quantisation, in particular for LPC/LSP modes \\
+\hline
+\end{tabular}
+\caption{Codec 2 Source Files}
 \end{table}
 
 \section{Glossary}
@@ -1012,6 +1033,15 @@ $v$ & Voicing decision for the current frame \\
 \end{tabular}
 \caption{Glossary of Symbols}
 \end{table}
+
+\section{Further Documentation Work}
+
+This section contains ideas for expanding the documentation of Codec 2.  Please contact the authors if you are interested in this material or would like to help develop and test it.
+
+\begin{enumerate}
+\item The \emph{c2sim} utility is presently undocumented. We could add some worked examples aimed at the experimenter - e.g. using c2sim to extract and plot model parameters.  Demonstrate how to listen to various phases of quantisation.
+\item Several Octave scripts exist that were used to develop Codec 2. We could add information describing how to use the Octave tools to single step through the codec operation.
+\end{enumerate}
 
 \bibliographystyle{plain}
 \bibliography{codec2_refs}
