@@ -312,6 +312,10 @@ if(UNITTEST)
              COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR};
                             clang-format --dry-run --Werror src/*.c src/*.h unittest/*.c demo/*.c")
 
+    add_test(NAME test_codec2_doc
+             COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR}/doc;
+                            CODEC2_SRC=${CMAKE_CURRENT_SOURCE_DIR} CODEC2_BINARY=${CMAKE_CURRENT_BINARY_DIR} make")
+
     add_test(NAME test_freedv_get_hash
              COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/unittest/thash")
 
