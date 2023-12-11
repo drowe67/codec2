@@ -1023,7 +1023,7 @@ int main(int argc, char *argv[]) {
         if (lpc_model) {
           lsp_to_lpc(&lsps_dec[i][0], &ak_dec[i][0], order);
           aks_to_M2(fftr_fwd_cfg, &ak_dec[i][0], order, &model_dec[i], e_dec[i],
-                    &snr, 0, simlpcpf, lpcpf, 1, LPCPF_BETA, LPCPF_GAMMA, Aw);
+                    &snr, 1, simlpcpf, lpcpf, 1, LPCPF_BETA, LPCPF_GAMMA, Aw);
           apply_lpc_correction(&model_dec[i]);
           sum_snr += snr;
 #ifdef DUMP

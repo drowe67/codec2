@@ -110,6 +110,10 @@ We have standardized on C99 and develop and test using gcc on a Linux platform. 
    make
    ```
 
+## Documentation
+
+An algorithm description can be found in `doc/codec2.pdf`.
+
 ## Programs
 
 + See `demo` directory for simple examples of using Codec and the FreeDV API.
@@ -138,7 +142,7 @@ CTest is used as a test framework, with support from [GNU Octave](https://www.gn
 
 1. Install GNU Octave and libraries on Ubuntu with:
    ```
-   sudo apt install octave octave-common octave-signal liboctave-dev gnuplot python3-numpy sox valgrind clang-format
+   sudo apt install octave octave-common octave-signal liboctave-dev gnuplot python3-numpy sox valgrind clang-format texmaker texlive-bibtex-extra texlive-science
    ```
 1. To build and run the tests:
    ```
@@ -180,6 +184,7 @@ CTest is used as a test framework, with support from [GNU Octave](https://www.gn
 ```
 cmake       - cmake support files
 demo        - Simple Codec 2 and FreeDv API demo applications
+doc         - documentation
 octave      - Octave scripts used to support ctests
 src         - C source code for Codec 2, FDMDV modem, COHPSK modem, FreeDV API
 raw         - speech files in raw format (16 bits signed linear 8 kHz)

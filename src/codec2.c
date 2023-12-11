@@ -46,7 +46,6 @@
 #include "lpc.h"
 #include "lsp.h"
 #include "machdep.h"
-#include "newamp2.h"
 #include "nlp.h"
 #include "phase.h"
 #include "postfilter.h"
