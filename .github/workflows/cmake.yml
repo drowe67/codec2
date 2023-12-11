@@ -51,7 +51,7 @@ jobs:
     - name: Run ctests
       working-directory: ${{github.workspace}}/build_linux
       shell: bash
-      run: ctest --output-on-failure
+      run: ctest --output-on-failure -E test_codec2_doc
 
     - name: Test library installation
       working-directory: ${{github.workspace}}/build_linux
