@@ -9,14 +9,14 @@
 \usepackage{catchfile}
 \usepackage{siunitx}
 
-\CatchFileDef{\headfull}{../.git/HEAD}{}
-\StrGobbleRight{\headfull}{1}[\head]
-\StrBehind[2]{\head}{/}[\branch]
-\IfFileExists{../.git/refs/heads/\branch}{%
-    \CatchFileDef{\commit}{../.git/refs/heads/\branch}{}}{%
-    \newcommand{\commit}{\dots~(in \emph{packed-refs})}}
 \newcommand{\gitrevision}{%
-  \StrLeft{\commit}{7}%
+  \immediate\write18{git log -n1 --oneline | awk '{print $1;}' > gitrevision.txt}
+  \input{gitrevision.txt}
+}
+
+\newcommand{\branch}{%
+  \immediate\write18{git branch --show-current > gitbranch.txt}
+  \input{gitbranch.txt}
 }
 
 \title{Codec 2}

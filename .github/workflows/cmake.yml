@@ -21,7 +21,7 @@ jobs:
       shell: bash
       run: |
            sudo apt-get update
-           sudo apt-get install octave octave-common octave-signal liboctave-dev gnuplot sox p7zip-full python3-numpy valgrind clang-format
+           sudo apt-get install octave octave-common octave-signal liboctave-dev gnuplot sox p7zip-full python3-numpy valgrind clang-format texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra texlive-science texmaker texlive-bibtex-extra
    
     - name: Create Build Directory
       shell: bash
@@ -50,7 +50,7 @@ jobs:
     - name: Run ctests
       working-directory: ${{github.workspace}}/build_linux
       shell: bash
-      run: ctest --output-on-failure -E test_codec2_doc
+      run: ctest --output-on-failure
 
     - name: Test library installation
       working-directory: ${{github.workspace}}/build_linux
