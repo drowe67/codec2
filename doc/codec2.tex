@@ -89,10 +89,10 @@ Recently, machine learning has been applied to speech coding.  This technology p
 
 \subsection{Speech in Time and Frequency}
 
-To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the ``pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
+To explain how Codec 2 works, let's look at some speech. Figure \ref{fig:hts2a_time} shows a short 40ms segment of speech in the time and frequency domain.  On the time plot we can see the waveform is changing slowly over time as the word is articulated.  On the right hand side it also appears to repeat itself - one cycle looks very similar to the last.  This cycle time is the ``pitch period", which for this example is around $P=35$ samples.  Given we are sampling at $F_s=8000$ Hz, the pitch period is $P/F_s=35/8000=0.0044$ seconds, or 4.4ms.
 
 \begin{figure} [H]
-\caption{ A 40ms segment from the word ``these" from a female speaker, sampled at 8kHz. Top is a plot against time, bottom (blue) is a plot of the same speech against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz), this is the ``pitch period" of this segment.  The red crosses are the sine wave amplitudes, explained in the text.}
+\caption{ A 40ms segment from the word ``these" from a female speaker, sampled at 8kHz. Top is a plot against time, bottom (blue) is a plot of the same speech against frequency. The waveform repeats itself every 4.3ms ($F_0=230$ Hz); this is the ``pitch period" of this segment.  The red crosses are the sine wave amplitudes, explained in the text.}
 \label{fig:hts2a_time}
 \begin{center}
 \input hts2a_37_sn.tex
@@ -103,14 +103,14 @@ To explain how Codec 2 works, lets look at some speech. Figure \ref{fig:hts2a_ti
 
 Now if the pitch period is 4.4ms, the pitch frequency or \emph{fundamental} frequency $F_0$ is about $1/0.0044 \approx 230$ Hz.  If we look at the blue frequency domain plot at the bottom of Figure \ref{fig:hts2a_time}, we can see spikes that repeat every 230 Hz.  If the signal is repeating itself in the time domain, it also repeats itself in the frequency domain.  Those spikes separated by about 230 Hz are harmonics of the fundamental frequency $F_0$.
 
-Note that each harmonic has it's own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example there is a peak around 500 Hz, and another, broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
+Note that each harmonic has its own amplitude, that varies across frequency.  The red line plots the amplitude of each harmonic. In this example, there is a peak around 500 Hz and another broader peak around 2300 Hz.  The ear perceives speech by the location of these peaks and troughs.
 
 \subsection{Sinusoidal Speech Coding}
 
-A sinewave will cause a spike or spectral line on a spectrum plot, so we can see each spike as a small sine wave generator.  Each sine wave generator has it's own frequency that are all multiples of the fundamental pitch frequency (e.g. $230, 460, 690,...$ Hz).  They will also have their own amplitude and phase.  If we add all the sine waves together (Figure \ref{fig:sinusoidal_model}) we can produce reasonable quality synthesised speech.  This is called sinusoidal speech coding and is the speech production ``model" at the heart of Codec 2.
+A sinewave will cause a spike or spectral line on a spectrum plot, so we can see each spike as a small sine wave generator.  Each sine wave generator has its own frequency that are all multiples of the fundamental pitch frequency (e.g. $230, 460, 690,...$ Hz).  They will also have their own amplitude and phase.  If we add all the sine waves together (Figure \ref{fig:sinusoidal_model}) we can produce reasonable quality synthesised speech.  This is called sinusoidal speech coding and is the speech production ``model" at the heart of Codec 2.
 
 \begin{figure}[h]
-\caption{The sinusoidal speech model.  If we sum a series of sine waves, we can generate a speech signal.  Each sinewave has it's own amplitude ($A_1,A_2,... A_L$), frequency, and phase (not shown).  We assume the frequencies are multiples of the fundamental frequency $F_0$. $L$ is the total number of sinewaves we can fit in 4 kHz.}
+\caption{The sinusoidal speech model.  If we sum a series of sine waves, we can generate a speech signal.  Each sinewave has its own amplitude ($A_1,A_2,... A_L$), frequency, and phase (not shown).  We assume the frequencies are multiples of the fundamental frequency $F_0$. $L$ is the total number of sinewaves we can fit in 4 kHz.}
 \label{fig:sinusoidal_model}
 \begin{center}
 \begin{tikzpicture}[>=triangle 45,x=1.0cm,y=1.0cm]
@@ -136,21 +136,21 @@ A sinewave will cause a spike or spectral line on a spectrum plot, so we can see
 \end{center}
 \end{figure}
 
-The model parameters evolve over time, but can generally be considered constant for a short time window (a few 10s of ms).  For example pitch evolves over time, moving up or down as a word is articulated.
+The model parameters evolve over time, but can generally be considered constant for a short time window (a few 10s of ms).  For example, pitch evolves over time, moving up or down as a word is articulated.
 
-As the model parameters change over time, we need to keep updating them.  This is known as the \emph{frame rate} of the codec, which can be expressed in terms of frequency (Hz) or time (ms).  For sampling model parameters Codec 2 uses a frame rate of 10ms.  For transmission over the channel we reduce this to 20-40ms, in order to lower the bit rate.  The trade off with a lower frame rate is reduced speech quality.
+As the model parameters change over time, we need to keep updating them.  This is known as the \emph{frame rate} of the codec, which can be expressed in terms of frequency (Hz) or time (ms).  For sampling model parameters, Codec 2 uses a frame rate of 10ms.  For transmission over the channel, we reduce this to 20-40ms in order to lower the bit rate.  The trade off with a lower frame rate is reduced speech quality.
 
 The parameters of the sinusoidal model are:
 \begin{enumerate}
 \item The frequency of each sine wave.  As they are all harmonics of $F_0$ we can just send $F_0$ to the decoder, and it can reconstruct the frequency of each harmonic as $F_0,2F_0,3F_0,...,LF_0$.  We used 5-7 bits/frame to represent $F_0$ in Codec 2.
 \item The amplitude of each sine wave, $A_1,A_2,...,A_L$.  These ``spectral amplitudes" are really important as they convey the information the ear needs to understand speech.  Most of the bits are used for spectral amplitude information.  Codec 2 uses between 18 and 50 bits/frame for spectral amplitude information.
 \item Voicing information.  Speech can be approximated into voiced speech (vowels) and unvoiced speech (like consonants), or some mixture of the two.  The example in Figure \ref{fig:hts2a_time} above is voiced speech.  So we need some way to describe voicing to the decoder. This requires just a few bits/frame.
-\item The phase of each sine wave.  Codec 2 discards the phases of each harmonic at the encoder and reconstruct them at the decoder using an algorithm, so no bits are required for phases.  This results in some drop in speech quality.
+\item The phase of each sine wave.  Codec 2 discards the phases of each harmonic at the encoder and reconstructs them at the decoder using an algorithm, so no bits are required for phases.  This results in some drop in speech quality.
 \end{enumerate}
 
 \subsection{Codec 2 Encoder and Decoder}
 
-This section explains how the Codec 2 encoder and decoder works using block diagrams.
+This section explains how the Codec 2 encoder and decoder work using block diagrams.
 
 \begin{figure}[h]
 \caption{Codec 2 Encoder.}
@@ -186,13 +186,13 @@ The encoder is presented in Figure \ref{fig:codec2_encoder}.  Frames of input sp
 
 Yet another algorithm is used to determine if the frame is voiced or unvoiced.  This works by comparing the spectrum to what we would expect for voiced speech (e.g. lots of spectral lines).  If the energy is more random and continuous rather than discrete lines, we consider it unvoiced.
 
-Up until this point the processing happens at a 10ms frame rate.  However in the next step we ``decimate`` the model parameters - this means we discard some of the model parameters to lower the frame rate, which helps us lower the bit rate.  Decimating to 20ms (throwing away every 2nd set of model parameters) doesn't have much effect, but beyond that the speech quality starts to degrade.  So there is a trade off between decimation rate and bit rate over the channel.
+Up until this point the processing happens at a 10ms frame rate.  However, in the next step, we ``decimate`` the model parameters - this means we discard some of the model parameters to lower the frame rate, which helps us lower the bit rate.  Decimating to 20ms (throwing away every 2nd set of model parameters) doesn't have much effect, but beyond that the speech quality starts to degrade.  So there is a trade off between decimation rate and bit rate over the channel.
 
-Once we have the desired frame rate, we ``quantise" each model parameter.  This means we use a fixed number of bits to represent it, so we can send the bits over the channel.  Parameters like pitch and voicing are fairly easy, but quite a bit of DSP goes into quantising the spectral amplitudes. For the higher bit rate Codec 2 modes, we design a filter that matches the spectral amplitudes, then send a quantised version of the filter over the channel. Using the example in Figure \ref{fig:hts2a_time} - the filter would have a band pass peaks at 500 and 2300 Hz.  It's frequency response would follow the red line. The filter is time varying - we redesign it for every frame.
+Once we have the desired frame rate, we ``quantise" each model parameter.  This means we use a fixed number of bits to represent it, so we can send the bits over the channel.  Parameters like pitch and voicing are fairly easy, but quite a bit of DSP goes into quantising the spectral amplitudes. For the higher bit rate Codec 2 modes, we design a filter that matches the spectral amplitudes, then send a quantised version of the filter over the channel. Using the example in Figure \ref{fig:hts2a_time} - the filter would have a band pass peaks at 500 and 2300 Hz.  Its frequency response would follow the red line. The filter is time varying - we redesign it for every frame.
 
 You'll notice the term ``estimate" being used a lot.  One of the problems with model based speech coding is the algorithms we use to extract the model parameters are not perfect.  Occasionally the algorithms get it wrong.  Look at the red crosses on the bottom plot of Figure \ref{fig:hts2a_time}.  These mark the amplitude estimate of each harmonic.  If you look carefully, you'll see that above 2000Hz, the crosses fall a little short of the exact centre of each harmonic.  This is an example of a ``fine" pitch estimator error, a little off the correct value.
 
-Often the errors interact, for example the fine pitch error shown above will mean the amplitude estimates are a little bit off as well. Fortunately these errors tend to be temporary, and are sometimes not even noticeable to the listener - remember this codec is often used for HF/VHF radio where channel noise is part of the normal experience.
+Often the errors interact, for example the fine pitch error shown above will mean the amplitude estimates are a little bit off as well. Fortunately, these errors tend to be temporary and are sometimes not even noticeable to the listener - remember this codec is often used for HF/VHF radio where channel noise is part of the normal experience.
  
 \begin{figure}[h]
 \caption{Codec 2 Decoder}
@@ -200,7 +200,7 @@ Often the errors interact, for example the fine pitch error shown above will mea
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm,align=center,text width=2cm]
 
-\node [input] (rinput) {};
+\node [input] (input) {};
 \node [block, right of=rinput,node distance=2cm] (dequantise) {Dequantise Interpolate};
 \node [block, right of=dequantise,node distance=3cm] (recover) {Recover Amplitudes};
 \node [block, right of=recover,node distance=3cm] (synthesise) {Synthesise Speech};
@@ -218,19 +218,19 @@ Often the errors interact, for example the fine pitch error shown above will mea
 \end{center}
 \end{figure}
 
-Figure \ref{fig:codec2_decoder} shows the operation of the Codec 2 decoder.  We take the sequence of bits received from the channel and recover the quantised model parameters, pitch, spectral amplitudes, and voicing.  We then resample the model parameters back up to the 10ms frame rate using a technique called interpolation.  For example say we receive a $F_0=200$ Hz pitch value then 20ms later $F_0=220$ Hz.  We can use the average $F_0=210$ Hz for the middle 10ms frame.
+Figure \ref{fig:codec2_decoder} shows the operation of the Codec 2 decoder.  We take the sequence of bits received from the channel and recover the quantised model parameters, pitch, spectral amplitudes, and voicing.  We then resample the model parameters back up to the 10ms frame rate using a technique called interpolation.  For example, say we receive a $F_0=200$ Hz pitch value, then 20ms later $F_0=220$ Hz.  We can use the average $F_0=210$ Hz for the middle 10ms frame.
 
 The phases of each harmonic are generated using the other model parameters and some DSP.  It turns out that if you know the amplitude spectrum, you can determine a ``reasonable" phase spectrum using some DSP operations, which in practice is implemented with a couple of FFTs.  We also use the voicing information - for unvoiced speech we use random phases (a good way to synthesise noise-like signals) - and for voiced speech we make sure the phases are chosen so the synthesised speech transitions smoothly from one frame to the next.
 
-Frames of speech are synthesised using an inverse FFT.  We take a blank array of FFT samples, and at intervals of $F_0$ insert samples with the amplitude and phase of each harmonic.  We then inverse FFT to create a frame of time domain samples.  These frames of synthesised speech samples are carefully aligned with the previous frame to ensure smooth frame-frame transitions, and output to the listener.
+Frames of speech are synthesised using an inverse FFT.  We take a blank array of FFT samples, and at intervals of $F_0$ insert samples with the amplitude and phase of each harmonic.  We then inverse FFT to create a frame of time domain samples.  These frames of synthesised speech samples are carefully aligned with the previous frame to ensure smooth frame-frame transitions and output to the listener.
 
 \subsection{Bit Allocation}
 
-Table \ref{tab:bit_allocation} presents the bit allocation for two popular Codec 2 modes.  One additional parameter is the frame energy, this is the average level of the spectral amplitudes, or ``AF gain" of the speech frame.
+Table \ref{tab:bit_allocation} presents the bit allocation for two popular Codec 2 modes.  One additional parameter is the frame energy, which is the average level of the spectral amplitudes, or ``AF gain" of the speech frame.
 
 At very low bit rates such as 700 bits/s, we use Vector Quantisation (VQ) to represent the spectral amplitudes.  We construct a table such that each row of the table has a set of spectral amplitude samples.  In Codec 2 700C the table has 512 rows.  During the quantisation process, we choose the table row that best matches the spectral amplitudes for this frame, then send the \emph{index} of the table row.  The decoder has a similar table, so can use the index to look up the spectral amplitude values.  If the table is 512 rows, we can use a 9 bit number to quantise the spectral amplitudes.  In Codec 2 700C, we use two tables of 512 entries each (18 bits total), the second one helps fine tune the quantisation from the first table.
 
-Vector Quantisation can only represent what is present in the tables, so if it sees anything unusual (for example a different microphone frequency response or background noise), the quantisation can become very rough and speech quality poor.  We train the tables at design time using a database of speech samples and a training algorithm - an early form of machine learning.
+Vector Quantisation can only represent what is present in the tables, so if it sees anything unusual (for example, a different microphone frequency response or background noise), the quantization can become very rough and speech quality poor.  We train the tables at design time using a database of speech samples and a training algorithm - an early form of machine learning.
 
 Codec 2 3200 uses the method of fitting a filter to the spectral amplitudes, this approach tends to be more forgiving of small variations in the input speech spectrum, but is not as efficient in terms of bit rate.
 
@@ -258,7 +258,7 @@ Bit rate & 3200 & 700 \\
 
 \subsection{Overview}
 
-Codec 2 is based on sinusoidal \cite{mcaulay1986speech} and Multi-Band Excitation (MBE) \cite{griffin1988multiband} vocoders that were first developed in the late 1980s.  Descendants of the MBE vocoders (IMBE, AMBE etc) have enjoyed widespread use in many applications such as VHF/UHF hand held radios and satellite communications. In the 1990s the author studied sinusoidal speech coding \cite{rowe1997techniques}, which provided the skill set and a practical, patent free baseline for starting the Codec 2 project:
+Codec 2 is based on sinusoidal \cite{mcaulay1986speech} and Multi-Band Excitation (MBE) \cite{griffin1988multiband} vocoders that were first developed in the late 1980s.  Descendants of the MBE vocoders (IMBE, AMBE etc) have enjoyed widespread use in many applications such as VHF/UHF handheld radios and satellite communications. In the 1990s the author studied sinusoidal speech coding \cite{rowe1997techniques}, which provided the skill set and a practical, patent free baseline for starting the Codec 2 project:
 
 Some features of the Codec 2 Design:
 \begin{enumerate}
@@ -280,7 +280,7 @@ Both voiced and unvoiced speech is represented using a harmonic sinusoidal model
 \end{equation}
 where the parameters $A_m, \theta_m, m=1...L$ represent the magnitude and phases of each sinusoid, $\omega_0$ is the fundamental frequency in radians/sample, and $L=\lfloor \pi/\omega_0 \rfloor$ is the number of harmonics.
 
-Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  This algorithms described in this section are based on the work in \cite{rowe1997techniques}, with some changes in notation.
+Figure \ref{fig:analysis} illustrates the processing steps in the sinusoidal analysis system at the core of the Codec 2 encoder.  The algorithms described in this section are based on the work in \cite{rowe1997techniques}, with some changes in notation.
 
 \begin{figure}[h]
 \caption{Sinusoidal Analysis}
@@ -345,7 +345,7 @@ r        &= \frac{\omega_0 N_{dft}}{2 \pi}
 \end{equation}
 The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech.  Figure $\ref{fig:hts2a_time}$ plots $S_w$ (blue) and $\{A_m\}$ (red) for a sample frame of female speech.
 
-The phase is sampled at the centre of the band.  For all practical Codec 2 modes the phase is not transmitted to the decoder so does not need to be computed.  However speech synthesised using the phase is useful as a control during development, and is available using the \emph{c2sim} utility.
+The phase is sampled at the centre of the band.  For all practical Codec 2 modes, the phase is not transmitted to the decoder, so it does not need to be computed.  However, speech synthesized using the phase is useful as a control during development and is available using the \emph{c2sim} utility.
 
 \subsection{Sinusoidal Synthesis}
 
@@ -548,7 +548,7 @@ Where $n_0$ is a time shift that represents the pulse position relative to the c
 \begin{equation}
 \phi_m = - m \omega_0 n_0
 \end{equation}
-As we don't transmit any phase information the pulse position $n_0$ is unknown at the decoder.  Fortunately the ear is insensitive to the absolute position of pitch pulses in voiced speech, as long as they evolve smoothly over time (discontinuities in phase are a characteristic of unvoiced speech).
+As we don't transmit any phase information the pulse position $n_0$ is unknown at the decoder.  Fortunately, the ear is insensitive to the absolute position of pitch pulses in voiced speech, as long as they evolve smoothly over time (discontinuities in phase are a characteristic of unvoiced speech).
 
 The excitation pulses occur at a rate of $\omega_0$ (one for each pitch period). The phase of the first harmonic advances by $N \phi_1$ radians over a synthesis frame of $N$ samples.  For example if $\omega_1 = \pi /20$ (200 Hz), then over a (10ms $N=80$) sample frame, the phase of the first harmonic would advance $(\pi/20)80 = 4 \pi$ radians or two complete cycles. We therefore derive $n_0$ from the excitation phase of the fundamental, which we treat as a timing reference.  Each frame we advance the phase of the fundamental:
 \begin{equation}
@@ -563,7 +563,7 @@ n_0    &= -\phi_1 / \omega_0 \\
 \end{split}
 \end{equation}
 
-For unvoiced speech $E(z)$ is a white noise signal.  At each frame we sample a random number generator on the interval $-\pi ... \pi$ to obtain the excitation phase of each harmonic.  We set $F_0 = 50$ Hz to use a large number of harmonics $L=4000/50=80$ for synthesis to best approximate a noise signal.
+For unvoiced speech $E(z)$ is a white noise signal.  At each frame, we sample a random number generator on the interval $-\pi ... \pi$ to obtain the excitation phase of each harmonic.  We set $F_0 = 50$ Hz to use a large number of harmonics $L=4000/50=80$ for synthesis to best approximate a noise signal.
 
 The second phase component is provided by sampling the phase of $H(z)$ at the harmonic centres.  The phase spectra of $H(z)$ is derived from the magnitude response using minimum phase techniques.  The method for deriving the phase spectra of $H(z)$ differs between Codec 2 modes and is described below in Sections \ref{sect:mode_lpc_lsp} and \ref{sect:mode_newamp1}.  This component of the phase tends to disperse the pitch pulse energy in time, especially around spectral peaks (formants).
 
@@ -577,7 +577,7 @@ Comparing to speech synthesised using original phases $\{\theta_m\}$ the followi
 \item If there are voicing errors, the speech can sound clicky or staticy.  If voiced speech is mistakenly declared unvoiced, this model tends to synthesise annoying impulses or clicks, as for voiced speech $H(z)$ is relatively flat (broad, high frequency formants), so there is very little dispersion of the excitation impulses through $H(z)$.
 \item When combined with amplitude modelling or quantisation, such that $H(z)$ is derived from $\{\hat{A}_m\}$ there is an additional drop in quality.
 \item This synthesis model (e.g. a pulse train exciting a LPC filter) is effectively the same as a simple LPC-10 vocoders, and yet (especially when $arg[H(z)]$ is derived from unquantised $\{A_m\}$) sounds much better.  Conventional wisdom (AMBE, MELP) says mixed voicing is required for high quality speech.
-\item If $H(z)$ is changing rapidly between frames, it's phase contribution may also change rapidly. This approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering by $H(z)$).
+\item If $H(z)$ is changing rapidly between frames, its phase contribution may also change rapidly. This approach could cause some discontinuities in the phase at the edge of synthesis frames, as no attempt is made to make sure that the phase tracks are continuous (the excitation phases are continuous, but not the final phases after filtering by $H(z)$).
 \item The recent crop of neural vocoders produce high quality speech using a similar parameters set, and notably without transmitting phase information.  Although many of these vocoders operate in the time domain, this approach can be interpreted as implementing a function $\{ \hat{\theta}_m\} = F(\omega_0, \{Am\},v)$.  This validates the general approach used here, and as future work Codec 2 may benefit from being augmented by machine learning.
 \end{enumerate}
 
@@ -594,7 +594,7 @@ In this and the next section we explain how the codec building blocks above are 
 \end{center}
 \end{figure}
 
-The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A spectrally flat excitation source $E(z)$ excites a filter $H(z)$ which models the magnitude spectrum of the speech.  In Linear Predictive Coding (LPC), we define $H(z)$ as an all pole filter:
+The source-filter model of speech production was introduced above in Equation (\ref{eq:source_filter}).  A spectrally flat excitation source $E(z)$ excites a filter $H(z)$ which models the magnitude spectrum of the speech.  In Linear Predictive Coding (LPC), we define $H(z)$ as an all-pole filter:
 \begin{equation}
 H(z) = \frac{G}{1-\sum_{k=1}^p a_k z^{-k}} = \frac{G}{A(z)}
 \end{equation}
@@ -613,7 +613,7 @@ A(z) = \frac{P(z)+Q(z)}{2}
 \end{equation}
 Thus to transmit the LPC coefficients using LSPs, we first transform the LPC model $A(z)$ to $P(z)$ and $Q(z)$ polynomial form. We then solve $P(z)$ and $Q(z)$ for $z=e^{j \omega}$ to obtain $p$ LSP frequencies $\{\omega_i\}$. The LSP frequencies are then quantised and transmitted over the channel. At the receiver the quantised LSPs are then used to reconstruct an approximation of $A(z)$.  More details on LSP analysis can be found in \cite{rowe1997techniques} and many other sources.
 
-Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted, but are still computed for use in voicing estimation (\ref{eq:voicing_snr}).
+Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping input speech frames are processed every 10ms ($N=80$ samples).  LPC analysis determines a set of $p=10$ LPC coefficients $\{a_k\}$ that describe the spectral envelope of the current frame and the LPC energy $E=G^2$. The LPC coefficients are transformed to $p=10$ LSP frequencies $\{\omega_i\}$. The source code for these algorithms is in \emph{lpc.c} and \emph{lsp.c}.  The LSP frequencies are then quantised to a fixed number of bits/frame.  Other parameters include the pitch $\omega_0$, LPC energy $E$, and voicing $v$.  The quantisation and bit packing source code for each Codec 2 mode can be found in \emph{codec2.c}.  Note the spectral magnitudes $\{A_m\}$ are not transmitted but are still computed for use in voicing estimation (\ref{eq:voicing_snr}).
 
 \begin{figure}[h]
 \caption{LPC/LSP Modes Encoder}
@@ -653,7 +653,7 @@ Figure \ref{fig:encoder_lpc_lsp} presents the LPC/LSP mode encoder. Overlapping 
 \end{center}
 \end{figure}
 
-One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our uses cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.   Another feature of LPC modelling combined with scalar LSP quantisation is some tolerance to variations in the input frequency response, e.g. due to microphone or anti-alias filter shape factors (see section \ref{sect:mode_newamp1} for more information on this issue).
+One of the problems with quantising spectral magnitudes in sinusoidal codecs is the time varying number of harmonic magnitudes, as $L=\pi/\omega_0$, and $\omega_0$ varies from frame to frame.  As we require a fixed bit rate for our use cases, it is desirable to have a fixed number of parameters.  Using a fixed order LPC model is a neat solution to this problem.   Another feature of LPC modelling combined with scalar LSP quantisation is some tolerance to variations in the input frequency response, e.g. due to microphone or anti-alias filter shape factors (see section \ref{sect:mode_newamp1} for more information on this issue).
 
 Some disadvantages \cite{makhoul1975linear} are the LPC spectrum $|H(e^{j \omega})|$ doesn't follow the spectral magnitudes $A_m$ exactly, in other words is requires a non-flat excitation spectrum to accurately model the amplitude spectrum. The slope of the LPC spectrum near 0 and $\pi$ must be 0, which means it does not track perceptually important low frequency information well. For high pitched speakers, LPC tends to place poles around single harmonics, rather than tracking the spectral envelope described by $\{Am\}$. All of these problems can be observed in Figure \ref{fig:hts2a_lpc_lsp}. Thus exciting the LPC model by a simple, spectrally flat $E(z)$ will result in some errors in the reconstructed magnitude speech spectrum.
 
@@ -710,7 +710,7 @@ arg \left[ H(e^{j \omega_0 m}) \right] = arg \left[ \hat{H}(\lfloor m r \rceil) 
 \end{center}
 \end{figure}
 
-Prior to sampling the amplitude and phase, a frequency domain post filter is applied to the LPC power spectrum. The algorithm is based on the MBE frequency domain post filter \cite[Section 8.6, p 267]{kondoz1994digital}, which is turn based on the frequency domain post filter from McAulay and Quatieri \cite[Section 4.3, p 148]{kleijn1995speech}.  The authors report a significant improvement in speech quality from the post filter, which has also been our experience when applied to Codec 2. The post filter is given by:
+Prior to sampling the amplitude and phase, a frequency domain post filter is applied to the LPC power spectrum. The algorithm is based on the MBE frequency domain post filter \cite[Section 8.6, p 267]{kondoz1994digital}, which is in turn based on the frequency domain post filter from McAulay and Quatieri \cite[Section 4.3, p 148]{kleijn1995speech}.  The authors report a significant improvement in speech quality from the post filter, which has also been our experience when applied to Codec 2. The post filter is given by:
 \begin{equation}
 \label{eq:lpc_lsp_pf}
 \begin{split}
@@ -718,14 +718,14 @@ P_f(e^{j\omega}) &= g \left( R_w(e^{j \omega} \right))^\beta \\
 R_w(^{j\omega}) &= A(e^{j \omega/ \gamma})/A(e^{j \omega})
 \end{split}
 \end{equation}
-where $g$ is chosen to normalise the gain of the post filter, and $\beta=0.2$, $\gamma=0.5$ are experimentally derived constants.  The post filter raises the spectral peaks (formants), and lowers the inter-formant energy.  The $\gamma$ term compensates for spectral tilt, providing equal emphasis at low and high frequencies.  The authors suggest the post filter reduces the noise level between formants, an explanation commonly given to post filters used for CELP codecs where significant inter-formant noise exists from the noisy excitation source.  However in harmonic sinusoidal codecs there is no excitation noise between formants in $E(z)$.  Our theory is the post filter also acts to reduce the bandwidth of spectral peaks, modifying the energy distribution across the time domain pitch cycle which improves speech quality, especially for low pitched speakers.
+where $g$ is chosen to normalise the gain of the post filter, and $\beta=0.2$, $\gamma=0.5$ are experimentally derived constants.  The post filter raises the spectral peaks (formants), and lowers the inter-formant energy.  The $\gamma$ term compensates for spectral tilt, providing equal emphasis at low and high frequencies.  The authors suggest the post filter reduces the noise level between formants, an explanation commonly given to post filters used for CELP codecs where significant inter-formant noise exists from the noisy excitation source.  However, in harmonic sinusoidal codecs, there is no excitation noise between formants in $E(z)$.  Our theory is the post filter also acts to reduce the bandwidth of spectral peaks, modifying the energy distribution across the time domain pitch cycle which improves speech quality, especially for low pitched speakers.
 
 A disadvantage of the post filter is the need for experimentally derived constants.  It performs a non-linear operation on the speech spectrum, and if mis-applied can worsen speech quality.  As it's operation is not completely understood, it represents a source of future quality improvement.
 
 \subsection{Codec 2 700C}
 \label{sect:mode_newamp1}
 
-To efficiently transmit spectral amplitude information Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation. Figure \ref{fig:encoder_newamp1} presents the Codec 2 700C encoder.  
+To efficiently transmit spectral amplitude information, Codec 2 700C uses a set of algorithms collectively denoted \emph{newamp1}.  One of these algorithms is the Rate K resampler which transforms the variable length vectors of spectral magnitude samples to fixed length $K$ vectors suitable for vector quantisation. Figure \ref{fig:encoder_newamp1} presents the Codec 2 700C encoder.  
 
 \begin{figure}[H]
 \caption{Codec 2 700C (newamp1) Encoder}
@@ -851,7 +851,7 @@ k = warp^{-1}(f,K) = \frac{mel(f)-mel(200)}{g} + 1
 \end{center}
 \end{figure}
 
-The input speech may be subject to arbitrary filtering, for example due to the microphone frequency response, room acoustics, and anti-aliasing filter.  This filtering is fixed or slowly time varying.  The filtering biases the target vectors away from the VQ training material, resulting in significant additional mean square error.  The filtering does not greatly affect the input speech quality, however the VQ performance distortion increases and the output speech quality is reduced.  This is exacerbated by operating in the log domain, the VQ will try to match very low level, perceptually insignificant energy near 0 and 4000 Hz. A microphone equaliser algorithm has been developed to help adjust to arbitrary microphone filtering.
+The input speech may be subject to arbitrary filtering, for example, due to the microphone frequency response, room acoustics, and anti-aliasing filter.  This filtering is fixed or slowly time-varying.  The filtering biases the target vectors away from the VQ training material, resulting in significant additional mean square error.  The filtering does not greatly affect the input speech quality, however the VQ performance distortion increases and the output speech quality is reduced.  This is exacerbated by operating in the log domain, the VQ will try to match very low level, perceptually insignificant energy near 0 and 4000 Hz. A microphone equaliser algorithm has been developed to help adjust to arbitrary microphone filtering.
 
 For every input frame $l$, the equaliser (EQ) updates the dimension $K$ equaliser vector $\mathbf{e}$:
 \begin{equation}
@@ -882,7 +882,7 @@ where $\mathbf{p}$ is a post filter vector. The post filter vector is generated 
 \end{equation}
 where $G$ is an energy normalisation term, and $1.2 < P_{gain} < 1.5$ describes the amount if post filtering applied.  $G$ and $P_{gain}$ are similar to $g$ and $\beta$ in the LPC/LSP post filter (\ref{eq:lpc_lsp_pf}).  The $\mathbf{r}$ term is a high pass (pre-emphasis) filter with +20 dB/decade gain after 300 Hz ($f_k$ is given in (\ref{eq:warp})).  The post filtering is applied on the pre-emphasised vector, then the pre-emphasis is removed from the final result.  Multiplying by $P_{gain}$ in the $log$ domain is similar to the $\alpha$ power function in (\ref{eq:lpc_lsp_pf}); spectral peaks are moved up, and troughs pushed down.  This filter enhances the speech quality but also introduces some artefacts.
 
-Figure \ref{fig:decoder_newamp1} is the block diagram of the decoder signal processing.  Cepstral techniques are used to synthesise a  phase spectra $arg[H(e^{j \omega}])$ from $\hat{\mathbf{a}}$ using a minimum phase model.  
+Figure \ref{fig:decoder_newamp1} is the block diagram of the decoder signal processing.  Cepstral techniques are used to synthesise a phase spectra $arg[H(e^{j \omega}])$ from $\hat{\mathbf{a}}$ using a minimum phase model.  
 
 \begin{figure}[h]
 \caption{Codec 2 700C (newamp1) Decoder}
@@ -916,11 +916,11 @@ Figure \ref{fig:decoder_newamp1} is the block diagram of the decoder signal proc
 
 Some notes on the Codec 2 700C \emph{newamp1} algorithms:
 \begin{enumerate}
-\item The amplitudes and Vector Quantiser (VQ) entries are in dB, which matches the ears logarithmic amplitude response. 
+\item The amplitudes and Vector Quantiser (VQ) entries are in dB, which matches the ear's logarithmic amplitude response. 
 \item The mode is capable of communications quality speech and is in common use with FreeDV, but is close to the lower limits of intelligibility, and doesn't do well in some languages (problems have been reported with German and Japanese).
 \item The VQ was trained on just 120 seconds of data - way too short.
 \item The parameter set (pitch, voicing, log spectral magnitudes) is very similar to that used for the latest neural vocoders.
-\item The Rate K algorithms were recently revisited, several improvements were proposed and prototyped \cite{rowe2023ratek}.
+\item The Rate K algorithms were recently revisited, and several improvements were proposed and prototyped \cite{rowe2023ratek}.
 \end{enumerate}
 
 \section{Summary of Codec 2 Modes}
@@ -945,14 +945,14 @@ Mode & Frm (ms) & Bits & $A_m$ & $E$ & $\omega_0$ & $v$ & Use Cases \\
 \caption{Codec 2 Modes}
 \end{table}
 
-The 3200 mode quantises the LSP differences $\omega_{i+1}-\omega_i$, which provides low distortion at the expense of robustness to bit errors, as an error in a low order LSP difference will propagate through the frame.  The 2400 and 1200 bit/s modes use a joint delta $\omega_0$ and energy VQ, which is efficient but also also suffers from error propagation so is not suitable for high BER use cases.
+The 3200 mode quantises the LSP differences $\omega_{i+1}-\omega_i$, which provides low distortion at the expense of robustness to bit errors, as an error in a low order LSP difference will propagate through the frame.  The 2400 and 1200 bit/s modes use a joint delta $\omega_0$ and energy VQ, which is efficient but also suffers from error propagation so is not suitable for high BER use cases.
 
 There is an unfortunate overlap in the naming conventions of Codec 2 and FreeDV.  The Codec 2 700C mode is used in the FreeDV 700C, 700D, and 700E modes.
 
 \section{Summary of Codec 2 Source Files}
 \label{sect:source_files}
 
-Codec 2 is part of the \emph{codec2} repository, which also includes various modems and FreeDV API code.  This sections lists the files specific to the speech codec. The \emph{cmake} system builds the \emph{libcodec2} library, which is called by user applications via the Codec 2 API in \emph{codec2.h}.  See the repository \emph{README} for information on building, demo applications, and an introduction to other features of the \emph{codec2} repository.
+Codec 2 is part of the \emph{codec2} repository, which also includes various modems and FreeDV API code.  This section lists the files specific to the speech codec. The \emph{cmake} system builds the \emph{libcodec2} library, which is called by user applications via the Codec 2 API in \emph{codec2.h}.  See the repository \emph{README} for information on building, demo applications, and an introduction to other features of the \emph{codec2} repository.
  
 \begin{table}[H]
 \label{tab:codec2_file}
