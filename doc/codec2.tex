@@ -200,7 +200,7 @@ Often the errors interact, for example the fine pitch error shown above will mea
 \begin{center}
 \begin{tikzpicture}[auto, node distance=2cm,>=triangle 45,x=1.0cm,y=1.0cm,align=center,text width=2cm]
 
-\node [input] (input) {};
+\node [input] (rinput) {};
 \node [block, right of=rinput,node distance=2cm] (dequantise) {Dequantise Interpolate};
 \node [block, right of=dequantise,node distance=3cm] (recover) {Recover Amplitudes};
 \node [block, right of=recover,node distance=3cm] (synthesise) {Synthesise Speech};
@@ -230,7 +230,7 @@ Table \ref{tab:bit_allocation} presents the bit allocation for two popular Codec
 
 At very low bit rates such as 700 bits/s, we use Vector Quantisation (VQ) to represent the spectral amplitudes.  We construct a table such that each row of the table has a set of spectral amplitude samples.  In Codec 2 700C the table has 512 rows.  During the quantisation process, we choose the table row that best matches the spectral amplitudes for this frame, then send the \emph{index} of the table row.  The decoder has a similar table, so can use the index to look up the spectral amplitude values.  If the table is 512 rows, we can use a 9 bit number to quantise the spectral amplitudes.  In Codec 2 700C, we use two tables of 512 entries each (18 bits total), the second one helps fine tune the quantisation from the first table.
 
-Vector Quantisation can only represent what is present in the tables, so if it sees anything unusual (for example, a different microphone frequency response or background noise), the quantization can become very rough and speech quality poor.  We train the tables at design time using a database of speech samples and a training algorithm - an early form of machine learning.
+Vector Quantisation can only represent what is present in the tables, so if it sees anything unusual (for example, a different microphone frequency response or background noise), the quantisation can become very rough and speech quality poor.  We train the tables at design time using a database of speech samples and a training algorithm - an early form of machine learning.
 
 Codec 2 3200 uses the method of fitting a filter to the spectral amplitudes, this approach tends to be more forgiving of small variations in the input speech spectrum, but is not as efficient in terms of bit rate.
 
@@ -345,7 +345,7 @@ r        &= \frac{\omega_0 N_{dft}}{2 \pi}
 \end{equation}
 The DFT indexes $a_m, b_m$ select the band of $S_w(k)$ containing the $m$-th harmonic; $r$ maps the harmonic number $m$ to the nearest DFT index, and $\lfloor x \rceil$ is the rounding operator. This method of estimating $A_m$ is relatively insensitive to small errors in $F0$ estimation and works equally well for voiced and unvoiced speech.  Figure $\ref{fig:hts2a_time}$ plots $S_w$ (blue) and $\{A_m\}$ (red) for a sample frame of female speech.
 
-The phase is sampled at the centre of the band.  For all practical Codec 2 modes, the phase is not transmitted to the decoder, so it does not need to be computed.  However, speech synthesized using the phase is useful as a control during development and is available using the \emph{c2sim} utility.
+The phase is sampled at the centre of the band.  For all practical Codec 2 modes, the phase is not transmitted to the decoder, so it does not need to be computed.  However, speech synthesised using the phase is useful as a control during development and is available using the \emph{c2sim} utility.
 
 \subsection{Sinusoidal Synthesis}
 
