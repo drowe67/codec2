@@ -135,9 +135,9 @@ function config = ofdm_init_mode(mode="700D")
     config.amp_scale = 2.5*300E3; config.clip_gain1 = 1.2; config.clip_gain2 = 1.0;
     config.txbpf_width_Hz = 400;
  elseif strcmp(mode,"datac14")
-    Ns=5; config.Np=6; Tcp = 0.006; Ts = 0.020; Nc = 3; config.data_mode = "streaming";
+    Ns=5; config.Np=4; Tcp = 0.005; Ts = 0.018; Nc = 4; config.data_mode = "streaming";
     config.edge_pilots = 0;
-    config.Ntxtbits = 0; config.Nuwbits = 48; config.bad_uw_errors = 18;
+    config.Ntxtbits = 0; config.Nuwbits = 32; config.bad_uw_errors = 12;
     config.ftwindow_width = 80; config.timing_mx_thresh = 0.45;
     config.tx_uw = zeros(1,config.Nuwbits);
     config.tx_uw(1:24) = [1 1 0 0  1 0 1 0  1 1 1 1  0 0 0 0  1 1 1 1  0 0 0 0];
