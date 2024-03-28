@@ -236,6 +236,8 @@ int main(int argc, char *argv[]) {
     mode = FREEDV_MODE_DATAC4;
   if (!strcmp(argv[dx], "DATAC13") || !strcmp(argv[dx], "datac13"))
     mode = FREEDV_MODE_DATAC13;
+  if (!strcmp(argv[dx], "DATAC14") || !strcmp(argv[dx], "datac14"))
+    mode = FREEDV_MODE_DATAC14;
   if (mode == -1) {
     fprintf(stderr, "Error: in mode: %s", argv[dx]);
     exit(1);
