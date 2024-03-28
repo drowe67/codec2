@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
   int tx_bits_log[COHPSK_BITS_PER_FRAME * FRAMES];
   COMP tx_symb_log[NSYMROWPILOT * FRAMES][COHPSK_NC * COHPSK_ND];
   COMP tx_fdm_frame_log[COHPSK_M * NSYMROWPILOT * FRAMES];
-  COMP ch_fdm_frame_log[COHPSK_M * NSYMROWPILOT * FRAMES];
-  COMP ch_fdm_frame_log_out[(COHPSK_M * NSYMROWPILOT + 1) * FRAMES];
+  COMP ch_fdm_frame_log[COHPSK_M * NSYMROWPILOT * FRAMESL];
+  COMP ch_fdm_frame_log_out[(COHPSK_M * NSYMROWPILOT + 1) * FRAMESL];
   // COMP           rx_fdm_frame_bb_log[M*NSYMROWPILOT*FRAMES];
   // COMP           ch_symb_log[NSYMROWPILOT*FRAMES][COHPSK_NC*COHPSK_ND];
   COMP ct_symb_ff_log[NSYMROWPILOT * FRAMES][COHPSK_NC * COHPSK_ND];
@@ -317,6 +317,11 @@ int main(int argc, char *argv[]) {
 #ifdef XX
 #endif
   fclose(fout);
+
+  free(coh->rx_baseband_log);
+  free(coh->rx_filt_log);
+  free(coh->ch_symb_log);
+  free(coh->rx_timing_log);
 
   cohpsk_destroy(coh);
 

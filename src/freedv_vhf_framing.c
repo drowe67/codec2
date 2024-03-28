@@ -391,6 +391,7 @@ int fvhff_get_varicode_size(struct freedv_vhf_deframer *def) {
 void fvhff_destroy_deframer(struct freedv_vhf_deframer *def) {
   freedv_data_channel_destroy(def->fdc);
   free(def->bits);
+  free(def->invbits);
   free(def);
 }
 

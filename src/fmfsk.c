@@ -93,6 +93,7 @@ struct FMFSK *fmfsk_create(int Fs, int Rb) {
  * Destroys an fmfsk modem and deallocates memory
  */
 void fmfsk_destroy(struct FMFSK *fmfsk) {
+  free(fmfsk->stats);
   free(fmfsk->oldsamps);
   free(fmfsk);
 }

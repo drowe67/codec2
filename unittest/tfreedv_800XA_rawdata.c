@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   unsigned char payload_tx[7] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde};
 
   printf("freedv_codec_frames_from_rawdata() ");
-  unsigned char codec_frames[8] = {0};
+  unsigned char codec_frames[9] = {0};
   freedv_codec_frames_from_rawdata(f, codec_frames, payload_tx);
   int fails = 0;
   for (i = 0; i < 8; i++) {
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
   printf("Passed\n");
 
   printf("freedv_rawdata_from_codec_frames() ");
-  unsigned char rawdata[7] = {0};
+  unsigned char rawdata[8] = {0};
   freedv_rawdata_from_codec_frames(f, rawdata, payload);
   fails = 0;
   for (i = 0; i < 7; i++) {

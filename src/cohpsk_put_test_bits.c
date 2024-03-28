@@ -65,11 +65,13 @@ int main(int argc, char *argv[]) {
   }
 
   coh = cohpsk_create();
+  assert(coh != NULL);
 
   foct = NULL;
   logframes = 0;
   if (argc == 3) {
     if ((foct = fopen(argv[2], "wt")) == NULL) {
+      cohpsk_destroy(coh);
       fprintf(stderr, "Error opening output Octave file: %s: %s.\n", argv[2],
               strerror(errno));
       exit(1);
@@ -101,6 +103,7 @@ int main(int argc, char *argv[]) {
   }
 
   fclose(fin);
+  cohpsk_destroy(coh);
   float ber = (float)nerrors / nbits;
   fprintf(stderr, "BER: %4.3f Nbits: %d Nerrors: %d\n", ber, nbits, nerrors);
 
