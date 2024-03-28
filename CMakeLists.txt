@@ -662,6 +662,13 @@ endif()
                             cd ${CMAKE_CURRENT_BINARY_DIR}/src;
                             cat test.raw | ./ofdm_demod --mode datac13 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
              
+    # DATAC14 Octave Tx, C Rx, burst mode
+    add_test(NAME test_OFDM_modem_datac14_octave
+             COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
+                            DISPLAY=\"\" octave-cli -qf --eval 'ofdm_ldpc_tx(\"${CMAKE_CURRENT_BINARY_DIR}/src/test.raw\",\"datac14\",1,3,\"awgn\",\"bursts\",5)';
+                            cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            cat test.raw | ./ofdm_demod --mode datac14 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
+             
     # DATAC4 C Tx, C Rx, burst mode
     add_test(NAME test_OFDM_modem_datac4_ldpc_burst
              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
@@ -676,7 +683,14 @@ endif()
                             ./ch - - --No -17 |
                             ./ofdm_demod --mode datac13 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
 
-   # -------------------------------------------------------------------------
+    # DATAC14 C Tx, C Rx, burst mode
+    add_test(NAME test_OFDM_modem_datac14_ldpc_burst
+             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            ./ofdm_mod --mode datac14 --in /dev/zero --testframes 1 --verbose 1 --ldpc --bursts 10 |
+                            ./ch - - --No -17 |
+                            ./ofdm_demod --mode datac14 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
+
+    # -------------------------------------------------------------------------
     #                                LDPC
     # -------------------------------------------------------------------------
 
@@ -1392,6 +1406,7 @@ endif(NOT APPLE)
         test_OFDM_modem_datac3_octave
         test_OFDM_modem_datac4_octave
         test_OFDM_modem_datac13_octave
+        test_OFDM_modem_datac14_octave
         test_fsk_lib_4fsk_ldpc
         test_OFDM_modem_datac0_compression
         PROPERTIES

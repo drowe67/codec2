@@ -226,6 +226,31 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->clip_gain1 = 1.2;
     config->clip_gain2 = 1.0;
     config->rx_bpf_en = true;
+  } else if (strcmp(mode, "datac14") == 0) {
+    config->ns = 5;
+    config->np = 4;
+    config->tcp = 0.005;
+    config->ts = 0.018;
+    config->nc = 4;
+    config->edge_pilots = 0;
+    config->txtbits = 0;
+    config->state_machine = "data";
+    config->ftwindowwidth = 80;
+    config->timing_mx_thresh = 0.45;
+    config->codename = "HRA_56_56";
+    config->amp_est_mode = 1;
+    config->nuwbits = 32;
+    config->bad_uw_errors = 12;
+    uint8_t uw[] = {1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1,
+                    0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0};
+    assert(sizeof(uw) <= MAX_UW_BITS);
+    memcpy(config->tx_uw, uw, sizeof(uw));
+    memcpy(&config->tx_uw[config->nuwbits - sizeof(uw)], uw, sizeof(uw));
+    config->data_mode = "streaming";
+    config->amp_scale = 2.5 * 300E3;
+    config->clip_gain1 = 1.2;
+    config->clip_gain2 = 1.0;
+    config->rx_bpf_en = true;
   } else {
     assert(0);
   }
