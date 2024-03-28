@@ -212,6 +212,7 @@ int main(int argc, char *argv[]) {
         ctest = 1;
         break;
       case 'u':
+        if (fading_dir) free(fading_dir);
         fading_dir = strdup(optarg);
         break;
       case 'h':
@@ -519,6 +520,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "ch: WARNING output clipping\n");
 
   if (ffading != NULL) fclose(ffading);
+  if (fading_dir) free(fading_dir);
   if (ch_fdm_delay != NULL) FREE(ch_fdm_delay);
   if (ctest) {
     /* special ctest mode: check CPAPR is around 0dB */
