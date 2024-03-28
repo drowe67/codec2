@@ -57,6 +57,7 @@ void on_reliable_text_rx(reliable_text_t rt, const char *txt_ptr, int length,
 }
 
 int main(int argc, char *argv[]) {
+  struct my_callback_state my_cb_state;
   FILE *fin, *fout;
   struct freedv *freedv;
   int mode;
@@ -184,7 +185,6 @@ int main(int argc, char *argv[]) {
                                   on_reliable_text_rx, NULL);
   } else {
     /* set up callback for txt msg chars */
-    struct my_callback_state my_cb_state;
     sprintf(my_cb_state.tx_str, "cq cq cq hello world\r");
     my_cb_state.ptx_str = my_cb_state.tx_str;
     my_cb_state.calls = 0;
