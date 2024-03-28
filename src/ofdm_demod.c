@@ -488,8 +488,8 @@ int main(int argc, char *argv[]) {
           gp_deinterleave_float(payload_amps_de, payload_amps,
                                 Npayloadsymsperpacket);
 
-          float llr[Npayloadbitsperpacket];
-          uint8_t out_char[ldpc.CodeLength];
+          float llr[ldpc.CodeLength * 2];
+          uint8_t out_char[ldpc.CodeLength * 2];
 
           if (testframes == true) {
             Nerrs_raw =
