@@ -559,7 +559,8 @@ static void allocate_tx_bpf(struct OFDM *ofdm) {
     quisk_filt_cfInit(ofdm->tx_bpf, filtP400S600,
                       sizeof(filtP400S600) / sizeof(float));
     quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
-  } else if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13")) {
+  } else if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13") ||
+             !strcmp(ofdm->mode, "datac14")) {
     quisk_filt_cfInit(ofdm->tx_bpf, filtP200S400,
                       sizeof(filtP200S400) / sizeof(float));
     // centre the filter on the mean carrier freq, allows a narrower filter to
@@ -590,7 +591,8 @@ static void allocate_rx_bpf(struct OFDM *ofdm) {
 
   /* Receive bandpass filter; complex coefficients, center frequency */
 
-  if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13")) {
+  if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13") ||
+      !strcmp(ofdm->mode, "datac14")) {
     quisk_filt_cfInit(ofdm->rx_bpf, filtP200S400,
                       sizeof(filtP200S400) / sizeof(float));
     // centre the filter on the mean carrier freq, allows a narrower filter to

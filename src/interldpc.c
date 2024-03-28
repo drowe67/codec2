@@ -78,6 +78,7 @@ void ldpc_mode_specific_setup(struct OFDM *ofdm, struct LDPC *ldpc) {
   }
   if (!strcmp(ofdm->mode, "datac4")) set_data_bits_per_frame(ldpc, 448);
   if (!strcmp(ofdm->mode, "datac13")) set_data_bits_per_frame(ldpc, 128);
+  if (!strcmp(ofdm->mode, "datac14")) set_data_bits_per_frame(ldpc, 40);
 }
 
 /* LDPC encode frame - generate parity bits and a codeword, applying the

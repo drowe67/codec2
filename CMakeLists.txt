@@ -662,6 +662,13 @@ endif()
                             cd ${CMAKE_CURRENT_BINARY_DIR}/src;
                             cat test.raw | ./ofdm_demod --mode datac13 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
              
+    # DATAC14 Octave Tx, C Rx, burst mode
+    add_test(NAME test_OFDM_modem_datac14_octave
+             COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
+                            DISPLAY=\"\" octave-cli -qf --eval 'ofdm_ldpc_tx(\"${CMAKE_CURRENT_BINARY_DIR}/src/test.raw\",\"datac14\",1,3,\"awgn\",\"bursts\",5)';
+                            cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            cat test.raw | ./ofdm_demod --mode datac14 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
+             
     # DATAC4 C Tx, C Rx, burst mode
     add_test(NAME test_OFDM_modem_datac4_ldpc_burst
              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
@@ -676,7 +683,14 @@ endif()
                             ./ch - - --No -17 |
                             ./ofdm_demod --mode datac13 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
 
-   # -------------------------------------------------------------------------
+    # DATAC14 C Tx, C Rx, burst mode
+    add_test(NAME test_OFDM_modem_datac14_ldpc_burst
+             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            ./ofdm_mod --mode datac14 --in /dev/zero --testframes 1 --verbose 1 --ldpc --bursts 10 |
+                            ./ch - - --No -17 |
+                            ./ofdm_demod --mode datac14 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
+
+    # -------------------------------------------------------------------------
     #                                LDPC
     # -------------------------------------------------------------------------
 
@@ -1064,6 +1078,12 @@ if (NOT APPLE)
                             ./freedv_data_raw_tx --testframes 10 DATAC13 /dev/zero /dev/null")
              set_tests_properties(test_memory_leak_FreeDV_DATAC13_tx PROPERTIES PASS_REGULAR_EXPRESSION "ERROR SUMMARY: 0 errors")
 
+     add_test(NAME test_memory_leak_FreeDV_DATAC14_tx
+             COMMAND sh -c "cd  ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+                            ./freedv_data_raw_tx --testframes 10 DATAC14 /dev/zero /dev/null")
+             set_tests_properties(test_memory_leak_FreeDV_DATAC14_tx PROPERTIES PASS_REGULAR_EXPRESSION "ERROR SUMMARY: 0 errors")
+           
      add_test(NAME test_memory_leak_FreeDV_700E_tx
              COMMAND sh -c "cd  ${CMAKE_CURRENT_BINARY_DIR}/src;
                             valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
@@ -1307,6 +1327,13 @@ endif(NOT APPLE)
                             ./freedv_data_raw_rx DATAC13 - binaryOut.bin -v;
                             diff binaryIn.bin binaryOut.bin")
 
+     add_test(NAME test_freedv_data_raw_ofdm_datac14_burst_file
+             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            head -c $((3*10)) </dev/urandom > binaryIn.bin;
+                            ./freedv_data_raw_tx DATAC14 binaryIn.bin - --bursts 10 |
+                            ./freedv_data_raw_rx DATAC14 - binaryOut.bin -v;
+                            diff binaryIn.bin binaryOut.bin")
+
      # FSK LDPC default 100 bit/s 2FSK, enough noise for several % raw BER to give
      # FEC/acquisition a work out, bursts of 1 frame as that stresses acquisition
      add_test(NAME test_freedv_data_raw_fsk_ldpc_100
@@ -1392,6 +1419,7 @@ endif(NOT APPLE)
         test_OFDM_modem_datac3_octave
         test_OFDM_modem_datac4_octave
         test_OFDM_modem_datac13_octave
+        test_OFDM_modem_datac14_octave
         test_fsk_lib_4fsk_ldpc
         test_OFDM_modem_datac0_compression
         PROPERTIES

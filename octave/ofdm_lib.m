@@ -1254,7 +1254,7 @@ endfunction
 % with acquisition
 function [rx delay_samples] = ofdm_rx_filter(states, mode, rx)
   delay_samples = 0;
-  if strcmp(mode,"datac4") || strcmp(mode,"datac13")
+  if strcmp(mode,"datac4") || strcmp(mode,"datac13") || strcmp(mode,"datac14")
     w_centre = mean(states.w); centre_norm = w_centre/(2*pi);
     n_coeffs = 100;
     cutoff_Hz = 400; cutoff_norm = cutoff_Hz/states.Fs;
