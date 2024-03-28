@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
                                 Npayloadsymsperpacket);
 
           float llr[Npayloadbitsperpacket];
-          uint8_t out_char[Npayloadbitsperpacket];
+          uint8_t out_char[ldpc.CodeLength];
 
           if (testframes == true) {
             Nerrs_raw =
