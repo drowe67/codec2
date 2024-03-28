@@ -306,6 +306,7 @@ int main(int argc, char *argv[]) {
 
   /* finish up with some stats */
 
+  int rc = 0;
   if (freedv_get_test_frames(freedv)) {
     int Tbits = freedv_get_total_bits(freedv);
     int Terrs = freedv_get_total_bit_errors(freedv);
@@ -327,9 +328,9 @@ int main(int argc, char *argv[]) {
 
       /* set return code for Ctest */
       if ((uncoded_ber < 0.1f) && (coded_ber < 0.01f))
-        return 0;
+        rc = 0;
       else
-        return 1;
+        rc = 1;
     }
   }
 
@@ -339,5 +340,5 @@ int main(int argc, char *argv[]) {
 
   freedv_close(freedv);
 
-  return 0;
+  return rc;
 }

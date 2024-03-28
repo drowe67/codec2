@@ -413,8 +413,8 @@ int main(int argc, char *argv[]) {
   if (verbose == 2) fprintf(stderr, "Warning EsNo: %f hard coded\n", EsNo);
 
   /* More logging */
-  COMP payload_syms_log[NFRAMES][Npayloadsymsperpacket];
-  float payload_amps_log[NFRAMES][Npayloadsymsperpacket];
+  COMP payload_syms_log[NFRAMES][Npayloadsymsperframe];
+  float payload_amps_log[NFRAMES][Npayloadsymsperframe];
 
   for (i = 0; i < NFRAMES; i++) {
     for (j = 0; j < Npayloadsymsperframe; j++) {
@@ -488,8 +488,8 @@ int main(int argc, char *argv[]) {
           gp_deinterleave_float(payload_amps_de, payload_amps,
                                 Npayloadsymsperpacket);
 
-          float llr[Npayloadbitsperpacket];
-          uint8_t out_char[Npayloadbitsperpacket];
+          float llr[ldpc.CodeLength * 2];
+          uint8_t out_char[ldpc.CodeLength * 2];
 
           if (testframes == true) {
             Nerrs_raw =
