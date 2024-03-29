@@ -493,8 +493,8 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
       gp_deinterleave_float(payload_amps_de, payload_amps,
                             Npayloadsymsperpacket);
 
-      float llr[Npayloadbitsperpacket];
-      uint8_t decoded_codeword[Npayloadbitsperpacket];
+      float llr[ldpc->CodeLength * 2];
+      uint8_t decoded_codeword[ldpc->CodeLength * 2];
       symbols_to_llrs(llr, payload_syms_de, payload_amps_de, EsNo,
                       ofdm->mean_amp, Npayloadsymsperpacket);
       ldpc_decode_frame(ldpc, &parityCheckCount, &iter, decoded_codeword, llr);

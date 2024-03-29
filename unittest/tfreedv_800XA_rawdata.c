@@ -132,6 +132,9 @@ int main(int argc, char **argv) {
       }
     }
   }
+
+  freedv_close(f);
+
   if (!frames) {
     printf("Did not decode any frames successfully\n");
     goto fail;

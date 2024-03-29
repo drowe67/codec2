@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
 
   short rx_scaled[Nmaxsamperframe];
   int rx_bits[Nbitsperframe];
-  uint8_t rx_bits_char[Nbitsperframe];
+  uint8_t rx_bits_char[Npayloadsymsperpacket * 2];
   uint8_t rx_uw[ofdm_nuwbits];
   short txt_bits[ofdm_ntxtbits];
 

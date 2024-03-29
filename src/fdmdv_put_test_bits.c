@@ -155,6 +155,7 @@ int main(int argc, char *argv[]) {
   }
 
   fclose(fin);
+  free(rx_bits);
   free(error_pattern);
   fdmdv_destroy(fdmdv);
 

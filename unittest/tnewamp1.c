@@ -287,6 +287,11 @@ int main(int argc, char *argv[]) {
   octave_save_complex(fout, "H_c", (COMP *)H, FRAMES, MAX_AMP, MAX_AMP);
   fclose(fout);
 
+  codec2_fft_free(fft_fwd_cfg);
+  codec2_fft_free(phase_fft_fwd_cfg);
+  codec2_fft_free(phase_fft_inv_cfg);
+  nlp_destroy(nlp_states);
+
   printf(
       "Done! Now run\n  octave:1> "
       "tnewamp1(\"../path/to/build_linux/src/hts1a\", "

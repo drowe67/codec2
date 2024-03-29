@@ -1129,6 +1129,12 @@ int main(int argc, char *argv[]) {
   if (fbands != NULL) fclose(fbands);
   if (frateKWov != NULL) fclose(frateKWov);
 
+  codec2_fft_free(fft_fwd_cfg);
+  codec2_fftr_free(fftr_fwd_cfg);
+  codec2_fftr_free(fftr_inv_cfg);
+  codec2_fft_free(phase_fft_fwd_cfg);
+  codec2_fft_free(phase_fft_inv_cfg);
+
   return 0;
 }
 
