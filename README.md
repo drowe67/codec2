@@ -30,7 +30,7 @@ Feature Requests can be submitted via GitHub Issues.
 Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue. We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that will most benefit this project.
 
 Some key guidelines about the code in the `codec2` repo:
-1. Code that is required to build libcodec2, or to test libcodec2 goes in codec2.
+1. Only code that is required to build, test, or document libcodec2 goes in codec2.
 2. Experimental work, code used for algorithm development, should probably go into some other repo.
 3. Only widely used “production” code goes in codec2. If it has an user base of < 2 (e.g. personal projects, early R&D) - it should probably be application code or a fork.
 
