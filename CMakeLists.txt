@@ -472,7 +472,7 @@ endif()
 
     add_test(NAME test_OFDM_modem_octave_qam16_uncoded
              COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
-                            echo \"ofdm_tx('test_qam16.raw','qam16c1',3,12,'awgn','bursts',3); ofdm_rx('test_qam16.raw','qam16c1', 'passber', 0.05, 'packetsperburst', 1); quit\" |
+                            echo \"ofdm_tx('test_qam16.raw','qam16c2',1,12,'awgn','bursts',3); ofdm_rx('test_qam16.raw','qam16c2', 'passber', 0.05, 'packetsperburst', 1); quit\" |
                             DISPLAY=\"\" octave-cli")
              set_tests_properties(test_OFDM_modem_octave_qam16_uncoded PROPERTIES PASS_REGULAR_EXPRESSION "Pass")
 

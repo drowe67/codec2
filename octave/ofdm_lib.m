@@ -76,7 +76,7 @@ function states = ofdm_init(config)
     1 + j,  1 + j*3,  3 + j,  3 + j*3;
     1 - j,  1 - j*3,  3 - j,  3 - j*3;
    -1 + j, -1 + j*3, -3 + j, -3 + j*3;
-   -1 - j, -1 - j*3, -3 - j, -3 - j*3]/3;
+   -1 - j, -1 - j*3, -3 - j, -3 - j*3];
   rms = sqrt(states.qam16(:)'*states.qam16(:)/16);% set average Es to 1
   states.qam16 /= rms;
   states.qam16 *= exp(-j*pi/4);                   % same rotation as QPSK constellation
