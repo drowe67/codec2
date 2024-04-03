@@ -25,7 +25,6 @@ function config = ofdm_init_mode(mode="700D")
   config.bad_uw_errors = 3;
   config.amp_scale = 245E3;
   config.amp_est_mode = 0;
-  config.EsNo_est_all_symbols = 1;
   config.EsNodB = 3;
   config.state_machine = "voice1";
   config.edge_pilots = 1;
@@ -59,12 +58,12 @@ function config = ofdm_init_mode(mode="700D")
     config.bps=4; config.Ntxtbits = 0; config.Nuwbits = 15*4; config.bad_uw_errors = 5;
     config.state_machine = "data";
     config.ftwindow_width = 32; config.amp_scale = 132E3;
-    config.EsNo_est_all_symbols = 0; config.amp_est_mode = 1; config.EsNodB = 10;
+    config.amp_est_mode = 1; config.EsNodB = 10;
   elseif strcmp(mode,"qam16c2")
     Ns=5; config.Np=31; Tcp = 0.004; Ts = 0.016; Nc = 33; config.data_mode = "streaming";
     config.bps=4; config.Ntxtbits = 0; config.Nuwbits = 42*4; config.bad_uw_errors = 15;
     config.ftwindow_width = 80; config.amp_scale = 135E3; config.state_machine = "data";
-    config.EsNo_est_all_symbols = 0; config.amp_est_mode = 1; config.EsNodB = 10;
+    config.amp_est_mode = 1; config.EsNodB = 10;
     config.tx_uw = zeros(1,config.Nuwbits = 42*4);
     config.tx_uw(1:24) = [1 1 0 0  1 0 1 0  1 1 1 1  0 0 0 0  1 1 1 1  0 0 0 0];
     config.tx_uw(end-24+1:end) = [1 1 0 0  1 0 1 0  1 1 1 1  0 0 0 0  1 1 1 1  0 0 0 0];

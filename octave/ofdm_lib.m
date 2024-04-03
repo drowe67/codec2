@@ -52,7 +52,6 @@ function states = ofdm_init(config)
   bad_uw_errors = config.bad_uw_errors;
   amp_scale = config.amp_scale;
   amp_est_mode = config.amp_est_mode;
-  EsNo_est_all_symbols = config.EsNo_est_all_symbols;
   EsNodB = config.EsNodB; 
   state_machine = config.state_machine; 
   edge_pilots = config.edge_pilots;
@@ -275,7 +274,6 @@ function states = ofdm_init(config)
 
   % Es/No (SNR) est states
 
-  states.EsNo_est_all_symbols = EsNo_est_all_symbols;
   states.clock_offset_est = 0;
 
   % pre-amble for data modes
