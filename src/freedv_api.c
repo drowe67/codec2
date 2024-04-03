@@ -247,7 +247,8 @@ void freedv_close(struct freedv *freedv) {
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, freedv->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, freedv->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, freedv->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, freedv->mode)) {
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, freedv->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, freedv->mode)) {
     FREE(freedv->rx_syms);
     FREE(freedv->rx_amps);
     FREE(freedv->ldpc);
@@ -279,7 +280,8 @@ static int is_ofdm_mode(struct freedv *f) {
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode);
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode);
 }
 
 static int is_ofdm_data_mode(struct freedv *f) {
@@ -288,7 +290,8 @@ static int is_ofdm_data_mode(struct freedv *f) {
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode);
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -479,7 +482,8 @@ void freedv_rawdatacomptx(struct freedv *f, COMP mod_out[],
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode))
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode))
     freedv_comptx_ofdm(f, mod_out);
 
   if (FDV_MODE_ACTIVE(FREEDV_MODE_FSK_LDPC, f->mode)) {
@@ -1079,7 +1083,8 @@ int freedv_rawdatacomprx(struct freedv *f, unsigned char *packed_payload_bits,
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode))
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode))
     rx_status = freedv_comp_short_rx_ofdm(f, (void *)demod_in, 0, 1.0f);
   if (FDV_MODE_ACTIVE(FREEDV_MODE_FSK_LDPC, f->mode)) {
     rx_status = freedv_rx_fsk_ldpc_data(f, demod_in);
