@@ -62,6 +62,7 @@ extern "C" {
 #define FREEDV_MODE_DATAC4 18
 #define FREEDV_MODE_DATAC13 19
 #define FREEDV_MODE_DATAC14 20
+#define FREEDV_MODE_DATA_CUSTOM 21
 
 // Sample rates used
 #define FREEDV_FS_8000 8000
@@ -144,6 +145,9 @@ extern "C" {
 #if !defined(FREEDV_MODE_DATAC14_EN)
 #define FREEDV_MODE_DATAC14_EN FREEDV_MODE_EN_DEFAULT
 #endif
+#if !defined(FREEDV_MODE_DATA_CUSTOM_EN)
+#define FREEDV_MODE_DATA_CUSTOM_EN FREEDV_MODE_EN_DEFAULT
+#endif
 
 #define FDV_MODE_ACTIVE(mode_name, var) \
   ((mode_name##_EN) == 0 ? 0 : (var) == mode_name)
@@ -163,6 +167,9 @@ struct freedv_advanced {
   int first_tone;    // Freq of first tone Hz
   int tone_spacing;  // Spacing between tones Hz
   char *codename;    // LDPC codename, from codes listed in ldpc_codes.c
+
+  // parameters for FREEDV_MODE_DATA_CUSTOM
+  void *config;  // ptr to struct OFDM_CONFIG
 };
 
 // Called when text message char is decoded
