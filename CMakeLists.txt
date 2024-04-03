@@ -1291,6 +1291,12 @@ endif(NOT APPLE)
                             ./freedv_data_raw_rx --framesperburst 2 --testframes DATAC0 - /dev/null --vv")
              set_tests_properties(test_freedv_data_raw_ofdm_datac0_burst PROPERTIES PASS_REGULAR_EXPRESSION "Coded FER: 0.0000 Tfrms:     6 Tfers:     0")
 
+      add_test(NAME test_freedv_data_raw_ofdm_data_custom
+             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            ./freedv_data_raw_tx --bursts 3 --testframes 3 custom /dev/zero - |
+                            ./freedv_data_raw_rx --testframes custom - /dev/null --vv")
+             set_tests_properties(test_freedv_data_raw_ofdm_data_custom PROPERTIES PASS_REGULAR_EXPRESSION "Coded FER: 0.0000 Tfrms:     3 Tfers:     0")
+
      # Burst mode with data file I/O:
      add_test(NAME test_freedv_data_raw_ofdm_datac0_burst_file
              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
