@@ -108,6 +108,7 @@ struct OFDM_CONFIG {
   char *data_mode;
   float fmin;
   float fmax;
+  float EsNodB; /* EsNo est used for LDPC decoder */
 };
 
 struct OFDM {
@@ -248,6 +249,7 @@ struct OFDM {
                                detector */
 
   char *codename;
+  float EsNodB; /* EsNo est used for LDPC decoder */
   char *state_machine;
 };
 

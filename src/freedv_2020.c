@@ -229,8 +229,7 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
 
   f->sync = 0;
 
-  // TODO: should be higher for 2020?
-  float EsNo = 3.0;
+  float EsNo = pow(10.0, ofdm->EsNodB / 10);
 
   /* looking for modem sync */
 

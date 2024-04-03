@@ -190,6 +190,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     ofdm->state_machine = "voice1";
     ofdm->edge_pilots = 1;
     ofdm->codename = "HRA_112_112";
+    ofdm->EsNodB = 3.0;
     ofdm->amp_est_mode = 0;
     ofdm->tx_bpf_en = true;
     ofdm->rx_bpf_en = false;
@@ -224,6 +225,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     ofdm->state_machine = config->state_machine;
     ofdm->edge_pilots = config->edge_pilots;
     ofdm->codename = config->codename;
+    ofdm->EsNodB = config->EsNodB;
     ofdm->amp_est_mode = config->amp_est_mode;
     ofdm->tx_bpf_en = config->tx_bpf_en;
     ofdm->rx_bpf_en = config->rx_bpf_en;
@@ -273,6 +275,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
   ofdm->config.state_machine = ofdm->state_machine;
   ofdm->config.edge_pilots = ofdm->edge_pilots;
   ofdm->config.codename = ofdm->codename;
+  ofdm->config.EsNodB = ofdm->EsNodB;
   ofdm->config.amp_est_mode = ofdm->amp_est_mode;
   ofdm->config.tx_bpf_en = ofdm->tx_bpf_en;
   ofdm->config.rx_bpf_en = ofdm->rx_bpf_en;

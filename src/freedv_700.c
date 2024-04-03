@@ -447,7 +447,7 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
   assert((demod_in_is_short == 0) || (demod_in_is_short == 1));
 
   int rx_status = 0;
-  float EsNo = 3.0; /* further work: estimate this properly from signal */
+  float EsNo = pow(10.0, ofdm->EsNodB / 10);
   f->sync = 0;
 
   /* looking for OFDM modem sync */
