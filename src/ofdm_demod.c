@@ -552,12 +552,12 @@ int main(int argc, char *argv[]) {
 
           /* count errors across UW, payload, txt bits */
           int rx_bits[Nbitsperpacket];
-          int dibit[2];
-          assert(ofdm->bps == 2); /* this only works for QPSK at this stage */
+          int bits[ofdm->bps];
           for (int s = 0; s < Nsymsperpacket; s++) {
-            qpsk_demod(rx_syms[s], dibit);
-            rx_bits[2 * s] = dibit[1];
-            rx_bits[2 * s + 1] = dibit[0];
+            if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+            if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
+            for (int i = 0; i < ofdm->bps; i++)
+              rx_bits[ofdm->bps * s + i] = bits[ofdm->bps - 1 - i];
           }
           for (Nerrs_raw = 0, i = 0; i < Nbitsperpacket; i++)
             if (tx_bits[i] != rx_bits[i]) Nerrs_raw++;

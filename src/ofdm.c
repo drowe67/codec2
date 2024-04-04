@@ -127,9 +127,12 @@ complex float qam16_mod(int *bits) {
   return qam16[(bits[3] << 3) | (bits[2] << 2) | (bits[1] << 1) | bits[0]];
 }
 
-void qam16_demod(complex float symbol, int *bits) {
+void qam16_demod(complex float symbol, int *bits, float amp_est) {
   float dist[16];
   int i;
+
+  amp_est += 1E-12;  // prevent /0 errors
+  symbol /= amp_est;
 
   for (i = 0; i < 16; i++) {
     dist[i] = cnormf(symbol - qam16[i]);
@@ -1919,7 +1922,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
           aphase_est_pilot[i];
 
       if (ofdm->bps == 2) qpsk_demod(rx_corr, abit);
-      if (ofdm->bps == 4) qam16_demod(rx_corr, abit);
+      if (ofdm->bps == 4) qam16_demod(rx_corr, abit, aamp_est_pilot[i]);
       for (int i = 0; i < ofdm->bps; i++)
         rx_bits[bit_index++] = abit[ofdm->bps - 1 - i];
     }
@@ -2458,13 +2461,11 @@ void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
   int Nuwsyms = ofdm->nuwbits / ofdm->bps;
   int Ntxtsyms = ofdm->ntxtbits / ofdm->bps;
-  int dibit[2];
+  int bits[ofdm->bps];
   int s, t;
 
   int p = 0;
   int u = 0;
-
-  assert(ofdm->bps == 2); /* this only works for QPSK at this stage */
 
   for (s = 0; s < (Nsymsperpacket - Ntxtsyms); s++) {
     if ((u < Nuwsyms) && (s == ofdm->uw_ind_sym[u])) {
@@ -2479,11 +2480,12 @@ void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
   assert(u == Nuwsyms);
   assert(p == (Nsymsperpacket - Nuwsyms - Ntxtsyms));
 
-  for (t = 0; s < Nsymsperpacket; s++, t += 2) {
-    qpsk_demod(rx_syms[s], dibit);
+  for (t = 0; s < Nsymsperpacket; s++, t += ofdm->bps) {
+    if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+    if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
 
-    txt_bits[t] = dibit[1];
-    txt_bits[t + 1] = dibit[0];
+    for (int i = 0; i < ofdm->bps; i++)
+      txt_bits[t + i] = bits[ofdm->bps - 1 - i];
   }
 
   assert(t == ofdm->ntxtbits);
@@ -2502,13 +2504,12 @@ void ofdm_disassemble_qpsk_modem_packet_with_text_amps(
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
   int Nuwsyms = ofdm->nuwbits / ofdm->bps;
   int Ntxtsyms = ofdm->ntxtbits / ofdm->bps;
-  int dibit[2];
+  int bits[ofdm->bps];
   int s, t;
 
   int p = 0;
   int u = 0;
 
-  assert(ofdm->bps == 2); /* this only works for QPSK at this stage */
   assert(textIndex != NULL);
 
   for (s = 0; s < (Nsymsperpacket - Ntxtsyms); s++) {
@@ -2525,11 +2526,12 @@ void ofdm_disassemble_qpsk_modem_packet_with_text_amps(
   assert(p == (Nsymsperpacket - Nuwsyms - Ntxtsyms));
 
   *textIndex = s;
-  for (t = 0; s < Nsymsperpacket; s++, t += 2) {
-    qpsk_demod(rx_syms[s], dibit);
+  for (t = 0; s < Nsymsperpacket; s++, t += ofdm->bps) {
+    if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+    if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
 
-    txt_bits[t] = dibit[1];
-    txt_bits[t + 1] = dibit[0];
+    for (int i = 0; i < ofdm->bps; i++)
+      txt_bits[t + i] = bits[ofdm->bps - 1 - i];
   }
 
   assert(t == ofdm->ntxtbits);
@@ -2542,17 +2544,15 @@ void ofdm_extract_uw(struct OFDM *ofdm, complex float rx_syms[],
                      float rx_amps[], uint8_t rx_uw[]) {
   int Nsymsperframe = ofdm->bitsperframe / ofdm->bps;
   int Nuwsyms = ofdm->nuwbits / ofdm->bps;
-  int dibit[2];
   int s, u;
-
-  assert(ofdm->bps ==
-         2); /* this only works for QPSK at this stage (e.g. UW demod) */
 
   for (s = 0, u = 0; s < Nsymsperframe * ofdm->nuwframes; s++) {
     if ((u < Nuwsyms) && (s == ofdm->uw_ind_sym[u])) {
-      qpsk_demod(rx_syms[s], dibit);
-      rx_uw[2 * u] = dibit[1];
-      rx_uw[2 * u + 1] = dibit[0];
+      int bits[ofdm->bps];
+      if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+      if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
+      for (int i = 0; i < ofdm->bps; i++)
+        rx_uw[ofdm->bps * u + i] = bits[ofdm->bps - 1 - i];
       u++;
     }
   }

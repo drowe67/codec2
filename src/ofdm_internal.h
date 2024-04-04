@@ -258,7 +258,7 @@ struct OFDM {
 complex float qpsk_mod(int *);
 complex float qam16_mod(int *);
 void qpsk_demod(complex float, int *);
-void qam16_demod(complex float, int *);
+void qam16_demod(complex float, int *, float);
 void ofdm_txframe(struct OFDM *, complex float *, complex float[]);
 void ofdm_assemble_qpsk_modem_packet(struct OFDM *, uint8_t[], uint8_t[],
                                      uint8_t[]);
