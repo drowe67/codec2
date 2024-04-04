@@ -73,9 +73,9 @@ function states = ofdm_init(config)
   states.Nsampersymbol = states.M+states.Ncp;     % number of samples in a single symbol
   states.Nsamperframe  = Ns*states.Nsampersymbol; % number of samples in a modem frame
   states.qam16 = [
-    1 + j,  1 + j*3,  3 + j,  3 + j*3;
-    1 - j,  1 - j*3,  3 - j,  3 - j*3;
-   -1 + j, -1 + j*3, -3 + j, -3 + j*3;
+    1 + j,  1 + j*3,  3 + j,  3 + j*3, ...
+    1 - j,  1 - j*3,  3 - j,  3 - j*3, ...
+   -1 + j, -1 + j*3, -3 + j, -3 + j*3, ...
    -1 - j, -1 - j*3, -3 - j, -3 - j*3];
   rms = sqrt(states.qam16(:)'*states.qam16(:)/16);% set average Es to 1
   states.qam16 /= rms;
@@ -127,7 +127,7 @@ function states = ofdm_init(config)
       states.uw_ind = [states.uw_ind bps*ind_sym-b];   % bit index
     end
   end
-
+  
   % how many of the first few frames have UW symbols in them
   Nsymsperframe = states.Nbitsperframe/states.bps;
   states.Nuwframes = ceil(states.uw_ind_sym(end)/Nsymsperframe);

@@ -75,13 +75,7 @@ static void ofdm_demod_core(struct OFDM *, int *);
  */
 static const complex float qpsk[] = {1.0f + 0.0f * I, 0.0f + 1.0f * I,
                                      0.0f - 1.0f * I, -1.0f + 0.0f * I};
-/*
-static const complex float qam16[] = {
-    1.0f + 1.0f * I,  1.0f + 3.0f * I,  3.0f + 1.0f * I,  3.0f + 3.0f * I,
-    1.0f - 1.0f * I,  1.0f - 3.0f * I,  3.0f - 1.0f * I,  3.0f - 3.0f * I,
-    -1.0f + 1.0f * I, -1.0f + 3.0f * I, -3.0f + 1.0f * I, -3.0f + 3.0f * I,
-    -1.0f - 1.0f * I, -1.0f - 3.0f * I, -3.0f - 1.0f * I, -3.0f - 3.0f * I};
-*/
+
 static const complex float qam16[] = {
     4.4721e-01 + 2.7756e-17 * I,  8.9443e-01 + 4.4721e-01 * I,
     8.9443e-01 - 4.4721e-01 * I,  1.3416e+00 + 1.1102e-16 * I,
@@ -91,6 +85,7 @@ static const complex float qam16[] = {
     -4.4721e-01 + 8.9443e-01 * I, -1.1102e-16 + 1.3416e+00 * I,
     -4.4721e-01 - 2.7756e-17 * I, -8.9443e-01 - 4.4721e-01 * I,
     -8.9443e-01 + 4.4721e-01 * I, -1.3416e+00 - 1.1102e-16 * I};
+
 /*
  * These pilots are compatible with Octave version
  */
@@ -476,7 +471,6 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
   ofdm->tx_uw_syms =
       MALLOC(sizeof(complex float) * (ofdm->nuwbits / ofdm->bps));
   assert(ofdm->tx_uw_syms != NULL);
-
   for (int b = 0, s = 0; b < ofdm->nuwbits; b += ofdm->bps, s++) {
     int bits[ofdm->bps];
     for (int i = 0; i < ofdm->bps; i++)
