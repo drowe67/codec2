@@ -1193,31 +1193,14 @@ void ofdm_mod(struct OFDM *ofdm, COMP *result, const int *tx_bits) {
   complex float *tx =
       (complex float *)result;  // complex has same memory layout
   complex float tx_sym_lin[length];
-  int dibit[2];
-  int s, i;
 
-  if (ofdm->bps == 1) {
-    /* Here we will have Nbitsperpacket / 1 */
-
-    for (s = 0; s < length; s++) {
-      tx_sym_lin[s] = (float)(2 * tx_bits[s] - 1);
-    }
-  } else if (ofdm->bps == 2) {
-    /* Here we will have Nbitsperpacket / 2 */
-
-    for (s = 0, i = 0; i < length; s += 2, i++) {
-      dibit[0] = tx_bits[s + 1] & 0x1;
-      dibit[1] = tx_bits[s] & 0x1;
-
-      tx_sym_lin[i] = qpsk_mod(dibit);
-    }
-  } else if (ofdm->bps == 4) {
-    for (int b = 0, s = 0; b < ofdm->bitsperpacket; b += ofdm->bps, s++) {
-      int bits[ofdm->bps];
-      for (int i = 0; i < ofdm->bps; i++)
-        bits[ofdm->bps - 1 - i] = tx_bits[b + i] & 0x1;
-      tx_sym_lin[s] = qam16_mod(bits);
-    }
+  assert((ofdm->bps == 2) || (ofdm->bps == 4));
+  for (int b = 0, s = 0; b < ofdm->bitsperpacket; b += ofdm->bps, s++) {
+    int bits[ofdm->bps];
+    for (int i = 0; i < ofdm->bps; i++)
+      bits[ofdm->bps - 1 - i] = tx_bits[b + i] & 0x1;
+    if (ofdm->bps == 2) tx_sym_lin[s] = qpsk_mod(bits);
+    if (ofdm->bps == 4) tx_sym_lin[s] = qam16_mod(bits);
   }
 
   ofdm_txframe(ofdm, tx, tx_sym_lin);
@@ -1888,7 +1871,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
    * frame bit ordering correct
    */
   complex float rx_corr;
-  int abit[2];
+  int abit[ofdm->bps];
   int bit_index = 0;
   float sum_amp = 0.0f;
 
@@ -1935,17 +1918,10 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
       ofdm->aphase_est_pilot_log[(rr * ofdm->nc) + (i - 1)] =
           aphase_est_pilot[i];
 
-      if (ofdm->bps == 1) {
-        rx_bits[bit_index++] = crealf(rx_corr) > 0.0f;
-      } else if (ofdm->bps == 2) {
-        /*
-         * Only one final task, decode what quadrant the phase
-         * is in, and return the dibits
-         */
-        qpsk_demod(rx_corr, abit);
-        rx_bits[bit_index++] = abit[1];
-        rx_bits[bit_index++] = abit[0];
-      }
+      if (ofdm->bps == 2) qpsk_demod(rx_corr, abit);
+      if (ofdm->bps == 4) qam16_demod(rx_corr, abit);
+      for (int i = 0; i < ofdm->bps; i++)
+        rx_bits[bit_index++] = abit[ofdm->bps - 1 - i];
     }
   }
 
