@@ -669,6 +669,13 @@ endif()
                             cd ${CMAKE_CURRENT_BINARY_DIR}/src;
                             cat test.raw | ./ofdm_demod --mode datac14 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
              
+    # QAM16C2 Octave Tx, C Rx, burst mode
+    add_test(NAME test_OFDM_modem_qam16c2_octave
+             COMMAND sh -c "cd ${CMAKE_CURRENT_SOURCE_DIR}/octave;
+                            DISPLAY=\"\" octave-cli -qf --eval 'ofdm_ldpc_tx(\"${CMAKE_CURRENT_BINARY_DIR}/src/test.raw\",\"qam16c2\",1,10,\"awgn\",\"bursts\",2)';
+                            cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            cat test.raw | ./ofdm_demod --mode qam16c2 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
+
     # DATAC4 C Tx, C Rx, burst mode
     add_test(NAME test_OFDM_modem_datac4_ldpc_burst
              COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
@@ -689,6 +696,13 @@ endif()
                             ./ofdm_mod --mode datac14 --in /dev/zero --testframes 1 --verbose 1 --ldpc --bursts 10 |
                             ./ch - - --No -17 |
                             ./ofdm_demod --mode datac14 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
+
+    # QAM16C2 C Tx, C Rx, burst mode
+    add_test(NAME test_OFDM_modem_qam16c2_ldpc_burst
+             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            ./ofdm_mod --mode qam16c2 --in /dev/zero --testframes 1 --verbose 1 --ldpc --bursts 10 |
+                            ./ch - - --No -30 |
+                            ./ofdm_demod --mode qam16c2 --out /dev/null --testframes --ldpc --verbose 2 --packetsperburst 1")
 
     # -------------------------------------------------------------------------
     #                                LDPC
@@ -1340,6 +1354,13 @@ endif(NOT APPLE)
                             ./freedv_data_raw_rx DATAC14 - binaryOut.bin -v;
                             diff binaryIn.bin binaryOut.bin")
 
+     add_test(NAME test_freedv_data_raw_ofdm_qam16c2_burst_file
+             COMMAND sh -c "cd ${CMAKE_CURRENT_BINARY_DIR}/src;
+                            head -c $((1213*10)) </dev/urandom > binaryIn.bin;
+                            ./freedv_data_raw_tx qam16c2 binaryIn.bin - --bursts 10 |
+                            ./freedv_data_raw_rx qam16c2 - binaryOut.bin -v;
+                            diff binaryIn.bin binaryOut.bin")
+
      # FSK LDPC default 100 bit/s 2FSK, enough noise for several % raw BER to give
      # FEC/acquisition a work out, bursts of 1 frame as that stresses acquisition
      add_test(NAME test_freedv_data_raw_fsk_ldpc_100
@@ -1426,6 +1447,7 @@ endif(NOT APPLE)
         test_OFDM_modem_datac4_octave
         test_OFDM_modem_datac13_octave
         test_OFDM_modem_datac14_octave
+        test_OFDM_modem_qam16c2_octave
         test_fsk_lib_4fsk_ldpc
         test_OFDM_modem_datac0_compression
         PROPERTIES
