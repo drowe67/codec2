@@ -103,7 +103,7 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->txtbits = 0;
     config->nuwbits = 42 * 4;
     assert(config->nuwbits <= MAX_UW_BITS);
-    config->bad_uw_errors = 15;
+    config->bad_uw_errors = 50;
     config->ftwindowwidth = 80;
     config->state_machine = "data";
     config->amp_est_mode = 1;

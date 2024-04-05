@@ -408,9 +408,7 @@ int main(int argc, char *argv[]) {
   else
     Ndiscard = 1; /* much longer packets, so discard thresh smaller */
 
-  float EsNo = 3.0f;
-
-  if (verbose == 2) fprintf(stderr, "Warning EsNo: %f hard coded\n", EsNo);
+  float EsNo = pow(10.0, ofdm->EsNodB / 10.0);
 
   /* More logging */
   COMP payload_syms_log[NFRAMES][Npayloadsymsperpacket];
