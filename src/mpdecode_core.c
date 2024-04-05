@@ -27,10 +27,20 @@
 #define QPSK_CONSTELLATION_SIZE 4
 #define QPSK_BITS_PER_SYMBOL 2
 
-/* QPSK constellation for symbol likelihood calculations */
+/* Constellations for symbol likelihood calculations */
 
-static COMP S_matrix[] = {
+static COMP S_matrix_qpsk[] = {
     {1.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, -1.0f}, {-1.0f, 0.0f}};
+
+static COMP S_matrix_qam16[] = {
+    {4.4721e-01, 2.7756e-17},   {8.9443e-01, 4.4721e-01},
+    {8.9443e-01, -4.4721e-01},  {1.3416e+00, 1.1102e-16},
+    {2.7756e-17, -4.4721e-01},  {-4.4721e-01, -8.9443e-01},
+    {4.4721e-01, -8.9443e-01},  {1.1102e-16, -1.3416e+00},
+    {-2.7756e-17, 4.4721e-01},  {4.4721e-01, 8.9443e-01},
+    {-4.4721e-01, 8.9443e-01},  {-1.1102e-16, 1.3416e+00},
+    {-4.4721e-01, -2.7756e-17}, {-8.9443e-01, -4.4721e-01},
+    {-8.9443e-01, 4.4721e-01},  {-1.3416e+00, -1.1102e-16}};
 
 // c_nodes will be an array of NumberParityBits of struct c_node
 // Each c_node contains an array of <degree> c_sub_node elements
@@ -633,6 +643,11 @@ void symbols_to_llrs(float llr[], COMP rx_psk_symbols[], float rx_amps[],
   int constellation_points = 1 << bps;
   float symbol_likelihood[nsyms * constellation_points];
   float bit_likelihood[nsyms * bps];
+
+  COMP *S_matrix;
+  assert((bps == 2) || (bps == 4));
+  if (bps == 2) S_matrix = S_matrix_qpsk;
+  if (bps == 4) S_matrix = S_matrix_qam16;
 
   Demod2D(symbol_likelihood, rx_psk_symbols, S_matrix, constellation_points,
           EsNo, rx_amps, mean_amp, nsyms);
