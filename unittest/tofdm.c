@@ -475,8 +475,8 @@ int main(int argc, char *argv[]) {
       float *ldpc_codeword_symbol_amps =
           &ofdm->rx_amp[(ofdm_nuwbits + ofdm_ntxtbits) / ofdm_bps];
 
-      Demod2D(symbol_likelihood, ldpc_codeword_symbols, S_matrix, EsNo,
-              ldpc_codeword_symbol_amps, ofdm->mean_amp,
+      Demod2D(symbol_likelihood, ldpc_codeword_symbols, S_matrix, 1 << ofdm_bps,
+              EsNo, ldpc_codeword_symbol_amps, ofdm->mean_amp,
               CODED_BITSPERFRAME / ofdm_bps);
       Somap(bit_likelihood, symbol_likelihood, 1 << ofdm_bps, ofdm_bps,
             CODED_BITSPERFRAME / ofdm_bps);

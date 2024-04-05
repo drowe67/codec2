@@ -500,7 +500,7 @@ int main(int argc, char *argv[]) {
           }
 
           symbols_to_llrs(llr, payload_syms_de, payload_amps_de, EsNo,
-                          ofdm->mean_amp, Npayloadsymsperpacket);
+                          ofdm->mean_amp, ofdm->bps, Npayloadsymsperpacket);
 
           assert(Ndatabitsperpacket == ldpc.data_bits_per_frame);
           ldpc_decode_frame(&ldpc, &parityCheckCount, &iter, out_char, llr);

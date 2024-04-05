@@ -182,7 +182,8 @@ static int reliable_text_ldpc_decode(reliable_text_impl_t* obj, char* dest) {
     float EsNo = 3.0;  // note: constant from freedv_700.c
 
     symbols_to_llrs(llr, (COMP*)deinterleavedSyms, deinterleavedAmps, EsNo,
-                    obj->fdv->ofdm->mean_amp, Npayloadsymsperpacket);
+                    obj->fdv->ofdm->mean_amp, obj->fdv->ofdm->bps,
+                    Npayloadsymsperpacket);
   } else {
     // Deinterlace the received bits.
     gp_deinterleave_bits(deinterleavedBits, src, LDPC_TOTAL_SIZE_BITS / 2);

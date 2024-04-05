@@ -286,7 +286,7 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
     }
 
     symbols_to_llrs(llr, codeword_symbols_de, codeword_amps_de, EsNo,
-                    ofdm->mean_amp, coded_syms_per_frame);
+                    ofdm->mean_amp, ofdm->bps, coded_syms_per_frame);
     ldpc_decode_frame(ldpc, &parityCheckCount, &iter, out_char, llr);
     if (parityCheckCount != ldpc->NumberParityBits)
       rx_status |= FREEDV_RX_BIT_ERRORS;
