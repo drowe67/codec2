@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
           }
 
           symbols_to_llrs(llr, codeword_symbols_de, codeword_amps_de, EsNo,
-                          ofdm->mean_amp, coded_syms_per_frame);
+                          ofdm->mean_amp, ofdm->bps, coded_syms_per_frame);
           iter = run_ldpc_decoder(&ldpc, out_char, llr, &parityCheckCount);
 
           // fprintf(stderr,"iter: %d pcc: %d\n", iter, parityCheckCount);
@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
         } else {
           /* lpdc_en == 0,  external LDPC decoder, so output LLRs */
           symbols_to_llrs(llr, codeword_symbols_de, codeword_amps_de, EsNo,
-                          ofdm->mean_amp, coded_syms_per_frame);
+                          ofdm->mean_amp, ofdm->bps, coded_syms_per_frame);
           fwrite(llr, sizeof(double), coded_bits_per_frame, fout);
         }
       } else {  // !llrs_en (or ldpc_en)
