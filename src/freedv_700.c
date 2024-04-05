@@ -198,6 +198,7 @@ void freedv_ofdm_data_open(struct freedv *f, struct freedv_advanced *adv) {
   if (f->mode == FREEDV_MODE_DATAC4) strcpy(mode, "datac4");
   if (f->mode == FREEDV_MODE_DATAC13) strcpy(mode, "datac13");
   if (f->mode == FREEDV_MODE_DATAC14) strcpy(mode, "datac14");
+  if (f->mode == FREEDV_MODE_QAM16C2) strcpy(mode, "qam16c2");
   if (f->mode == FREEDV_MODE_DATA_CUSTOM) {
     assert(adv != NULL);
     assert(adv->config != NULL);
@@ -506,8 +507,6 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
       symbols_to_llrs(llr, payload_syms_de, payload_amps_de, EsNo,
                       ofdm->mean_amp, ofdm->bps, Npayloadsymsperpacket);
       ldpc_decode_frame(ldpc, &parityCheckCount, &iter, decoded_codeword, llr);
-      // iter = run_ldpc_decoder(ldpc, decoded_codeword, llr,
-      // &parityCheckCount);
       memcpy(f->rx_payload_bits, decoded_codeword, Ndatabitsperpacket);
 
       if (strlen(ofdm->data_mode)) {
