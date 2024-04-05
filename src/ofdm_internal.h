@@ -260,17 +260,17 @@ complex float qam16_mod(int *);
 void qpsk_demod(complex float, int *);
 void qam16_demod(complex float, int *, float);
 void ofdm_txframe(struct OFDM *, complex float *, complex float[]);
-void ofdm_assemble_qpsk_modem_packet(struct OFDM *, uint8_t[], uint8_t[],
-                                     uint8_t[]);
-void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *, complex float[],
-                                             COMP[], uint8_t[]);
-void ofdm_disassemble_qpsk_modem_packet(struct OFDM *, complex float rx_syms[],
-                                        float rx_amps[], COMP[], float[],
-                                        short[]);
-void ofdm_disassemble_qpsk_modem_packet_with_text_amps(struct OFDM *,
-                                                       complex float rx_syms[],
-                                                       float rx_amps[], COMP[],
-                                                       float[], short[], int *);
+void ofdm_assemble_psk_modem_packet(struct OFDM *, uint8_t[], uint8_t[],
+                                    uint8_t[]);
+void ofdm_assemble_psk_modem_packet_symbols(struct OFDM *, complex float[],
+                                            COMP[], uint8_t[]);
+void ofdm_disassemble_psk_modem_packet(struct OFDM *, complex float rx_syms[],
+                                       float rx_amps[], COMP[], float[],
+                                       short[]);
+void ofdm_disassemble_psk_modem_packet_with_text_amps(struct OFDM *,
+                                                      complex float rx_syms[],
+                                                      float rx_amps[], COMP[],
+                                                      float[], short[], int *);
 void ofdm_extract_uw(struct OFDM *ofdm, complex float rx_syms[],
                      float rx_amps[], uint8_t rx_uw[]);
 void ofdm_rand(uint16_t[], int);

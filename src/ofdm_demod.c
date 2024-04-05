@@ -473,8 +473,8 @@ int main(int argc, char *argv[]) {
         /* we have received enough frames to make a complete packet .... */
 
         /* extract payload symbols from packet */
-        ofdm_disassemble_qpsk_modem_packet(ofdm, rx_syms, rx_amps, payload_syms,
-                                           payload_amps, txt_bits);
+        ofdm_disassemble_psk_modem_packet(ofdm, rx_syms, rx_amps, payload_syms,
+                                          payload_amps, txt_bits);
 
         if (ldpc_en) {
           assert((ofdm_nuwbits + ofdm_ntxtbits + Npayloadbitsperpacket) <=
@@ -492,8 +492,8 @@ int main(int argc, char *argv[]) {
           uint8_t out_char[Npayloadbitsperpacket];
 
           if (testframes == true) {
-            Nerrs_raw =
-                count_uncoded_errors(&ldpc, ofdm_config, payload_syms_de, 0);
+            Nerrs_raw = count_uncoded_errors(
+                &ldpc, ofdm_config, payload_syms_de, payload_amps_de, 0);
             Terrs += Nerrs_raw;
             Tbits +=
                 Npayloadbitsperpacket; /* not counting errors in txt bits */
@@ -524,7 +524,7 @@ int main(int argc, char *argv[]) {
           assert(Npayloadsymsperpacket * ofdm_config->bps ==
                  Npayloadbitsperpacket);
           for (i = 0; i < Npayloadsymsperpacket; i++) {
-            int bits[2];
+            int bits[ofdm->bps];
             complex float s = payload_syms[i].real + I * payload_syms[i].imag;
             qpsk_demod(s, bits);
             rx_bits_char[ofdm_config->bps * i] = bits[1];
@@ -547,8 +547,7 @@ int main(int argc, char *argv[]) {
           memset(txt_bits, 0, ofdm_ntxtbits);
           uint8_t tx_bits[Nbitsperpacket];
           ofdm_generate_payload_data_bits(payload_bits, Npayloadbitsperpacket);
-          ofdm_assemble_qpsk_modem_packet(ofdm, tx_bits, payload_bits,
-                                          txt_bits);
+          ofdm_assemble_psk_modem_packet(ofdm, tx_bits, payload_bits, txt_bits);
 
           /* count errors across UW, payload, txt bits */
           int rx_bits[Nbitsperpacket];

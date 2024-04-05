@@ -248,7 +248,7 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
 
     ofdm_demod(ofdm, rx_bits, demod_in);
     ofdm_extract_uw(ofdm, ofdm->rx_np, ofdm->rx_amp, rx_uw);
-    ofdm_disassemble_qpsk_modem_packet_with_text_amps(
+    ofdm_disassemble_psk_modem_packet_with_text_amps(
         ofdm, ofdm->rx_np, ofdm->rx_amp, payload_syms, payload_amps, txt_bits,
         &txt_sym_index);
 
@@ -279,8 +279,8 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
     uint8_t out_char[coded_bits_per_frame];
 
     if (f->test_frames) {
-      Nerrs_raw =
-          count_uncoded_errors(ldpc, &f->ofdm->config, codeword_symbols_de, 0);
+      Nerrs_raw = count_uncoded_errors(ldpc, &f->ofdm->config,
+                                       codeword_symbols_de, payload_amps_de, 0);
       f->total_bit_errors += Nerrs_raw;
       f->total_bits += f->ofdm_bitsperframe;
     }

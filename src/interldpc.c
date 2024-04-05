@@ -134,17 +134,18 @@ void ldpc_encode_frame(struct LDPC *ldpc, int codeword[],
   for (j = 0; j < ldpc->NumberParityBits; i++, j++) codeword[i] = pbits[j];
 }
 
-void qpsk_modulate_frame(COMP tx_symbols[], int codeword[], int n) {
+void psk_modulate_frame(int bps, COMP tx_symbols[], int codeword[], int n) {
   int s, i;
-  int dibit[2];
-  complex float qpsk_symb;
+  int bits[bps];
+  complex float symb;
 
-  for (s = 0, i = 0; i < n; s += 2, i++) {
-    dibit[0] = codeword[s + 1] & 0x1;
-    dibit[1] = codeword[s] & 0x1;
-    qpsk_symb = qpsk_mod(dibit);
-    tx_symbols[i].real = crealf(qpsk_symb);
-    tx_symbols[i].imag = cimagf(qpsk_symb);
+  assert((bps == 2) || (bps == 4));
+  for (s = 0, i = 0; i < n; s += bps, i++) {
+    for (int b = 0; b < bps; b++) bits[b] = codeword[s + bps - 1 - b] & 0x1;
+    if (bps == 2) symb = qpsk_mod(bits);
+    if (bps == 4) symb = qam16_mod(bits);
+    tx_symbols[i].real = crealf(symb);
+    tx_symbols[i].imag = cimagf(symb);
   }
 }
 
@@ -220,7 +221,8 @@ void ldpc_decode_frame(struct LDPC *ldpc, int *parityCheckCount, int *iter,
    of txt bits as this is done after we dissassemmble the frame */
 
 int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config,
-                         COMP codeword_symbols_de[], int crc16) {
+                         COMP codeword_symbols_de[], float codeword_amps_de[],
+                         int crc16) {
   int i, Nerrs;
 
   int coded_syms_per_frame = ldpc->coded_bits_per_frame / config->bps;
@@ -248,12 +250,13 @@ int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config,
   ldpc_encode_frame(ldpc, test_codeword, tx_bits);
 
   for (i = 0; i < coded_syms_per_frame; i++) {
-    int bits[2];
+    int bits[config->bps];
     complex float s =
         codeword_symbols_de[i].real + I * codeword_symbols_de[i].imag;
-    qpsk_demod(s, bits);
-    rx_bits_raw[config->bps * i] = bits[1];
-    rx_bits_raw[config->bps * i + 1] = bits[0];
+    if (config->bps == 2) qpsk_demod(s, bits);
+    if (config->bps == 4) qam16_demod(s, bits, codeword_amps_de[i]);
+    for (int b = 0; b < config->bps; b++)
+      rx_bits_raw[config->bps * i + b] = bits[config->bps - 1 - b];
   }
 
   Nerrs = 0;
@@ -329,10 +332,11 @@ void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc,
   complex float tx_symbols[Nbitsperpacket / ofdm->bps];
 
   ldpc_encode_frame(ldpc, codeword, tx_bits);
-  qpsk_modulate_frame(payload_symbols, codeword, Npayloadsymsperpacket);
+  psk_modulate_frame(ofdm->bps, payload_symbols, codeword,
+                     Npayloadsymsperpacket);
   gp_interleave_comp(payload_symbols_inter, payload_symbols,
                      Npayloadsymsperpacket);
-  ofdm_assemble_qpsk_modem_packet_symbols(ofdm, tx_symbols,
-                                          payload_symbols_inter, txt_bits);
+  ofdm_assemble_psk_modem_packet_symbols(ofdm, tx_symbols,
+                                         payload_symbols_inter, txt_bits);
   ofdm_txframe(ofdm, tx_sams, tx_symbols);
 }

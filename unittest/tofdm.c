@@ -324,8 +324,8 @@ int main(int argc, char *argv[]) {
       for (i = 0; i < ofdm_ntxtbits; i++) txt_bits[i] = 0;
 
       uint8_t tx_bits_char[ofdm_bitsperframe];
-      ofdm_assemble_qpsk_modem_packet(ofdm, tx_bits_char, payload_bits,
-                                      txt_bits);
+      ofdm_assemble_psk_modem_packet(ofdm, tx_bits_char, payload_bits,
+                                     txt_bits);
       for (i = 0; i < ofdm_bitsperframe; i++) tx_bits[i] = tx_bits_char[i];
     }
 

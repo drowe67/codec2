@@ -2381,9 +2381,9 @@ void ofdm_get_demod_stats(struct OFDM *ofdm, struct MODEM_STATS *stats,
 /*
  * Assemble packet of bits from UW, payload bits, and txt bits
  */
-void ofdm_assemble_qpsk_modem_packet(struct OFDM *ofdm, uint8_t modem_frame[],
-                                     uint8_t payload_bits[],
-                                     uint8_t txt_bits[]) {
+void ofdm_assemble_psk_modem_packet(struct OFDM *ofdm, uint8_t modem_frame[],
+                                    uint8_t payload_bits[],
+                                    uint8_t txt_bits[]) {
   int s, t;
 
   int p = 0;
@@ -2410,10 +2410,10 @@ void ofdm_assemble_qpsk_modem_packet(struct OFDM *ofdm, uint8_t modem_frame[],
 /*
  * Assemble packet of symbols from UW, payload symbols, and txt bits
  */
-void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
-                                             complex float modem_packet[],
-                                             COMP payload_syms[],
-                                             uint8_t txt_bits[]) {
+void ofdm_assemble_psk_modem_packet_symbols(struct OFDM *ofdm,
+                                            complex float modem_packet[],
+                                            COMP payload_syms[],
+                                            uint8_t txt_bits[]) {
   complex float *payload =
       (complex float *)&payload_syms[0];  // complex has same memory layout
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
@@ -2436,7 +2436,8 @@ void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
   assert(u == Nuwsyms);
   assert(p == (Nsymsperpacket - Nuwsyms - Ntxtsyms));
 
-  /* txt bit insertion only works for QPSK at this stage */
+  /* txt bit insertion only works for QPSK at this stage, however QAM modes
+   * generally has no txt bits  */
   assert((Ntxtsyms == 0) || (ofdm->bps == 2));
   for (t = 0; s < Nsymsperpacket; s++, t += 2) {
     dibit[1] = txt_bits[t] & 0x1;
@@ -2451,11 +2452,11 @@ void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
  * Disassemble a received packet of symbols into UW bits and payload data
  * symbols
  */
-void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
-                                        complex float rx_syms[],
-                                        float rx_amps[], COMP codeword_syms[],
-                                        float codeword_amps[],
-                                        short txt_bits[]) {
+void ofdm_disassemble_psk_modem_packet(struct OFDM *ofdm,
+                                       complex float rx_syms[], float rx_amps[],
+                                       COMP codeword_syms[],
+                                       float codeword_amps[],
+                                       short txt_bits[]) {
   complex float *codeword =
       (complex float *)&codeword_syms[0];  // complex has same memory layout
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
@@ -2495,7 +2496,7 @@ void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
  * Disassemble a received packet of symbols into UW bits and payload data
  * symbols
  */
-void ofdm_disassemble_qpsk_modem_packet_with_text_amps(
+void ofdm_disassemble_psk_modem_packet_with_text_amps(
     struct OFDM *ofdm, complex float rx_syms[], float rx_amps[],
     COMP codeword_syms[], float codeword_amps[], short txt_bits[],
     int *textIndex) {

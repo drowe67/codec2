@@ -490,7 +490,7 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
       /* we have received enough modem frames to complete packet and run LDPC
        * decoder */
       int txt_sym_index = 0;
-      ofdm_disassemble_qpsk_modem_packet_with_text_amps(
+      ofdm_disassemble_psk_modem_packet_with_text_amps(
           ofdm, rx_syms, rx_amps, payload_syms, payload_amps, txt_bits,
           &txt_sym_index);
 
@@ -526,8 +526,9 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
 
       if (f->test_frames) {
         /* est uncoded BER from payload bits */
-        Nerrs_raw = count_uncoded_errors(
-            ldpc, &f->ofdm->config, payload_syms_de, strlen(ofdm->data_mode));
+        Nerrs_raw =
+            count_uncoded_errors(ldpc, &f->ofdm->config, payload_syms_de,
+                                 payload_amps_de, strlen(ofdm->data_mode));
         f->total_bit_errors += Nerrs_raw;
         f->total_bits += Npayloadbitsperpacket;
 
