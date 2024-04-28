@@ -488,24 +488,39 @@ Voicing is determined using a variation of the MBE voicing algorithm \cite{griff
 
 For each band we first estimate the complex harmonic amplitude (magnitude and phase) using \cite{griffin1988multiband}:
 \begin{equation}
+\label{eq:est_amp_mbe1}
 B_m = \frac{\sum_{k=a_m}^{b_m} S_w(k) W^* (k - \lfloor mr \rceil)}{|\sum_{k=a_m}^{b_m} W (k - \lfloor mr \rceil)|^2}
 \end{equation}
-where $r= \omega_0 N_{dft}/2 \pi$ is a constant that maps the $m$-th harmonic to a DFT bin, and $ \lfloor x \rceil$ is the rounding operator.  As $w(n)$ is a real and even, $W(k)$ is real and even so we can write:
+where $r= \omega_0 N_{dft}/2 \pi$ is a constant that maps the $m$-th harmonic to a DFT bin, and $ \lfloor x \rceil$ is the rounding operator.  To avoid non-zero array indexes we define the shifted window function:
+\begin{equation}
+U(k) = W(k-N_{dft}/2)
+\end{equation}
+such that $U(N_{dft}/2)=W(0)$. As $w(n)$ is a real and even, $W(k)$ is real and even so we can write:
+\begin{equation}
+\begin{split}
+W^* (k - \lfloor mr \rceil) &= W(k - \lfloor mr \rceil) \\
+                            &= U(k - \lfloor mr \rceil + Ndft/2) \\
+                            &= U(k + l) \\
+                          l &= Ndft/2  - \lfloor mr \rceil  \\
+                            & = \lfloor Ndft/2  - mr \rceil
+\end{split}
+\end{equation}
+for even $Ndft$.  We can therefore write \ref{eq:est_amp_mbe1} as:
 \begin{equation}
 \label{eq:est_amp_mbe}
-B_m = \frac{\sum_{k=a_m}^{b_m} S_w(k) W (k + \lfloor mr \rceil)}{\sum_{k=a_m}^{b_m} |W (k + \lfloor mr \rceil)|^2}
+B_m = \frac{\sum_{k=a_m}^{b_m} S_w(k) U(k + l)}{\sum_{k=a_m}^{b_m} |U (k + l)|^2}
 \end{equation}
 Note this procedure is different to the $A_m$ magnitude estimation procedure in (\ref{eq:mag_est}), and is only used locally for the MBE voicing estimation procedure.  Unlike (\ref{eq:mag_est}), the MBE amplitude estimation (\ref{eq:est_amp_mbe}) assumes the energy in the band of $S_w(k)$ is from the DFT of a sine wave, and $B_m$ is complex valued.
 
 The synthesised frequency domain speech for this band is defined as:
 \begin{equation}
-\hat{S}_w(k) = B_m W(k + \lfloor mr \rceil), \quad k=a_m,...,b_m-1
+\hat{S}_w(k) = B_m U(k + l), \quad k=a_m,...,b_m-1
 \end{equation}
 The error between the input and synthesised speech in this band is then:
 \begin{equation}
 \begin{split}
 E_m &= \sum_{k=a_m}^{b_m-1} |S_w(k) - \hat{S}_w(k)|^2 \\
-    &=\sum_{k=a_m}^{b_m-1} |S_w(k) - B_m W(k + \lfloor mr \rceil)|^2
+    &=\sum_{k=a_m}^{b_m-1} |S_w(k) - B_m U(k + l)|^2
 \end{split}
 \end{equation}
 A Signal to Noise Ratio (SNR) ratio is defined as:
