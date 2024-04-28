@@ -81,7 +81,7 @@ This production of this document was kindly supported by an ARDC grant \cite{ard
 
 A speech codec takes speech samples from an A/D converter (e.g. 16 bit samples at 8 kHz or 128 kbits/s) and compresses them down to a low bit rate that can be more easily sent over a narrow bandwidth channel (e.g. 700 bits/s for HF).  Speech coding is the art of ``what can we throw away". We need to lower the bit rate of the speech while retaining speech you can understand, and making it sound as natural as possible.
 
-As such low bit rates we use a speech production ``model".  The input speech is anlaysed, and we extract model parameters, which are then sent over the channel.  An example of a model based parameter is the pitch of the person speaking.  We estimate the pitch of the speaker, quantise it to a 7 bit number, and send that over the channel every 20ms.
+As such low bit rates we use a speech production ``model".  The input speech is analysed, and we extract model parameters, which are then sent over the channel.  An example of a model based parameter is the pitch of the person speaking.  We estimate the pitch of the speaker, quantise it to a 7 bit number, and send that over the channel every 20ms.
 
 The model based approach used by Codec 2 allows high compression, with some trade offs such as noticeable artefacts in the decoded speech.  Higher bit rate codecs (above 5000 bit/s), such as those use for mobile telephony or voice on the Internet, tend to pay more attention to preserving the speech waveform, or use a hybrid approach of waveform and model based techniques.  They sound better but require a higher bit rate.
 
