@@ -146,7 +146,7 @@ These modes use an OFDM modem with powerful LDPC codes and are designed for send
 | DATAC3 | 500 | 321 | 126 | (2048,1024) | 3.19 | 74/100 at 0dB | Forward link data (low SNR) |
 | DATAC4 | 250 | 87 | 56 | (1472,448) | 5.17 | 90/100 at -4dB | Forward link data (low SNR) |
 | DATAC13 | 200 | 64 | 14 | (384,128) | 2.0 | 90/100 at -4dB | Reverse link ACK packets (low SNR) |
-| DATAC14 | 250 | 58 | 3 | (112,56) | 0.69 | 90/100 at -4dB | Reverse link ACK packets (low SNR) |
+| DATAC14 | 250 | 58 | 3 | (112,56) | 0.69 | 90/100 at -2dB | Reverse link ACK packets (low SNR) |
 | QAM16C2 | 2100 | 3100 | 1213 | (16200,9720) | 3.2 | 90/100 at 15dB | Forward link data (high SNR) |
 
 Notes:
@@ -247,7 +247,7 @@ This command line demonstrates the effect:
 ```
 Try adjusting `--clip` and `No` argument of `ch` (noise level) for different modes.  Note the SNR estimates returned from `freedv_data_raw_rx` compared to the SNR from the channel simulator `ch`. You will notice clipping also increases the RMS power and reduces the PER for a given channel noise power.  CPAPR will also reduce with clipping enabled.
 
-The following plots illustrate the SNR estimates versus actual channel SNR with and without compression (clipping).  Not that even with the uncompressed waveform there is a small offset of around 1dB, possibly due to modem implementation loss or noise in the frequency, phase, or timing estimators.
+The following plots illustrate the SNR estimates versus actual channel SNR with and without compression (clipping).  Note that even with the uncompressed waveform there is a small offset of around 1dB, possibly due to modem implementation loss or noise in the frequency, phase, or timing estimators.
 
 ![](doc/snrest_snr_ctx.png)
 ![](doc/snrest_snr_ctxc.png)

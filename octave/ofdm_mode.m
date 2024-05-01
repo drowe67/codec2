@@ -143,7 +143,7 @@ function config = ofdm_init_mode(mode="700D")
     config.tx_uw(end-24+1:end) = [1 1 0 0  1 0 1 0  1 1 1 1  0 0 0 0  1 1 1 1  0 0 0 0];
     config.amp_est_mode = 1; config.EsNodB = 3;
     config.state_machine = "data"; 
-    config.amp_scale = 2.5*300E3; config.clip_gain1 = 1.2; config.clip_gain2 = 1.0;
+    config.amp_scale = 2*300E3; config.clip_gain1 = 2; config.clip_gain2 = 1;
     config.txbpf_width_Hz = 400;
   elseif strcmp(mode,"1")
     Ns=5; config.Np=10; Tcp=0; Tframe = 0.1; Ts = Tframe/Ns; Nc = 1;
