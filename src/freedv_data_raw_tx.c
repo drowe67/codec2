@@ -278,8 +278,13 @@ int main(int argc, char *argv[]) {
     memcpy(ofdm_config.tx_uw, uw, sizeof(uw));
     memcpy(&ofdm_config.tx_uw[ofdm_config.nuwbits - sizeof(uw)], uw,
            sizeof(uw));
+    /* set up a trivial Tx band pass filter as a demo */
+    static float tx_bpf[] = {1.0, 1.0, 1.0};
+    ofdm_config.tx_bpf_proto = tx_bpf;
+    ofdm_config.tx_bpf_proto_n = 3;
     adv.config = (void *)&ofdm_config;
     freedv = freedv_open_advanced(mode, &adv);
+    freedv_ofdm_print_info(freedv);
   } else {
     freedv = freedv_open(mode);
   }

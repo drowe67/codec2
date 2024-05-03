@@ -341,6 +341,9 @@ int freedv_get_bits_per_modem_frame(struct freedv *freedv);
 int freedv_get_sz_error_pattern(struct freedv *freedv);
 int freedv_get_protocol_bits(struct freedv *freedv);
 
+// dump OFDM modem config
+void freedv_ofdm_print_info(struct freedv *freedv);
+
 #ifdef __cplusplus
 }
 #endif

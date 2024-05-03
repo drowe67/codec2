@@ -2669,6 +2669,11 @@ void ofdm_print_info(struct OFDM *ofdm) {
           ofdm->phase_est_en ? "true" : "false");
   fprintf(stderr, "ofdm->tx_bpf_en = %s\n", ofdm->tx_bpf_en ? "true" : "false");
   fprintf(stderr, "ofdm->rx_bpf_en = %s\n", ofdm->rx_bpf_en ? "true" : "false");
+  fprintf(stderr, "ofdm->tx_bpf_proto_n = %d\n", ofdm->tx_bpf_proto_n);
+  fprintf(stderr, "ofdm->tx_bpf_proto:\n");
+  for (int i = 0; i < ofdm->tx_bpf_proto_n; i++)
+    fprintf(stderr, "%f\t", ofdm->tx_bpf_proto[i]);
+  fprintf(stderr, "\n");
   fprintf(stderr, "ofdm->dpsk_en = %s\n", ofdm->dpsk_en ? "true" : "false");
   fprintf(stderr, "ofdm->phase_est_bandwidth_mode = %s\n",
           phase_est_bandwidth_mode[ofdm->phase_est_bandwidth_mode]);
