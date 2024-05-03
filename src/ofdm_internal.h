@@ -94,15 +94,17 @@ struct OFDM_CONFIG {
   char *codename;      /* name of LDPC code used with this mode */
   uint8_t tx_uw[MAX_UW_BITS]; /* user defined unique word */
   int amp_est_mode;
-  bool tx_bpf_en;    /* default tx (mod) hilbert clipper BPF enable */
-  bool rx_bpf_en;    /* default rx (demod) input BPF enable */
-  bool foff_limiter; /* tames freq offset updates in low SNR */
-  float amp_scale;   /* used to scale Tx waveform to approx FREEDV_PEAK with
-                        clipper off */
-  float clip_gain1;  /* gain we apply to Tx signal before clipping to control
-                        PAPR*/
-  float clip_gain2;  /* gain we apply to Tx signal after clipping and BBF to
-                        control peak level */
+  bool tx_bpf_en;      /* default tx (mod) hilbert clipper BPF enable */
+  bool rx_bpf_en;      /* default rx (demod) input BPF enable */
+  float *tx_bpf_proto; /* low pass prototype for complex BPF */
+  int tx_bpf_proto_n;  /* number of taps in low pass prototype */
+  bool foff_limiter;   /* tames freq offset updates in low SNR */
+  float amp_scale;     /* used to scale Tx waveform to approx FREEDV_PEAK with
+                          clipper off */
+  float clip_gain1;    /* gain we apply to Tx signal before clipping to control
+                          PAPR*/
+  float clip_gain2;    /* gain we apply to Tx signal after clipping and BBF to
+                          control peak level */
   bool clip_en;
   char mode[16]; /* OFDM mode in string form */
   char *data_mode;
@@ -156,6 +158,7 @@ struct OFDM {
   int packetsperburst; /* for OFDM data modes, how many packets before we reset
                           state machine */
   int amp_est_mode;    /* amplitude estimtor algorithm */
+  int tx_bpf_proto_n;  /* number of taps in low pass prototype */
   float amp_scale;
   float clip_gain1;
   float clip_gain2;
@@ -220,6 +223,7 @@ struct OFDM {
   float coarse_foff_est_hz;
   float timing_norm;
   float mean_amp;
+  float *tx_bpf_proto;
 
   // Integer
   int clock_offset_counter;
