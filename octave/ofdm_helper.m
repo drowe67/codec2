@@ -44,7 +44,8 @@ function print_config(states)
   printf("Nc=%d Ts=%4.3f Tcp=%4.3f Ns: %d Np: %d\n", Nc, 1/Rs, Tcp, Ns, Np);
   printf("Nsymperframe: %d Nbitsperpacket: %d Nsamperframe: %d Ntxtbits: %d Nuwbits: %d Nuwframes: %d\n",
           Ns*Nc, Nbitsperpacket, Nsamperframe, Ntxtbits, Nuwbits, Nuwframes);
-  printf("uncoded bits/s: %4.1f\n",  Nbitsperpacket*Fs/(Np*Nsamperframe));
+  printf("uncoded bits/s: %4.1f  Duration (incl post/preamble): %4.2f s\n",
+         Nbitsperpacket*Fs/(Np*Nsamperframe), (Np+2)*Ns*(Tcp+1/Rs));
 end
 
 %-----------------------------------------------------------------------

@@ -25,18 +25,20 @@ The code supporting these modes won't be going away any time soon (and we will c
 
 We have a process for considering Feature Requests and Pull Requests that we will guide you through.
 
-Feature Requests can be submitted via GitHub Issues.
+If you have a Feature Request, please answer the questions in the [Feature Request Form](https://freedv.org/wp-content/uploads/sites/8/2024/03/FreeDV-027-Feature-Request-Form-V1.1.pdf), and submit your answers as a GitHub Issue.
 
 Before writing any code or submitting a PR - **please discuss** the PR with developers by raising a GitHub Issue. We have many years of experience and a carefully considered plan for Codec 2 development, and can guide you on work that will most benefit this project.
 
 Some key guidelines about the code in the `codec2` repo:
-1. Code that is required to build libcodec2, or to test libcodec2 goes in codec2.
+1. Only code that is required to build, test, or document libcodec2 goes in codec2.
 2. Experimental work, code used for algorithm development, should probably go into some other repo.
 3. Only widely used “production” code goes in codec2. If it has an user base of < 2 (e.g. personal projects, early R&D) - it should probably be application code or a fork.
 
 ## Ports to non C99 Compilers
 
-We have standardized on C99 and develop and test using gcc on a Linux platform.  We encourage people who want to use non-standard compilers like MSVC and certain embedded compilers to maintain their own Codec 2 forks. Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms – rather than consuming time and resources on non-core activities that others can do equally well. If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
+For Windows applications (built with MSVC or any compiler) we recommend linking with our [cross-compiled](#building-for-windows) Codec 2 DLLs.  This lets you enjoy the benefits of our carefully developed, tested and maintained codebase without having to develop and maintain your own fork.
+
+We have standardized on C99 and develop and test using gcc on a Linux platform.  Our focus needs to be on what’s unique about our project – the speech codec and modem waveforms, and we lack the resources to support multiple compilers.  If you want to build Codec 2 using a non-standard compiler like MSVC and certain embedded compilers you will need to maintain your own Codec 2 fork (a very large commitment).  If you decide to fork Codec 2 to a non C99 compiler - please ensure you port the ctests and that they all pass.  If the tests have not been ported or do not pass - it's not Codec 2.
 
 ## Quickstart
 
@@ -203,7 +205,7 @@ wav         - speech files in wave file format
    make
    ```
 
-## Bulding for Windows
+## Building for Windows
 
 We develop and test on Linux to the [C99 standard](#ports-to-non-c99-compilers). We recommend using MinGW to cross compile for Windows.
 

@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
             stderr,
             "\nAdjust path --fading_dir or use GNU Octave to generate:\n\n");
       gen_fading_file:
-        fprintf(stderr, "$ octave --no-gui\n");
+        fprintf(stderr, "$ octave-cli\n");
         fprintf(stderr, "octave:24> pkg load signal\n");
         fprintf(stderr, "octave:24> time_secs=60\n");
         fprintf(stderr,

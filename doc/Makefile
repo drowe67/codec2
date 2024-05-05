@@ -20,10 +20,10 @@ PATH := $(PATH):$(CODEC2_BINARY)/src
 PLOT_FILES := hts2a_37_sn.tex hts2a_37_sw.tex hts2a_37_lpc_lsp.tex hts2a_37_lpc_pf.tex
 
 $(DOCNAME).pdf: $(PLOT_FILES) $(DOCNAME).tex $(DOCNAME)_refs.bib
-	pdflatex -jobname=$(JOBNAME) $(DOCNAME).tex 
+	pdflatex -shell-escape -file-line-error -jobname=$(JOBNAME) $(DOCNAME).tex 
 	bibtex   $(JOBNAME).aux
-	pdflatex -jobname=$(JOBNAME) $(DOCNAME).tex
-	pdflatex -jobname=$(JOBNAME) $(DOCNAME).tex
+	pdflatex -shell-escape -file-line-error -jobname=$(JOBNAME) $(DOCNAME).tex
+	pdflatex -shell-escape -file-line-error -jobname=$(JOBNAME) $(DOCNAME).tex
 
 $(PLOT_FILES):
 	echo $(PATH)
