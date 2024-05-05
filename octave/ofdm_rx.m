@@ -83,7 +83,9 @@ function ofdm_rx(filename, mode="700D", varargin)
   Nerrs = 0; rx_uw = zeros(1,states.Nuwbits);
 
   % main loop ----------------------------------------------------------------
-  
+
+  rx = ofdm_rx_filter(states, mode, rx);
+
   f = 1;
   while(prx < Nsam)
     

@@ -44,6 +44,7 @@
 */
 
 static const int b_table[] = {
+    48,   31,  /* datac14: HRA_56_56, 40 data bits used          */
     56,   37,  /* 700E:   HRA_56_56                              */
     106,  67,  /* 2020B:  (112,56) partial protection            */
     112,  71,  /* 700D:   HRA_112_112                            */
