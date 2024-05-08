@@ -77,10 +77,14 @@ static const complex float qpsk[] = {1.0f + 0.0f * I, 0.0f + 1.0f * I,
                                      0.0f - 1.0f * I, -1.0f + 0.0f * I};
 
 static const complex float qam16[] = {
-    1.0f + 1.0f * I,  1.0f + 3.0f * I,  3.0f + 1.0f * I,  3.0f + 3.0f * I,
-    1.0f - 1.0f * I,  1.0f - 3.0f * I,  3.0f - 1.0f * I,  3.0f - 3.0f * I,
-    -1.0f + 1.0f * I, -1.0f + 3.0f * I, -3.0f + 1.0f * I, -3.0f + 3.0f * I,
-    -1.0f - 1.0f * I, -1.0f - 3.0f * I, -3.0f - 1.0f * I, -3.0f - 3.0f * I};
+    4.4721e-01 + 2.7756e-17 * I,  8.9443e-01 + 4.4721e-01 * I,
+    8.9443e-01 - 4.4721e-01 * I,  1.3416e+00 + 1.1102e-16 * I,
+    2.7756e-17 - 4.4721e-01 * I,  -4.4721e-01 - 8.9443e-01 * I,
+    4.4721e-01 - 8.9443e-01 * I,  1.1102e-16 - 1.3416e+00 * I,
+    -2.7756e-17 + 4.4721e-01 * I, 4.4721e-01 + 8.9443e-01 * I,
+    -4.4721e-01 + 8.9443e-01 * I, -1.1102e-16 + 1.3416e+00 * I,
+    -4.4721e-01 - 2.7756e-17 * I, -8.9443e-01 - 4.4721e-01 * I,
+    -8.9443e-01 + 4.4721e-01 * I, -1.3416e+00 - 1.1102e-16 * I};
 
 /*
  * These pilots are compatible with Octave version
@@ -123,9 +127,12 @@ complex float qam16_mod(int *bits) {
   return qam16[(bits[3] << 3) | (bits[2] << 2) | (bits[1] << 1) | bits[0]];
 }
 
-void qam16_demod(complex float symbol, int *bits) {
+void qam16_demod(complex float symbol, int *bits, float amp_est) {
   float dist[16];
   int i;
+
+  amp_est += 1E-12;  // prevent /0 errors
+  symbol /= amp_est;
 
   for (i = 0; i < 16; i++) {
     dist[i] = cnormf(symbol - qam16[i]);
@@ -190,6 +197,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     ofdm->state_machine = "voice1";
     ofdm->edge_pilots = 1;
     ofdm->codename = "HRA_112_112";
+    ofdm->EsNodB = 3.0;
     ofdm->amp_est_mode = 0;
     ofdm->tx_bpf_en = true;
     ofdm->rx_bpf_en = false;
@@ -224,6 +232,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     ofdm->state_machine = config->state_machine;
     ofdm->edge_pilots = config->edge_pilots;
     ofdm->codename = config->codename;
+    ofdm->EsNodB = config->EsNodB;
     ofdm->amp_est_mode = config->amp_est_mode;
     ofdm->tx_bpf_en = config->tx_bpf_en;
     ofdm->rx_bpf_en = config->rx_bpf_en;
@@ -273,6 +282,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
   ofdm->config.state_machine = ofdm->state_machine;
   ofdm->config.edge_pilots = ofdm->edge_pilots;
   ofdm->config.codename = ofdm->codename;
+  ofdm->config.EsNodB = ofdm->EsNodB;
   ofdm->config.amp_est_mode = ofdm->amp_est_mode;
   ofdm->config.tx_bpf_en = ofdm->tx_bpf_en;
   ofdm->config.rx_bpf_en = ofdm->rx_bpf_en;
@@ -464,13 +474,12 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
   ofdm->tx_uw_syms =
       MALLOC(sizeof(complex float) * (ofdm->nuwbits / ofdm->bps));
   assert(ofdm->tx_uw_syms != NULL);
-
-  assert(ofdm->bps == 2);  // TODO generalise
-  for (int s = 0; s < (ofdm->nuwbits / ofdm->bps); s++) {
-    int dibit[2];
-    dibit[1] = ofdm->tx_uw[2 * s];
-    dibit[0] = ofdm->tx_uw[2 * s + 1];
-    ofdm->tx_uw_syms[s] = qpsk_mod(dibit);
+  for (int b = 0, s = 0; b < ofdm->nuwbits; b += ofdm->bps, s++) {
+    int bits[ofdm->bps];
+    for (int i = 0; i < ofdm->bps; i++)
+      bits[ofdm->bps - 1 - i] = ofdm->tx_uw[b + i];
+    if (ofdm->bps == 2) ofdm->tx_uw_syms[s] = qpsk_mod(bits);
+    if (ofdm->bps == 4) ofdm->tx_uw_syms[s] = qam16_mod(bits);
   }
 
   /* sync state machine */
@@ -1187,25 +1196,15 @@ void ofdm_mod(struct OFDM *ofdm, COMP *result, const int *tx_bits) {
   complex float *tx =
       (complex float *)result;  // complex has same memory layout
   complex float tx_sym_lin[length];
-  int dibit[2];
-  int s, i;
 
-  if (ofdm->bps == 1) {
-    /* Here we will have Nbitsperpacket / 1 */
-
-    for (s = 0; s < length; s++) {
-      tx_sym_lin[s] = (float)(2 * tx_bits[s] - 1);
-    }
-  } else if (ofdm->bps == 2) {
-    /* Here we will have Nbitsperpacket / 2 */
-
-    for (s = 0, i = 0; i < length; s += 2, i++) {
-      dibit[0] = tx_bits[s + 1] & 0x1;
-      dibit[1] = tx_bits[s] & 0x1;
-
-      tx_sym_lin[i] = qpsk_mod(dibit);
-    }
-  } /* else if (ofdm->bps == 3) { } TODO */
+  assert((ofdm->bps == 2) || (ofdm->bps == 4));
+  for (int b = 0, s = 0; b < ofdm->bitsperpacket; b += ofdm->bps, s++) {
+    int bits[ofdm->bps];
+    for (int i = 0; i < ofdm->bps; i++)
+      bits[ofdm->bps - 1 - i] = tx_bits[b + i] & 0x1;
+    if (ofdm->bps == 2) tx_sym_lin[s] = qpsk_mod(bits);
+    if (ofdm->bps == 4) tx_sym_lin[s] = qam16_mod(bits);
+  }
 
   ofdm_txframe(ofdm, tx, tx_sym_lin);
 }
@@ -1875,7 +1874,7 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
    * frame bit ordering correct
    */
   complex float rx_corr;
-  int abit[2];
+  int abit[ofdm->bps];
   int bit_index = 0;
   float sum_amp = 0.0f;
 
@@ -1922,17 +1921,10 @@ static void ofdm_demod_core(struct OFDM *ofdm, int *rx_bits) {
       ofdm->aphase_est_pilot_log[(rr * ofdm->nc) + (i - 1)] =
           aphase_est_pilot[i];
 
-      if (ofdm->bps == 1) {
-        rx_bits[bit_index++] = crealf(rx_corr) > 0.0f;
-      } else if (ofdm->bps == 2) {
-        /*
-         * Only one final task, decode what quadrant the phase
-         * is in, and return the dibits
-         */
-        qpsk_demod(rx_corr, abit);
-        rx_bits[bit_index++] = abit[1];
-        rx_bits[bit_index++] = abit[0];
-      }
+      if (ofdm->bps == 2) qpsk_demod(rx_corr, abit);
+      if (ofdm->bps == 4) qam16_demod(rx_corr, abit, aamp_est_pilot[i]);
+      for (int i = 0; i < ofdm->bps; i++)
+        rx_bits[bit_index++] = abit[ofdm->bps - 1 - i];
     }
   }
 
@@ -2389,9 +2381,9 @@ void ofdm_get_demod_stats(struct OFDM *ofdm, struct MODEM_STATS *stats,
 /*
  * Assemble packet of bits from UW, payload bits, and txt bits
  */
-void ofdm_assemble_qpsk_modem_packet(struct OFDM *ofdm, uint8_t modem_frame[],
-                                     uint8_t payload_bits[],
-                                     uint8_t txt_bits[]) {
+void ofdm_assemble_psk_modem_packet(struct OFDM *ofdm, uint8_t modem_frame[],
+                                    uint8_t payload_bits[],
+                                    uint8_t txt_bits[]) {
   int s, t;
 
   int p = 0;
@@ -2418,10 +2410,10 @@ void ofdm_assemble_qpsk_modem_packet(struct OFDM *ofdm, uint8_t modem_frame[],
 /*
  * Assemble packet of symbols from UW, payload symbols, and txt bits
  */
-void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
-                                             complex float modem_packet[],
-                                             COMP payload_syms[],
-                                             uint8_t txt_bits[]) {
+void ofdm_assemble_psk_modem_packet_symbols(struct OFDM *ofdm,
+                                            complex float modem_packet[],
+                                            COMP payload_syms[],
+                                            uint8_t txt_bits[]) {
   complex float *payload =
       (complex float *)&payload_syms[0];  // complex has same memory layout
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
@@ -2432,10 +2424,6 @@ void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
 
   int p = 0;
   int u = 0;
-
-  assert(
-      ofdm->bps ==
-      2); /* this only works for QPSK at this stage (e.g. modem packet mod) */
 
   for (s = 0; s < (Nsymsperpacket - Ntxtsyms); s++) {
     if ((u < Nuwsyms) && (s == ofdm->uw_ind_sym[u])) {
@@ -2448,6 +2436,9 @@ void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
   assert(u == Nuwsyms);
   assert(p == (Nsymsperpacket - Nuwsyms - Ntxtsyms));
 
+  /* txt bit insertion only works for QPSK at this stage, however QAM modes
+   * generally has no txt bits  */
+  assert((Ntxtsyms == 0) || (ofdm->bps == 2));
   for (t = 0; s < Nsymsperpacket; s++, t += 2) {
     dibit[1] = txt_bits[t] & 0x1;
     dibit[0] = txt_bits[t + 1] & 0x1;
@@ -2461,23 +2452,21 @@ void ofdm_assemble_qpsk_modem_packet_symbols(struct OFDM *ofdm,
  * Disassemble a received packet of symbols into UW bits and payload data
  * symbols
  */
-void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
-                                        complex float rx_syms[],
-                                        float rx_amps[], COMP codeword_syms[],
-                                        float codeword_amps[],
-                                        short txt_bits[]) {
+void ofdm_disassemble_psk_modem_packet(struct OFDM *ofdm,
+                                       complex float rx_syms[], float rx_amps[],
+                                       COMP codeword_syms[],
+                                       float codeword_amps[],
+                                       short txt_bits[]) {
   complex float *codeword =
       (complex float *)&codeword_syms[0];  // complex has same memory layout
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
   int Nuwsyms = ofdm->nuwbits / ofdm->bps;
   int Ntxtsyms = ofdm->ntxtbits / ofdm->bps;
-  int dibit[2];
+  int bits[ofdm->bps];
   int s, t;
 
   int p = 0;
   int u = 0;
-
-  assert(ofdm->bps == 2); /* this only works for QPSK at this stage */
 
   for (s = 0; s < (Nsymsperpacket - Ntxtsyms); s++) {
     if ((u < Nuwsyms) && (s == ofdm->uw_ind_sym[u])) {
@@ -2492,11 +2481,12 @@ void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
   assert(u == Nuwsyms);
   assert(p == (Nsymsperpacket - Nuwsyms - Ntxtsyms));
 
-  for (t = 0; s < Nsymsperpacket; s++, t += 2) {
-    qpsk_demod(rx_syms[s], dibit);
+  for (t = 0; s < Nsymsperpacket; s++, t += ofdm->bps) {
+    if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+    if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
 
-    txt_bits[t] = dibit[1];
-    txt_bits[t + 1] = dibit[0];
+    for (int i = 0; i < ofdm->bps; i++)
+      txt_bits[t + i] = bits[ofdm->bps - 1 - i];
   }
 
   assert(t == ofdm->ntxtbits);
@@ -2506,7 +2496,7 @@ void ofdm_disassemble_qpsk_modem_packet(struct OFDM *ofdm,
  * Disassemble a received packet of symbols into UW bits and payload data
  * symbols
  */
-void ofdm_disassemble_qpsk_modem_packet_with_text_amps(
+void ofdm_disassemble_psk_modem_packet_with_text_amps(
     struct OFDM *ofdm, complex float rx_syms[], float rx_amps[],
     COMP codeword_syms[], float codeword_amps[], short txt_bits[],
     int *textIndex) {
@@ -2515,13 +2505,12 @@ void ofdm_disassemble_qpsk_modem_packet_with_text_amps(
   int Nsymsperpacket = ofdm->bitsperpacket / ofdm->bps;
   int Nuwsyms = ofdm->nuwbits / ofdm->bps;
   int Ntxtsyms = ofdm->ntxtbits / ofdm->bps;
-  int dibit[2];
+  int bits[ofdm->bps];
   int s, t;
 
   int p = 0;
   int u = 0;
 
-  assert(ofdm->bps == 2); /* this only works for QPSK at this stage */
   assert(textIndex != NULL);
 
   for (s = 0; s < (Nsymsperpacket - Ntxtsyms); s++) {
@@ -2538,11 +2527,12 @@ void ofdm_disassemble_qpsk_modem_packet_with_text_amps(
   assert(p == (Nsymsperpacket - Nuwsyms - Ntxtsyms));
 
   *textIndex = s;
-  for (t = 0; s < Nsymsperpacket; s++, t += 2) {
-    qpsk_demod(rx_syms[s], dibit);
+  for (t = 0; s < Nsymsperpacket; s++, t += ofdm->bps) {
+    if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+    if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
 
-    txt_bits[t] = dibit[1];
-    txt_bits[t + 1] = dibit[0];
+    for (int i = 0; i < ofdm->bps; i++)
+      txt_bits[t + i] = bits[ofdm->bps - 1 - i];
   }
 
   assert(t == ofdm->ntxtbits);
@@ -2555,17 +2545,15 @@ void ofdm_extract_uw(struct OFDM *ofdm, complex float rx_syms[],
                      float rx_amps[], uint8_t rx_uw[]) {
   int Nsymsperframe = ofdm->bitsperframe / ofdm->bps;
   int Nuwsyms = ofdm->nuwbits / ofdm->bps;
-  int dibit[2];
   int s, u;
-
-  assert(ofdm->bps ==
-         2); /* this only works for QPSK at this stage (e.g. UW demod) */
 
   for (s = 0, u = 0; s < Nsymsperframe * ofdm->nuwframes; s++) {
     if ((u < Nuwsyms) && (s == ofdm->uw_ind_sym[u])) {
-      qpsk_demod(rx_syms[s], dibit);
-      rx_uw[2 * u] = dibit[1];
-      rx_uw[2 * u + 1] = dibit[0];
+      int bits[ofdm->bps];
+      if (ofdm->bps == 2) qpsk_demod(rx_syms[s], bits);
+      if (ofdm->bps == 4) qam16_demod(rx_syms[s], bits, rx_amps[s]);
+      for (int i = 0; i < ofdm->bps; i++)
+        rx_uw[ofdm->bps * u + i] = bits[ofdm->bps - 1 - i];
       u++;
     }
   }

@@ -39,6 +39,7 @@
 #include "ldpc_codes.h"
 #include "modem_stats.h"
 #include "octave.h"
+#include "ofdm_internal.h"
 
 /* other processes can end this program using signals */
 
@@ -216,6 +217,10 @@ int main(int argc, char *argv[]) {
     mode = FREEDV_MODE_DATAC13;
   if (!strcmp(argv[dx], "DATAC14") || !strcmp(argv[dx], "datac14"))
     mode = FREEDV_MODE_DATAC14;
+  if (!strcmp(argv[dx], "QAM16C2") || !strcmp(argv[dx], "qam16c2"))
+    mode = FREEDV_MODE_QAM16C2;
+  if (!strcmp(argv[dx], "CUSTOM") || !strcmp(argv[dx], "custom"))
+    mode = FREEDV_MODE_DATA_CUSTOM;
   if (mode == -1) {
     fprintf(stderr, "Error in mode: %s\n", argv[dx]);
     exit(1);
@@ -248,6 +253,23 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Setting estimator limits to %d to %d Hz.\n", fsk_lower,
             fsk_upper);
     fsk_set_freq_est_limits(fsk, fsk_lower, fsk_upper);
+  } else if (mode == FREEDV_MODE_DATA_CUSTOM) {
+    // demonstrate custom OFDM raw data modes
+    struct OFDM_CONFIG ofdm_config;
+    ofdm_init_mode("datac14", &ofdm_config);
+    // modify datac14 to have 3 carriers instead of 4, which means
+    // we have to tweak Np, and the number of unique word bits
+    ofdm_config.nc = 3;
+    ofdm_config.np = 6;
+    ofdm_config.nuwbits = 48;
+    ofdm_config.bad_uw_errors = 18;
+    uint8_t uw[] = {1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1,
+                    0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0};
+    memcpy(ofdm_config.tx_uw, uw, sizeof(uw));
+    memcpy(&ofdm_config.tx_uw[ofdm_config.nuwbits - sizeof(uw)], uw,
+           sizeof(uw));
+    adv.config = (void *)&ofdm_config;
+    freedv = freedv_open_advanced(mode, &adv);
   } else {
     freedv = freedv_open(mode);
   }
@@ -264,8 +286,8 @@ int main(int argc, char *argv[]) {
               fsk->Ndft);
   }
 
-  /* for streaming bytes it's much easier use the modes that have a multiple of
-   * 8 payload bits/frame */
+  /* for streaming bytes it's much easier use the modes that have a multiple
+   * of 8 payload bits/frame */
   assert((freedv_get_bits_per_modem_frame(freedv) % 8) == 0);
   int bytes_per_modem_frame = freedv_get_bits_per_modem_frame(freedv) / 8;
   // last two bytes used for CRC

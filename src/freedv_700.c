@@ -189,7 +189,7 @@ void freedv_ofdm_voice_open(struct freedv *f, char *mode) {
 
 // open function for OFDM data modes, TODO consider moving to a new
 // (freedv_ofdm_data.c) file
-void freedv_ofdm_data_open(struct freedv *f) {
+void freedv_ofdm_data_open(struct freedv *f, struct freedv_advanced *adv) {
   struct OFDM_CONFIG ofdm_config;
   char mode[32];
   if (f->mode == FREEDV_MODE_DATAC0) strcpy(mode, "datac0");
@@ -198,8 +198,15 @@ void freedv_ofdm_data_open(struct freedv *f) {
   if (f->mode == FREEDV_MODE_DATAC4) strcpy(mode, "datac4");
   if (f->mode == FREEDV_MODE_DATAC13) strcpy(mode, "datac13");
   if (f->mode == FREEDV_MODE_DATAC14) strcpy(mode, "datac14");
-
-  ofdm_init_mode(mode, &ofdm_config);
+  if (f->mode == FREEDV_MODE_QAM16C2) strcpy(mode, "qam16c2");
+  if (f->mode == FREEDV_MODE_DATA_CUSTOM) {
+    assert(adv != NULL);
+    assert(adv->config != NULL);
+    memcpy(&ofdm_config, (struct OFDM_CONFIG *)adv->config,
+           sizeof(struct OFDM_CONFIG));
+  } else {
+    ofdm_init_mode(mode, &ofdm_config);
+  }
   f->ofdm = ofdm_create(&ofdm_config);
   assert(f->ofdm != NULL);
 
@@ -219,8 +226,8 @@ void freedv_ofdm_data_open(struct freedv *f) {
   f->ofdm_ntxtbits = ofdm_config.txtbits;
 
   /* payload bits per FreeDV API "frame".  In OFDM modem nomenclature this is
-     the number of payload data bits per packet, or the number of data bits in a
-     LDPC codeword */
+     the number of payload data bits per packet, or the number of data bits in
+     a LDPC codeword */
   f->bits_per_modem_frame = f->ldpc->data_bits_per_frame;
 
   // buffers for received symbols for one packet/LDPC codeword - may span many
@@ -299,8 +306,8 @@ int freedv_comprx_700c(struct freedv *f, COMP demod_in_8kHz[]) {
 
   int rx_status = 0;
 
-  // quisk_cfInterpDecim() modifies input data so lets make a copy just in case
-  // there is no sync and we need to echo input to output
+  // quisk_cfInterpDecim() modifies input data so lets make a copy just in
+  // case there is no sync and we need to echo input to output
 
   // freedv_nin(f): input samples at Fs=8000 Hz
   // f->nin: input samples at Fs=7500 Hz
@@ -332,7 +339,8 @@ int freedv_comprx_700c(struct freedv *f, COMP demod_in_8kHz[]) {
       rx_status |= FREEDV_RX_BITS;
     } else {
       if (f->test_frames_diversity) {
-        /* normal operation - error pattern on frame after diveristy combination
+        /* normal operation - error pattern on frame after diveristy
+         * combination
          */
         short error_pattern[COHPSK_BITS_PER_FRAME];
         int bit_errors;
@@ -440,7 +448,7 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
   assert((demod_in_is_short == 0) || (demod_in_is_short == 1));
 
   int rx_status = 0;
-  float EsNo = 3.0; /* further work: estimate this properly from signal */
+  float EsNo = pow(10.0, ofdm->EsNodB / 10);
   f->sync = 0;
 
   /* looking for OFDM modem sync */
@@ -471,8 +479,8 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
     memcpy(&rx_amps[Nsymsperpacket - Nsymsperframe], ofdm->rx_amp,
            sizeof(float) * Nsymsperframe);
 
-    /* look for UW as frames enter packet buffer, note UW may span several modem
-     * frames */
+    /* look for UW as frames enter packet buffer, note UW may span several
+     * modem frames */
     int st_uw = Nsymsperpacket - ofdm->nuwframes * Nsymsperframe;
     ofdm_extract_uw(ofdm, &rx_syms[st_uw], &rx_amps[st_uw], rx_uw);
 
@@ -483,7 +491,7 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
       /* we have received enough modem frames to complete packet and run LDPC
        * decoder */
       int txt_sym_index = 0;
-      ofdm_disassemble_qpsk_modem_packet_with_text_amps(
+      ofdm_disassemble_psk_modem_packet_with_text_amps(
           ofdm, rx_syms, rx_amps, payload_syms, payload_amps, txt_bits,
           &txt_sym_index);
 
@@ -497,10 +505,8 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
       float llr[Npayloadbitsperpacket];
       uint8_t decoded_codeword[Npayloadbitsperpacket];
       symbols_to_llrs(llr, payload_syms_de, payload_amps_de, EsNo,
-                      ofdm->mean_amp, Npayloadsymsperpacket);
+                      ofdm->mean_amp, ofdm->bps, Npayloadsymsperpacket);
       ldpc_decode_frame(ldpc, &parityCheckCount, &iter, decoded_codeword, llr);
-      // iter = run_ldpc_decoder(ldpc, decoded_codeword, llr,
-      // &parityCheckCount);
       memcpy(f->rx_payload_bits, decoded_codeword, Ndatabitsperpacket);
 
       if (strlen(ofdm->data_mode)) {
@@ -510,8 +516,8 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
         else
           rx_status |= FREEDV_RX_BIT_ERRORS;
       } else {
-        // voice modes aren't as strict - pass everything through to the speech
-        // decoder, but flag frame with possible errors
+        // voice modes aren't as strict - pass everything through to the
+        // speech decoder, but flag frame with possible errors
         rx_status |= FREEDV_RX_BITS;
         if (parityCheckCount != ldpc->NumberParityBits)
           rx_status |= FREEDV_RX_BIT_ERRORS;
@@ -519,8 +525,9 @@ int freedv_comp_short_rx_ofdm(struct freedv *f, void *demod_in_8kHz,
 
       if (f->test_frames) {
         /* est uncoded BER from payload bits */
-        Nerrs_raw = count_uncoded_errors(
-            ldpc, &f->ofdm->config, payload_syms_de, strlen(ofdm->data_mode));
+        Nerrs_raw =
+            count_uncoded_errors(ldpc, &f->ofdm->config, payload_syms_de,
+                                 payload_amps_de, strlen(ofdm->data_mode));
         f->total_bit_errors += Nerrs_raw;
         f->total_bits += Npayloadbitsperpacket;
 

@@ -49,7 +49,8 @@ void qpsk_modulate_frame(COMP tx_symbols[], int codeword[], int n);
 void ldpc_decode_frame(struct LDPC *ldpc, int *parityCheckCount, int *iter,
                        uint8_t out_char[], float llr[]);
 int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config,
-                         COMP codeword_symbols_de[], int crc16);
+                         COMP codeword_symbols_de[], float codeword_amps_de[],
+                         int crc16);
 int count_errors(uint8_t tx_bits[], uint8_t rx_bits[], int n);
 void count_errors_protection_mode(int protection_mode, int *pNerrs,
                                   int *pNcoded, uint8_t tx_bits[],

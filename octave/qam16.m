@@ -25,7 +25,7 @@ function test_qam16_mod_demod(constellation)
     for decimal=0:15
       tx_bits = zeros(1,4);
       for i=1:4
-        tx_bits(1,5-i) = bitand(bitshift(decimal-1,1-i),1);
+        tx_bits(1,5-i) = bitand(bitshift(decimal,1-i),1);
       end
       symbol = qam16_mod(constellation, tx_bits);
       rx_bits = qam16_demod(constellation,symbol);

@@ -7,18 +7,31 @@
 
 1;
 
+% return 1 if prime
+function ret = is_prime(x)
+  for i=2:x-1
+    if mod(x,i) == 0
+      ret = 0;
+      return;
+    end
+  end
+  ret = 1;
+end
+
+function x = next_prime(x)
+  x++;
+  while is_prime(x) == 0
+    x++;
+  end
+end
+
 % Choose b for Golden Prime Interleaver.  b is chosen to be the
 % closest integer, which is relatively prime to N, to the Golden
 % section of N.
 
 function b = choose_interleaver_b(Nbits)
-
-  p = primes(Nbits);
-  i = 1;
-  while(p(i) < Nbits/1.62)
-    i++;
-  end
-  b = p(i);
+  b = floor(Nbits/1.62);
+  b = next_prime(b);
   assert(gcd(b,Nbits) == 1, "b and Nbits must be co-prime");
 end
 
@@ -36,7 +49,7 @@ endfunction
 
 function frame = gp_deinterleave(interleaved_frame)
   Nbits = length(interleaved_frame);
-  b = choose_interleaver_b(Nbits);
+  b = choose_interleaver_b(Nbits); 
   frame = zeros(1,Nbits);
   for i=1:Nbits
     j = mod((b*(i-1)), Nbits);

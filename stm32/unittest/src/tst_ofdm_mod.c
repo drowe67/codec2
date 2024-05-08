@@ -29,7 +29,7 @@
  *
  * Typical run:
 
-    ofdm_gen_test_bits stm_in.raw 6 --rand 
+    ofdm_gen_test_bits stm_in.raw 6 --rand
 
     ofdm_mod stm_in.raw ref_mod_out.raw
 
@@ -58,191 +58,195 @@
  */
 
 #include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <unistd.h>
 
-#include "semihosting.h"
 #include "codec2_ofdm.h"
-#include "ofdm_internal.h"
-#include "ldpc_codes.h"
-#include "interldpc.h"
-#include "gp_interleaver.h"
-
-#include "stm32f4xx_conf.h"
-#include "stm32f4xx.h"
-#include "machdep.h"
-
 #include "debug_alloc.h"
+#include "gp_interleaver.h"
+#include "interldpc.h"
+#include "ldpc_codes.h"
+#include "machdep.h"
+#include "ofdm_internal.h"
+#include "semihosting.h"
+#include "stm32f4xx.h"
+#include "stm32f4xx_conf.h"
 
 int main(int argc, char *argv[]) {
-    struct OFDM *ofdm;
-    FILE        *fcfg;
-    struct LDPC  ldpc;
+  struct OFDM *ofdm;
+  FILE *fcfg;
+  struct LDPC ldpc;
 
-    // Test configuration, read from stm_cfg.txt
-    int          config_verbose;
-//    int          config_testframes;
-    int          config_ldpc_en;
-//    int          config_log_payload_syms;
-    int          config_profile;
+  // Test configuration, read from stm_cfg.txt
+  int config_verbose;
+  //    int          config_testframes;
+  int config_ldpc_en;
+  //    int          config_log_payload_syms;
+  int config_profile;
 
-    int          Nbitsperframe, Nsamperframe;
-    int          frame = 0;
-    int          i;
+  int Nbitsperframe, Nsamperframe;
+  int frame = 0;
+  int i;
 
-    semihosting_init();
+  semihosting_init();
 
-    printf("OFDM_mod test and profile\n");
+  printf("OFDM_mod test and profile\n");
 
-    // Read configuration - a file of '0' or '1' characters
-    char config[8];
-    fcfg = fopen("stm_cfg.txt", "r");
-    if (fcfg == NULL) {
-        fprintf(stderr, "Error opening config file\n");
-        exit(1);
-    }
-    if (fread(&config[0], 1, 8, fcfg) != 8) {
-        fprintf(stderr, "Error reading config file\n");
-        exit(1);
-    }
-    config_verbose = config[0] - '0';
-//    config_testframes = config[1] - '0';
-    config_ldpc_en = config[2] - '0';
-//    config_log_payload_syms = config[3] - '0';
-    config_profile = config[4] - '0';
-    fclose(fcfg);
+  // Read configuration - a file of '0' or '1' characters
+  char config[8];
+  fcfg = fopen("stm_cfg.txt", "r");
+  if (fcfg == NULL) {
+    fprintf(stderr, "Error opening config file\n");
+    exit(1);
+  }
+  if (fread(&config[0], 1, 8, fcfg) != 8) {
+    fprintf(stderr, "Error reading config file\n");
+    exit(1);
+  }
+  config_verbose = config[0] - '0';
+  //    config_testframes = config[1] - '0';
+  config_ldpc_en = config[2] - '0';
+  //    config_log_payload_syms = config[3] - '0';
+  config_profile = config[4] - '0';
+  fclose(fcfg);
 
-    PROFILE_VAR(ofdm_mod_start);
-    if (config_profile) machdep_profile_init();
+  PROFILE_VAR(ofdm_mod_start);
+  if (config_profile) machdep_profile_init();
 
-    struct OFDM_CONFIG *ofdm_config;
+  struct OFDM_CONFIG *ofdm_config;
 
-    ofdm = ofdm_create(NULL);
-    assert(ofdm != NULL);
+  ofdm = ofdm_create(NULL);
+  assert(ofdm != NULL);
 
-    /* Get a copy of the actual modem config */
-    ofdm_config = ofdm_get_config_param(ofdm);
+  /* Get a copy of the actual modem config */
+  ofdm_config = ofdm_get_config_param(ofdm);
 
-    ldpc_codes_setup(&ldpc, "HRA_112_112");
+  ldpc_codes_setup(&ldpc, "HRA_112_112");
 
-    Nbitsperframe = ofdm_get_bits_per_frame(ofdm);
-    int Ndatabitsperframe;
-    if (config_ldpc_en) {
-        Ndatabitsperframe = ldpc.data_bits_per_frame;
-    } else {
-        Ndatabitsperframe = ofdm_get_bits_per_frame(ofdm) - ofdm->nuwbits - ofdm->ntxtbits;
-    }
+  Nbitsperframe = ofdm_get_bits_per_frame(ofdm);
+  int Ndatabitsperframe;
+  if (config_ldpc_en) {
+    Ndatabitsperframe = ldpc.data_bits_per_frame;
+  } else {
+    Ndatabitsperframe =
+        ofdm_get_bits_per_frame(ofdm) - ofdm->nuwbits - ofdm->ntxtbits;
+  }
 
-    Nsamperframe = ofdm_get_samples_per_frame(ofdm);
-//    int ofdm_nuwbits = (ofdm_config->ns - 1) * ofdm_config->bps - ofdm_config->txtbits;
+  Nsamperframe = ofdm_get_samples_per_frame(ofdm);
+  //    int ofdm_nuwbits = (ofdm_config->ns - 1) * ofdm_config->bps -
+  //    ofdm_config->txtbits;
 
-    if (config_verbose) {
-        ofdm_set_verbose(ofdm, config_verbose);
-        fprintf(stderr, "Nsamperframe: %d, Nbitsperframe: %d \n", Nsamperframe, Nbitsperframe);
-    }
+  if (config_verbose) {
+    ofdm_set_verbose(ofdm, config_verbose);
+    fprintf(stderr, "Nsamperframe: %d, Nbitsperframe: %d \n", Nsamperframe,
+            Nbitsperframe);
+  }
 
-    int ofdm_ntxtbits =  ofdm_config->txtbits;
+  int ofdm_ntxtbits = ofdm_config->txtbits;
 
-    uint8_t tx_bits_char[Ndatabitsperframe];
-    int16_t tx_scaled[Nsamperframe];
-    uint8_t txt_bits_char[ofdm_ntxtbits];
+  uint8_t tx_bits_char[Ndatabitsperframe];
+  int16_t tx_scaled[Nsamperframe];
+  uint8_t txt_bits_char[ofdm_ntxtbits];
 
-    for(i=0; i< ofdm_ntxtbits; i++) {
-        txt_bits_char[i] = 0;
-    }    
-    
-    if (config_verbose) {
-	    ofdm_print_info(ofdm);
-    }
+  for (i = 0; i < ofdm_ntxtbits; i++) {
+    txt_bits_char[i] = 0;
+  }
 
-    int sin = open("stm_in.raw", O_RDONLY);
-    if (sin < 0) {
-        printf("Error opening input file\n");
-        exit(1);
-    }
+  if (config_verbose) {
+    ofdm_print_info(ofdm);
+  }
 
-    int sout = open("mod.raw", O_WRONLY|O_TRUNC|O_CREAT, 0666);
-    if (sout < 0) {
-        printf("Error opening output file\n");
-        exit(1);
-    }
+  int sin = open("stm_in.raw", O_RDONLY);
+  if (sin < 0) {
+    printf("Error opening input file\n");
+    exit(1);
+  }
 
-    while (read(sin, tx_bits_char, sizeof(char) * Ndatabitsperframe) == Ndatabitsperframe) {
-        fprintf(stderr, "Frame %d\n", frame);
+  int sout = open("mod.raw", O_WRONLY | O_TRUNC | O_CREAT, 0666);
+  if (sout < 0) {
+    printf("Error opening output file\n");
+    exit(1);
+  }
 
-        if (config_profile) { PROFILE_SAMPLE(ofdm_mod_start); }
-
-            if (config_ldpc_en) {
-
-                complex float tx_sams[Nsamperframe];
-                ofdm_ldpc_interleave_tx(ofdm, &ldpc, tx_sams, tx_bits_char, txt_bits_char);
-
-                for(i=0; i<Nsamperframe; i++) {
-                    tx_scaled[i] = crealf(tx_sams[i]);
-                }
-
-             } else { // !config_ldpc_en
-
-                uint8_t tx_frame[Nbitsperframe];
-                ofdm_assemble_qpsk_modem_packet(ofdm, tx_frame, tx_bits_char, txt_bits_char);
-
-                int tx_bits[Nbitsperframe];
-                for(i=0; i<Nbitsperframe; i++) {
-                    tx_bits[i] = tx_frame[i];
-                }
-
-	        if (config_verbose >=3) {
-                    fprintf(stderr, "\ntx_bits:\n");
-                    for (i = 0; i < Nbitsperframe; i++) {
-                        fprintf(stderr, "  %3d %8d\n", i, tx_bits[i]);
-                    }
-                }
-
-                COMP tx_sams[Nsamperframe];
-                ofdm_mod(ofdm, tx_sams, tx_bits);
-
-	        if (config_verbose >=3) {
-                    fprintf(stderr, "\ntx_sams:\n");
-                    for (i = 0; i < Nsamperframe; i++) {
-                        fprintf(stderr, "  %3d % f\n", i, (double)tx_sams[i].real);
-                    }
-                }
-
-                for(i=0; i<Nsamperframe; i++) {
-                    tx_scaled[i] = tx_sams[i].real;
-                }
-            }
-
-        if (config_profile) PROFILE_SAMPLE_AND_LOG2(ofdm_mod_start, "  ofdm_mod");
-
-        write(sout, tx_scaled, sizeof(int16_t) * Nsamperframe);
-
-        frame ++;
-
-    }  // while (fread(...
-
-    close(sin);
-    close(sout);
-
-    if (config_verbose)
-        printf("%d frames processed\n", frame);
+  while (read(sin, tx_bits_char, sizeof(char) * Ndatabitsperframe) ==
+         Ndatabitsperframe) {
+    fprintf(stderr, "Frame %d\n", frame);
 
     if (config_profile) {
-        printf("\nStart Profile Data\n");
-        machdep_profile_print_logged_samples();
-        printf("End Profile Data\n");
+      PROFILE_SAMPLE(ofdm_mod_start);
+    }
+
+    if (config_ldpc_en) {
+      complex float tx_sams[Nsamperframe];
+      ofdm_ldpc_interleave_tx(ofdm, &ldpc, tx_sams, tx_bits_char,
+                              txt_bits_char);
+
+      for (i = 0; i < Nsamperframe; i++) {
+        tx_scaled[i] = crealf(tx_sams[i]);
+      }
+
+    } else {  // !config_ldpc_en
+
+      uint8_t tx_frame[Nbitsperframe];
+      ofdm_assemble_psk_modem_packet(ofdm, tx_frame, tx_bits_char,
+                                     txt_bits_char);
+
+      int tx_bits[Nbitsperframe];
+      for (i = 0; i < Nbitsperframe; i++) {
+        tx_bits[i] = tx_frame[i];
+      }
+
+      if (config_verbose >= 3) {
+        fprintf(stderr, "\ntx_bits:\n");
+        for (i = 0; i < Nbitsperframe; i++) {
+          fprintf(stderr, "  %3d %8d\n", i, tx_bits[i]);
         }
+      }
 
-    printf("\nEnd of Test\n");
-    fclose(stdout);
-    fclose(stderr);
+      COMP tx_sams[Nsamperframe];
+      ofdm_mod(ofdm, tx_sams, tx_bits);
 
-    return 0;
+      if (config_verbose >= 3) {
+        fprintf(stderr, "\ntx_sams:\n");
+        for (i = 0; i < Nsamperframe; i++) {
+          fprintf(stderr, "  %3d % f\n", i, (double)tx_sams[i].real);
+        }
+      }
+
+      for (i = 0; i < Nsamperframe; i++) {
+        tx_scaled[i] = tx_sams[i].real;
+      }
+    }
+
+    if (config_profile) PROFILE_SAMPLE_AND_LOG2(ofdm_mod_start, "  ofdm_mod");
+
+    write(sout, tx_scaled, sizeof(int16_t) * Nsamperframe);
+
+    frame++;
+
+  }  // while (fread(...
+
+  close(sin);
+  close(sout);
+
+  if (config_verbose) printf("%d frames processed\n", frame);
+
+  if (config_profile) {
+    printf("\nStart Profile Data\n");
+    machdep_profile_print_logged_samples();
+    printf("End Profile Data\n");
+  }
+
+  printf("\nEnd of Test\n");
+  fclose(stdout);
+  fclose(stderr);
+
+  return 0;
 }
 
 /* vi:set ts=4 et sts=4: */

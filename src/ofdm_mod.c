@@ -398,8 +398,7 @@ int main(int argc, char *argv[]) {
 
         /* assemble packet of bits then modulate */
         uint8_t tx_bits_char[Nbitsperpacket];
-        ofdm_assemble_qpsk_modem_packet(ofdm, tx_bits_char, data_bits,
-                                        txt_bits);
+        ofdm_assemble_psk_modem_packet(ofdm, tx_bits_char, data_bits, txt_bits);
         int tx_bits[Nbitsperpacket];
         for (i = 0; i < Nbitsperpacket; i++) tx_bits[i] = tx_bits_char[i];
         COMP tx_sams[Nsamperpacket];
