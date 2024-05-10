@@ -76,9 +76,11 @@ void ldpc_mode_specific_setup(struct OFDM *ofdm, struct LDPC *ldpc) {
     set_data_bits_per_frame(ldpc, 156);
     ldpc->protection_mode = LDPC_PROT_2020B;
   }
-  if (!strcmp(ofdm->mode, "datac4")) set_data_bits_per_frame(ldpc, 448);
-  if (!strcmp(ofdm->mode, "datac13")) set_data_bits_per_frame(ldpc, 128);
-  if (!strcmp(ofdm->mode, "datac14")) set_data_bits_per_frame(ldpc, 40);
+
+  /* compute the number of data bits used in the codeword */
+  int data_bits_per_frame = ofdm->bitsperpacket - ofdm->nuwbits -
+                            ofdm->ntxtbits - ldpc->NumberParityBits;
+  set_data_bits_per_frame(ldpc, data_bits_per_frame);
 }
 
 /* LDPC encode frame - generate parity bits and a codeword, applying the

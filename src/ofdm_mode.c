@@ -46,6 +46,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
   config->clip_gain2 = 0.8;
   config->clip_en = true;
   config->tx_bpf_en = true;
+  config->tx_bpf_proto = filtP650S900;
+  config->tx_bpf_proto_n = sizeof(filtP650S900) / sizeof(float);
   config->rx_bpf_en = false;
   config->amp_scale = 245E3;
   config->foff_limiter = false;
@@ -69,6 +71,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->amp_scale = 155E3;
     config->clip_gain1 = 3;
     config->clip_gain2 = 0.8;
+    config->tx_bpf_proto = filtP900S1100;
+    config->tx_bpf_proto_n = sizeof(filtP900S1100) / sizeof(float);
   } else if ((strcmp(mode, "2020") == 0)) {
     config->ts = 0.0205;
     config->nc = 31;
@@ -76,6 +80,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->amp_scale = 167E3;
     config->clip_gain1 = 2.5;
     config->clip_gain2 = 0.8;
+    config->tx_bpf_proto = filtP900S1100;
+    config->tx_bpf_proto_n = sizeof(filtP900S1100) / sizeof(float);
   } else if (strcmp(mode, "2020B") == 0) {
     config->ts = 0.014;
     config->tcp = 0.004;
@@ -92,6 +98,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->state_machine = "voice2";
     config->ftwindowwidth = 64;
     config->foff_limiter = true;
+    config->tx_bpf_proto = filtP1100S1300;
+    config->tx_bpf_proto_n = sizeof(filtP1100S1300) / sizeof(float);
   } else if (strcmp(mode, "qam16") == 0) {
     /* not in use yet */
     config->ns = 5;
@@ -109,6 +117,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->tx_bpf_en = false;
     config->clip_en = false;
     config->data_mode = "streaming";
+    config->tx_bpf_proto = NULL;
+    config->tx_bpf_proto_n = 0;
   } else if (strcmp(mode, "datac0") == 0) {
     config->ns = 5;
     config->np = 4;
@@ -130,6 +140,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->amp_scale = 300E3;
     config->clip_gain1 = 2.2;
     config->clip_gain2 = 0.85;
+    config->tx_bpf_proto = filtP400S600;
+    config->tx_bpf_proto_n = sizeof(filtP400S600) / sizeof(float);
   } else if (strcmp(mode, "datac1") == 0) {
     config->ns = 5;
     config->np = 38;
@@ -152,6 +164,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->amp_scale = 145E3;
     config->clip_gain1 = 2.7;
     config->clip_gain2 = 0.8;
+    config->tx_bpf_proto = filtP900S1100;
+    config->tx_bpf_proto_n = sizeof(filtP900S1100) / sizeof(float);
   } else if (strcmp(mode, "datac3") == 0) {
     config->ns = 5;
     config->np = 29;
@@ -176,6 +190,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->amp_scale = 300E3;
     config->clip_gain1 = 2.2;
     config->clip_gain2 = 0.8;
+    config->tx_bpf_proto = filtP400S600;
+    config->tx_bpf_proto_n = sizeof(filtP400S600) / sizeof(float);
   } else if (strcmp(mode, "datac4") == 0) {
     config->ns = 5;
     config->np = 47;
@@ -201,6 +217,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->clip_gain1 = 1.2;
     config->clip_gain2 = 1.0;
     config->rx_bpf_en = true;
+    config->tx_bpf_proto = filtP200S400;
+    config->tx_bpf_proto_n = sizeof(filtP200S400) / sizeof(float);
   } else if (strcmp(mode, "datac13") == 0) {
     config->ns = 5;
     config->np = 18;
@@ -226,6 +244,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->clip_gain1 = 1.2;
     config->clip_gain2 = 1.0;
     config->rx_bpf_en = true;
+    config->tx_bpf_proto = filtP200S400;
+    config->tx_bpf_proto_n = sizeof(filtP200S400) / sizeof(float);
   } else if (strcmp(mode, "datac14") == 0) {
     config->ns = 5;
     config->np = 4;
@@ -251,6 +271,8 @@ void ofdm_init_mode(char mode[], struct OFDM_CONFIG *config) {
     config->clip_gain1 = 2.0;
     config->clip_gain2 = 1.0;
     config->rx_bpf_en = true;
+    config->tx_bpf_proto = filtP200S400;
+    config->tx_bpf_proto_n = sizeof(filtP200S400) / sizeof(float);
   } else {
     assert(0);
   }

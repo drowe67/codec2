@@ -60,7 +60,7 @@
 /* The API version number.  The first version is 10.  Increment if the API
    changes in a way that would require changes by the API user. */
 
-#define VERSION 15
+#define VERSION 16
 
 /*
   Version 10   Initial version August 2, 2015.
@@ -79,6 +79,9 @@
 
   Version 15   December 2022 Removing rarely used DPSK support which is not
                needed given fast fading modes
+
+  Version 16   April 2024, added field to struct freedv_advanced to support
+               FREEDV_MODE_DATA_CUSTOM
  */
 
 char *ofdm_statemode[] = {"search", "trial", "synced"};
@@ -101,7 +104,8 @@ char *rx_sync_flags_to_text[] = {"----", "---T", "--S-", "--ST", "-B--", "-B-T",
 
 struct freedv *freedv_open(int mode) {
   // defaults for those modes that support the use of adv
-  struct freedv_advanced adv = {0, 2, 100, 8000, 1000, 200, "H_256_512_4"};
+  struct freedv_advanced adv = {0,    2,   100,           8000,
+                                1000, 200, "H_256_512_4", NULL};
   return freedv_open_advanced(mode, &adv);
 }
 
@@ -126,7 +130,8 @@ struct freedv *freedv_open_advanced(int mode, struct freedv_advanced *adv) {
        FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, mode) ||
        FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, mode) ||
        FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, mode) ||
-       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, mode)) == false)
+       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, mode) ||
+       FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, mode)) == false)
     return NULL;
 
   /* set everything to zero just in case */
@@ -150,12 +155,16 @@ struct freedv *freedv_open_advanced(int mode, struct freedv_advanced *adv) {
   if (FDV_MODE_ACTIVE(FREEDV_MODE_2400B, mode)) freedv_2400b_open(f);
   if (FDV_MODE_ACTIVE(FREEDV_MODE_800XA, mode)) freedv_800xa_open(f);
   if (FDV_MODE_ACTIVE(FREEDV_MODE_FSK_LDPC, mode)) freedv_fsk_ldpc_open(f, adv);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC0, mode)) freedv_ofdm_data_open(f);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC1, mode)) freedv_ofdm_data_open(f);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, mode)) freedv_ofdm_data_open(f);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, mode)) freedv_ofdm_data_open(f);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, mode)) freedv_ofdm_data_open(f);
-  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, mode)) freedv_ofdm_data_open(f);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC0, mode)) freedv_ofdm_data_open(f, NULL);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC1, mode)) freedv_ofdm_data_open(f, NULL);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, mode)) freedv_ofdm_data_open(f, NULL);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, mode)) freedv_ofdm_data_open(f, NULL);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, mode))
+    freedv_ofdm_data_open(f, NULL);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, mode))
+    freedv_ofdm_data_open(f, NULL);
+  if (FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, mode))
+    freedv_ofdm_data_open(f, adv);
 
   varicode_decode_init(&f->varicode_dec_states, 1);
 
@@ -238,7 +247,8 @@ void freedv_close(struct freedv *freedv) {
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, freedv->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, freedv->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, freedv->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, freedv->mode)) {
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, freedv->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, freedv->mode)) {
     FREE(freedv->rx_syms);
     FREE(freedv->rx_amps);
     FREE(freedv->ldpc);
@@ -270,7 +280,8 @@ static int is_ofdm_mode(struct freedv *f) {
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode);
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode);
 }
 
 static int is_ofdm_data_mode(struct freedv *f) {
@@ -279,7 +290,8 @@ static int is_ofdm_data_mode(struct freedv *f) {
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
          FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode);
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+         FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode);
 }
 
 /*---------------------------------------------------------------------------*\
@@ -470,7 +482,8 @@ void freedv_rawdatacomptx(struct freedv *f, COMP mod_out[],
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode))
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode))
     freedv_comptx_ofdm(f, mod_out);
 
   if (FDV_MODE_ACTIVE(FREEDV_MODE_FSK_LDPC, f->mode)) {
@@ -1070,7 +1083,8 @@ int freedv_rawdatacomprx(struct freedv *f, unsigned char *packed_payload_bits,
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC3, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC4, f->mode) ||
       FDV_MODE_ACTIVE(FREEDV_MODE_DATAC13, f->mode) ||
-      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode))
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATAC14, f->mode) ||
+      FDV_MODE_ACTIVE(FREEDV_MODE_DATA_CUSTOM, f->mode))
     rx_status = freedv_comp_short_rx_ofdm(f, (void *)demod_in, 0, 1.0f);
   if (FDV_MODE_ACTIVE(FREEDV_MODE_FSK_LDPC, f->mode)) {
     rx_status = freedv_rx_fsk_ldpc_data(f, demod_in);
@@ -1611,4 +1625,8 @@ unsigned short freedv_gen_crc16(unsigned char *data_p, int length) {
   }
 
   return crc;
+}
+
+void freedv_ofdm_print_info(struct freedv *freedv) {
+  ofdm_print_info(freedv->ofdm);
 }

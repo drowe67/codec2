@@ -221,7 +221,7 @@ void freedv_2400a_open(struct freedv *f);
 void freedv_2400b_open(struct freedv *f);
 void freedv_800xa_open(struct freedv *f);
 void freedv_fsk_ldpc_open(struct freedv *f, struct freedv_advanced *adv);
-void freedv_ofdm_data_open(struct freedv *f);
+void freedv_ofdm_data_open(struct freedv *f, struct freedv_advanced *adv);
 
 // each mode has tx and rx functions in various flavours for real and complex
 // valued samples

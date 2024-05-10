@@ -238,6 +238,8 @@ int main(int argc, char *argv[]) {
     mode = FREEDV_MODE_DATAC13;
   if (!strcmp(argv[dx], "DATAC14") || !strcmp(argv[dx], "datac14"))
     mode = FREEDV_MODE_DATAC14;
+  if (!strcmp(argv[dx], "CUSTOM") || !strcmp(argv[dx], "custom"))
+    mode = FREEDV_MODE_DATA_CUSTOM;
   if (mode == -1) {
     fprintf(stderr, "Error: in mode: %s", argv[dx]);
     exit(1);
@@ -259,10 +261,33 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (mode != FREEDV_MODE_FSK_LDPC)
-    freedv = freedv_open(mode);
-  else
+  if (mode == FREEDV_MODE_FSK_LDPC)
     freedv = freedv_open_advanced(mode, &adv);
+  else if (mode == FREEDV_MODE_DATA_CUSTOM) {
+    // demonstrate custom OFDM raw data modes
+    struct OFDM_CONFIG ofdm_config;
+    ofdm_init_mode("datac14", &ofdm_config);
+    // modify datac14 to have 3 carriers instead of 4, which means
+    // we have to tweak Np, and the number of unique word bits
+    ofdm_config.nc = 3;
+    ofdm_config.np = 6;
+    ofdm_config.nuwbits = 48;
+    ofdm_config.bad_uw_errors = 18;
+    uint8_t uw[] = {1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1,
+                    0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0};
+    memcpy(ofdm_config.tx_uw, uw, sizeof(uw));
+    memcpy(&ofdm_config.tx_uw[ofdm_config.nuwbits - sizeof(uw)], uw,
+           sizeof(uw));
+    /* set up a trivial Tx band pass filter as a demo */
+    static float tx_bpf[] = {1.0, 1.0, 1.0};
+    ofdm_config.tx_bpf_proto = tx_bpf;
+    ofdm_config.tx_bpf_proto_n = 3;
+    adv.config = (void *)&ofdm_config;
+    freedv = freedv_open_advanced(mode, &adv);
+    freedv_ofdm_print_info(freedv);
+  } else {
+    freedv = freedv_open(mode);
+  }
 
   assert(freedv != NULL);
 

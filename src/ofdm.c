@@ -192,6 +192,8 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     ofdm->codename = "HRA_112_112";
     ofdm->amp_est_mode = 0;
     ofdm->tx_bpf_en = true;
+    ofdm->tx_bpf_proto = filtP650S900;
+    ofdm->tx_bpf_proto_n = sizeof(filtP650S900) / sizeof(float);
     ofdm->rx_bpf_en = false;
     ofdm->amp_scale = 245E3;
     ofdm->clip_gain1 = 2.0;
@@ -226,6 +228,8 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     ofdm->codename = config->codename;
     ofdm->amp_est_mode = config->amp_est_mode;
     ofdm->tx_bpf_en = config->tx_bpf_en;
+    ofdm->tx_bpf_proto = config->tx_bpf_proto;
+    ofdm->tx_bpf_proto_n = config->tx_bpf_proto_n;
     ofdm->rx_bpf_en = config->rx_bpf_en;
     ofdm->foff_limiter = config->foff_limiter;
     ofdm->amp_scale = config->amp_scale;
@@ -275,6 +279,8 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
   ofdm->config.codename = ofdm->codename;
   ofdm->config.amp_est_mode = ofdm->amp_est_mode;
   ofdm->config.tx_bpf_en = ofdm->tx_bpf_en;
+  ofdm->config.tx_bpf_proto = ofdm->tx_bpf_proto;
+  ofdm->config.tx_bpf_proto_n = ofdm->tx_bpf_proto_n;
   ofdm->config.rx_bpf_en = ofdm->rx_bpf_en;
   ofdm->config.foff_limiter = ofdm->foff_limiter;
   ofdm->config.amp_scale = ofdm->amp_scale;
@@ -539,36 +545,19 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
 static void allocate_tx_bpf(struct OFDM *ofdm) {
   ofdm->tx_bpf = MALLOC(sizeof(struct quisk_cfFilter));
   assert(ofdm->tx_bpf != NULL);
+  assert(ofdm->tx_bpf_proto != NULL);
+  assert(ofdm->tx_bpf_proto_n != 0);
 
-  /* Transmit bandpass filter; complex coefficients, center frequency */
-
-  if (!strcmp(ofdm->mode, "700D")) {
-    quisk_filt_cfInit(ofdm->tx_bpf, filtP650S900,
-                      sizeof(filtP650S900) / sizeof(float));
-    quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
-  } else if (!strcmp(ofdm->mode, "700E") || !strcmp(ofdm->mode, "2020") ||
-             !strcmp(ofdm->mode, "datac1")) {
-    quisk_filt_cfInit(ofdm->tx_bpf, filtP900S1100,
-                      sizeof(filtP900S1100) / sizeof(float));
-    quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
-  } else if (!strcmp(ofdm->mode, "2020B")) {
-    quisk_filt_cfInit(ofdm->tx_bpf, filtP1100S1300,
-                      sizeof(filtP1100S1300) / sizeof(float));
-    quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
-  } else if (!strcmp(ofdm->mode, "datac0") || !strcmp(ofdm->mode, "datac3")) {
-    quisk_filt_cfInit(ofdm->tx_bpf, filtP400S600,
-                      sizeof(filtP400S600) / sizeof(float));
-    quisk_cfTune(ofdm->tx_bpf, ofdm->tx_centre / ofdm->fs);
-  } else if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13") ||
-             !strcmp(ofdm->mode, "datac14")) {
-    quisk_filt_cfInit(ofdm->tx_bpf, filtP200S400,
-                      sizeof(filtP200S400) / sizeof(float));
-    // centre the filter on the mean carrier freq, allows a narrower filter to
-    // be used
-    float tx_centre = find_carrier_centre(ofdm);
-    quisk_cfTune(ofdm->tx_bpf, tx_centre / ofdm->fs);
-  } else
-    assert(0);
+  quisk_filt_cfInit(ofdm->tx_bpf, ofdm->tx_bpf_proto, ofdm->tx_bpf_proto_n);
+  float tx_centre = ofdm->tx_centre;
+  if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13") ||
+      !strcmp(ofdm->mode, "datac14")) {
+    // Centre the filter on the mean carrier freq, allows a narrower
+    // filter to be used. Only really useful for very narrow, Nc odd
+    // waveforms. TODO: make this feature config controlled
+    tx_centre = find_carrier_centre(ofdm);
+  }
+  quisk_cfTune(ofdm->tx_bpf, tx_centre / ofdm->fs);
 }
 
 static void deallocate_tx_bpf(struct OFDM *ofdm) {
@@ -589,7 +578,9 @@ static void allocate_rx_bpf(struct OFDM *ofdm) {
   ofdm->rx_bpf = MALLOC(sizeof(struct quisk_cfFilter));
   assert(ofdm->rx_bpf != NULL);
 
-  /* Receive bandpass filter; complex coefficients, center frequency */
+  /* Receive bandpass filter; complex coefficients, center frequency, only
+     really needed for very low SNR waveforms. TODO: make this config
+     controlled. */
 
   if (!strcmp(ofdm->mode, "datac4") || !strcmp(ofdm->mode, "datac13") ||
       !strcmp(ofdm->mode, "datac14")) {
@@ -2678,6 +2669,11 @@ void ofdm_print_info(struct OFDM *ofdm) {
           ofdm->phase_est_en ? "true" : "false");
   fprintf(stderr, "ofdm->tx_bpf_en = %s\n", ofdm->tx_bpf_en ? "true" : "false");
   fprintf(stderr, "ofdm->rx_bpf_en = %s\n", ofdm->rx_bpf_en ? "true" : "false");
+  fprintf(stderr, "ofdm->tx_bpf_proto_n = %d\n", ofdm->tx_bpf_proto_n);
+  fprintf(stderr, "ofdm->tx_bpf_proto:\n");
+  for (int i = 0; i < ofdm->tx_bpf_proto_n; i++)
+    fprintf(stderr, "%f\t", ofdm->tx_bpf_proto[i]);
+  fprintf(stderr, "\n");
   fprintf(stderr, "ofdm->dpsk_en = %s\n", ofdm->dpsk_en ? "true" : "false");
   fprintf(stderr, "ofdm->phase_est_bandwidth_mode = %s\n",
           phase_est_bandwidth_mode[ofdm->phase_est_bandwidth_mode]);
