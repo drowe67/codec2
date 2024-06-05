@@ -276,8 +276,8 @@ int freedv_comprx_2020(struct freedv *f, COMP demod_in[]) {
     gp_deinterleave_float(codeword_amps_de, codeword_amps,
                           coded_syms_per_frame);
 
-    float llr[coded_bits_per_frame];
-    uint8_t out_char[coded_bits_per_frame];
+    float llr[ldpc->CodeLength * 2];
+    uint8_t out_char[ldpc->CodeLength * 2];
 
     if (f->test_frames) {
       Nerrs_raw =

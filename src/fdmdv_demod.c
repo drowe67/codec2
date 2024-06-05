@@ -247,8 +247,12 @@ int main(int argc, char *argv[]) {
 
   fclose(fin);
   fclose(fout);
+  FREE(rx_bits);
+  FREE(codec_bits);
   FREE(rx_fdm_log);
   FREE(rx_spec_log);
+  FREE(rx_symbols_log);
+  modem_stats_close(&stats);
   fdmdv_destroy(fdmdv);
 
   if (packed_bits != NULL) FREE(packed_bits);

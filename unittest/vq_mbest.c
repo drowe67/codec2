@@ -221,8 +221,8 @@ void quant_mbest(float vec_out[], int indexes[], float vec_in[], int num_stages,
   float err[k], se1;
   int i, j, s, s1, ind;
 
-  struct MBEST *mbest_stage[num_stages];
-  int index[num_stages];
+  struct MBEST *mbest_stage[MAX_STAGES];
+  int index[MAX_STAGES];
   float target[k];
 
   for (i = 0; i < num_stages; i++) {

@@ -59,7 +59,7 @@ void freedv_2400a_open(struct freedv *f) {
   f->n_codec_frames = 1;
   f->bits_per_codec_frame = codec2_bits_per_frame(f->codec2);
   f->bits_per_modem_frame = f->bits_per_codec_frame;
-  int n_packed_bytes = (f->bits_per_modem_frame + 7) / 8;
+  int n_packed_bytes = ceil((f->bits_per_modem_frame + 7.0) / 8.0) + 1;
   f->tx_payload_bits = MALLOC(n_packed_bytes);
   assert(f->tx_payload_bits != NULL);
   f->rx_payload_bits = MALLOC(n_packed_bytes);
@@ -91,7 +91,7 @@ void freedv_2400b_open(struct freedv *f) {
   f->n_codec_frames = 1;
   f->bits_per_codec_frame = codec2_bits_per_frame(f->codec2);
   f->bits_per_modem_frame = f->bits_per_codec_frame;
-  int n_packed_bytes = (f->bits_per_modem_frame + 7) / 8;
+  int n_packed_bytes = (f->bits_per_modem_frame + 7) / 8 + 1;
   f->tx_payload_bits = MALLOC(n_packed_bytes);
   assert(f->tx_payload_bits != NULL);
   f->rx_payload_bits = MALLOC(n_packed_bytes);
@@ -123,7 +123,13 @@ void freedv_800xa_open(struct freedv *f) {
 
   f->bits_per_codec_frame = codec2_bits_per_frame(f->codec2);
   f->bits_per_modem_frame = f->n_codec_frames * f->bits_per_codec_frame;
-  int n_packed_bytes = (f->bits_per_modem_frame + 7) / 8;
+
+  /*
+   * ~3.5 bits per frame, which needs to be rounded up to 4 because computers
+   * can't handle half bytes.
+   */
+  int n_packed_bytes = ceil((f->bits_per_modem_frame + 7.0) / 8.0) + 1;
+  if (n_packed_bytes < 8) n_packed_bytes = 8;
   f->tx_payload_bits = MALLOC(n_packed_bytes);
   assert(f->tx_payload_bits != NULL);
   f->rx_payload_bits = MALLOC(n_packed_bytes);
