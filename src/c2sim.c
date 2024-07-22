@@ -737,13 +737,13 @@ int main(int argc, char *argv[]) {
         encode_lsps_scalar(lsp_indexes, lsps, LPC_ORD);
         decode_lsps_scalar(lsps_, lsp_indexes, LPC_ORD);
         bw_expand_lsps(lsps_, LPC_ORD, 50.0, 100.0);
-        lsp_to_lpc(lsps_, ak_, LPC_ORD);
+        codec2_lsp_to_lpc(lsps_, ak_, LPC_ORD);
       }
 
       if (lspd) {
         encode_lspds_scalar(lsp_indexes, lsps, LPC_ORD);
         decode_lspds_scalar(lsps_, lsp_indexes, LPC_ORD);
-        lsp_to_lpc(lsps_, ak_, LPC_ORD);
+        codec2_lsp_to_lpc(lsps_, ak_, LPC_ORD);
       }
 
       if (lspjmv) {
@@ -753,7 +753,7 @@ int main(int argc, char *argv[]) {
           float lsps_bw[LPC_ORD];
           memcpy(lsps_bw, lsps_, sizeof(float) * order);
           bw_expand_lsps(lsps_bw, LPC_ORD, 50.0, 100.0);
-          lsp_to_lpc(lsps_bw, ak_, LPC_ORD);
+          codec2_lsp_to_lpc(lsps_bw, ak_, LPC_ORD);
         }
       }
 
@@ -1021,7 +1021,7 @@ int main(int argc, char *argv[]) {
 
       for (i = 0; i < decimate; i++) {
         if (lpc_model) {
-          lsp_to_lpc(&lsps_dec[i][0], &ak_dec[i][0], order);
+          codec2_lsp_to_lpc(&lsps_dec[i][0], &ak_dec[i][0], order);
           aks_to_M2(fftr_fwd_cfg, &ak_dec[i][0], order, &model_dec[i], e_dec[i],
                     &snr, 1, simlpcpf, lpcpf, 1, LPCPF_BETA, LPCPF_GAMMA, Aw);
           apply_lpc_correction(&model_dec[i]);
