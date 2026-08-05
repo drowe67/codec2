@@ -186,12 +186,36 @@ void init_c_v_nodes(struct c_node *c_nodes, int shift, int NumberParityBits,
     }
   }
 
+  /*
+   * Sub-node storage for every c-node used to be NumberParityBits separate
+   * CALLOC()s, one per node. On an embedded target with a heap of a few
+   * tens of KB, thousands of small, irregularly-sized allocations like
+   * that - one per decoded frame, immediately freed at the end of the same
+   * call - fragment the heap badly enough to fail a request well before
+   * the total bytes needed are actually exhausted (confirmed: a 24-byte
+   * request failing with well over 10 KB nominally free). One block sliced
+   * manually keeps the exact same total footprint and layout per node, but
+   * removes fragmentation as a failure mode entirely, since nothing in
+   * between the nodes is ever separately freed. c_nodes[0].subs is the
+   * block's base pointer - the only one valid to FREE(), see
+   * run_ldpc_decoder() below; every other c_nodes[i].subs is an offset
+   * into the same allocation, not a pointer of its own.
+   */
+  {
+    int total_c_subs = 0;
+    for (i = 0; i < NumberParityBits; i++) total_c_subs += c_nodes[i].degree;
+    struct c_sub_node *c_subs_pool =
+        CALLOC(total_c_subs, sizeof(struct c_sub_node));
+    assert(c_subs_pool);
+    int c_subs_used = 0;
+
   if (H1) {
     if (shift == 0) {
       for (i = 0; i < NumberParityBits; i++) {
-        // Allocate sub nodes
-        c_nodes[i].subs = CALLOC(c_nodes[i].degree, sizeof(struct c_sub_node));
-        assert(c_nodes[i].subs);
+        // Slice this node's sub nodes out of the one shared pool above
+        // instead of a separate CALLOC() per node.
+        c_nodes[i].subs = &c_subs_pool[c_subs_used];
+        c_subs_used += c_nodes[i].degree;
 
         // Populate sub nodes
         for (j = 0; j < c_nodes[i].degree - 2; j++) {
@@ -213,10 +237,10 @@ void init_c_v_nodes(struct c_node *c_nodes, int shift, int NumberParityBits,
       cnt = 0;
       for (i = 0; i < (NumberParityBits / shift); i++) {
         for (k = 0; k < shift; k++) {
-          // Allocate sub nodes
-          c_nodes[cnt].subs =
-              CALLOC(c_nodes[cnt].degree, sizeof(struct c_sub_node));
-          assert(c_nodes[cnt].subs);
+          // Slice this node's sub nodes out of the one shared pool above
+          // instead of a separate CALLOC() per node.
+          c_nodes[cnt].subs = &c_subs_pool[c_subs_used];
+          c_subs_used += c_nodes[cnt].degree;
 
           // Populate sub nodes
           for (j = 0; j < c_nodes[cnt].degree - 2; j++) {
@@ -245,9 +269,10 @@ void init_c_v_nodes(struct c_node *c_nodes, int shift, int NumberParityBits,
 
   } else {
     for (i = 0; i < NumberParityBits; i++) {
-      // Allocate sub nodes
-      c_nodes[i].subs = CALLOC(c_nodes[i].degree, sizeof(struct c_sub_node));
-      assert(c_nodes[i].subs);
+      // Slice this node's sub nodes out of the one shared pool above
+      // instead of a separate CALLOC() per node.
+      c_nodes[i].subs = &c_subs_pool[c_subs_used];
+      c_subs_used += c_nodes[i].degree;
 
       // Populate sub nodes
       for (j = 0; j < c_nodes[i].degree; j++) {
@@ -255,6 +280,7 @@ void init_c_v_nodes(struct c_node *c_nodes, int shift, int NumberParityBits,
       }
     }
   }
+  }  // end shared c_subs_pool scope
 
   /* determine degree of each v-node */
 
@@ -293,10 +319,21 @@ void init_c_v_nodes(struct c_node *c_nodes, int shift, int NumberParityBits,
 
   /* set up v_nodes */
 
+  // Same reasoning as c_subs_pool above: one shared allocation, sliced per
+  // node, instead of CodeLength separate small CALLOC()s. v_nodes[0].subs
+  // is the block's base pointer - the only one valid to FREE().
+  int total_v_subs = 0;
+  for (i = 0; i < CodeLength; i++) total_v_subs += v_nodes[i].degree;
+  struct v_sub_node *v_subs_pool =
+      CALLOC(total_v_subs, sizeof(struct v_sub_node));
+  assert(v_subs_pool);
+  int v_subs_used = 0;
+
   for (i = 0; i < CodeLength; i++) {
-    // Allocate sub nodes
-    v_nodes[i].subs = CALLOC(v_nodes[i].degree, sizeof(struct v_sub_node));
-    assert(v_nodes[i].subs);
+    // Slice this node's sub nodes out of the one shared pool above instead
+    // of a separate CALLOC() per node.
+    v_nodes[i].subs = &v_subs_pool[v_subs_used];
+    v_subs_used += v_nodes[i].degree;
 
     // Populate sub nodes
 
@@ -518,10 +555,14 @@ int run_ldpc_decoder(struct LDPC *ldpc, uint8_t out_char[], float input[],
   FREE(DecodedBits);
   FREE(data_int);
 
-  for (i = 0; i < NumberParityBits; i++) FREE(c_nodes[i].subs);
+  /* init_c_v_nodes() now hands out c_nodes[i].subs/v_nodes[i].subs as
+     slices of one shared allocation each, not NumberParityBits/CodeLength
+     separate ones - index 0 is the only real CALLOC() return value in
+     each, freeing any of the others would corrupt the heap. */
+  FREE(c_nodes[0].subs);
   FREE(c_nodes);
 
-  for (i = 0; i < CodeLength; i++) FREE(v_nodes[i].subs);
+  FREE(v_nodes[0].subs);
   FREE(v_nodes);
 
   return iter;
